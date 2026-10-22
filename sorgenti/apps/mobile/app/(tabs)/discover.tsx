@@ -1,5 +1,6 @@
+import { TextInput, Text } from "../../src/typography";
 import React, { useState } from "react";
-import { TextInput, Text, View, Pressable } from "react-native";
+import { View, Pressable } from "react-native";
 import { filterArticles, type Stage } from "@nido/core";
 import { useApp } from "../../src/state";
 import {

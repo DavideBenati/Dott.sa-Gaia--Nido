@@ -1,5 +1,6 @@
+import { Text } from "../../src/typography";
 import React from "react";
-import { View, Text, Linking } from "react-native";
+import { View, Linking } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { disclaimer } from "@nido/core";
 import { useApp } from "../../src/state";
@@ -56,14 +57,26 @@ export default function Article() {
           ricevuto una revisione clinica.
         </Notice>
       )}
-      <View style={{ gap: 28, marginVertical: 30 }}>
+      <View
+        style={{
+          gap: 30,
+          marginVertical: 30,
+          width: "100%",
+          maxWidth: 720,
+          alignSelf: "center",
+        }}
+      >
         {article.sections.map((section, index) => (
           <View key={index} style={{ gap: 14 }}>
             <Text accessibilityRole="header" style={ui.heading}>
               {section.heading}
             </Text>
             {section.paragraphs.map((paragraph, i) => (
-              <Text key={i} style={ui.body} selectable>
+              <Text
+                key={i}
+                style={[ui.body, { fontSize: 17, lineHeight: 29 }]}
+                selectable
+              >
                 {paragraph}
               </Text>
             ))}

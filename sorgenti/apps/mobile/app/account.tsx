@@ -1,5 +1,6 @@
+import { Text, TextInput } from "../src/typography";
 import React, { useState } from "react";
-import { View, Text, TextInput } from "react-native";
+import { View } from "react-native";
 import { useApp } from "../src/state";
 import { Screen, Notice, Button, ui } from "../src/ui";
 export default function Account() {

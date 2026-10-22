@@ -11,13 +11,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@nido/core": "0.1.0",
-    "@nido/data": "0.1.0",
     "@expo/metro-runtime": "~58.0.14",
     "@expo/ui": "~58.0.21",
+    "@nido/core": "0.1.0",
+    "@nido/data": "0.1.0",
     "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "58.0.16",
     "expo-constants": "~58.0.12",
+    "expo-font": "58.0.9",
     "expo-linking": "~58.0.13",
     "expo-router": "58.0.24",
     "expo-secure-store": "~58.0.2",

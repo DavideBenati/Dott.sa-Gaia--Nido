@@ -26,7 +26,7 @@ export default function Layout() {
           paddingBottom: 12,
           paddingTop: 8,
         },
-        tabBarLabelStyle: { fontSize: 12, fontWeight: "600" },
+        tabBarLabelStyle: { fontSize: 12, fontFamily: "NidoSansSemibold" },
         tabBarActiveBackgroundColor: colors.sagePale,
         tabBarItemStyle: { borderRadius: 14, marginHorizontal: 3 },
       }}

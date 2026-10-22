@@ -1,5 +1,6 @@
+import { Text, TextInput } from "../src/typography";
 import React, { useState } from "react";
-import { Pressable, Text, TextInput, View, Switch } from "react-native";
+import { Pressable, View, Switch } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { type JourneyType } from "@nido/core";
 import { useApp } from "../src/state";

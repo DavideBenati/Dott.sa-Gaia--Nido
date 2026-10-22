@@ -15,16 +15,8 @@ export const colors = {
   white: "#FFFFFF",
   error: "#98442D",
 };
-export const serif = Platform.select({
-  ios: "Georgia",
-  android: "serif",
-  default: "Georgia, serif",
-});
-export const sans = Platform.select({
-  ios: "System",
-  android: "sans-serif",
-  default: "system-ui, -apple-system, sans-serif",
-});
+export const serif = "NidoLora";
+export const sans = "NidoSans";
 export const shadow = Platform.select({
   web: { boxShadow: "0 6px 30px rgba(48,58,53,0.05)" },
   default: {

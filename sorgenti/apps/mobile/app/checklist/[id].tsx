@@ -1,5 +1,6 @@
+import { Text } from "../../src/typography";
 import React from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Pressable } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { useApp } from "../../src/state";
 import { Screen, Notice, EmptyState, ui } from "../../src/ui";

@@ -1,5 +1,6 @@
+import { Text } from "../src/typography";
 import React from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
 import { disclaimer } from "@nido/core";
 import { Screen, Notice, ui } from "../src/ui";
 export default function Privacy() {

@@ -311,10 +311,32 @@ test("responsive shortcuts, checklist progress and resettable search", async ({
     await page.setViewportSize(viewport);
     await page.goto(appPath("/"));
     const guest = page.getByText("Esplora come ospite", { exact: true });
+    await guest
+      .or(page.getByRole("button", { name: "Le tue letture", exact: true }))
+      .first()
+      .waitFor({ state: "visible" });
     if (await guest.isVisible()) await guest.click();
     await expect(
       page.getByRole("button", { name: "Le tue letture", exact: true }),
     ).toBeVisible();
+    await expect(
+      page.getByRole("heading", {
+        name: "Ogni nuovo inizio, insieme.",
+        exact: true,
+      }),
+    ).toHaveCSS("font-family", /NidoLora/);
+    await expect(page.getByText("Le tue letture", { exact: true })).toHaveCSS(
+      "font-family",
+      /NidoSansSemibold/,
+    );
+    expect(
+      await page.evaluate(() =>
+        Array.from(document.fonts).some(
+          (font) =>
+            font.family.includes("NidoLora") && font.status === "loaded",
+        ),
+      ),
+    ).toBe(true);
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= window.innerWidth,

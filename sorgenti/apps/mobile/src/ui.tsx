@@ -1,10 +1,10 @@
+import { Text } from "./typography";
 import React from "react";
 import {
   ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
   useWindowDimensions,
   type StyleProp,
@@ -470,7 +470,7 @@ export const ui = StyleSheet.create({
     padding: 22,
     ...shadow,
   },
-  body: { color: colors.muted, fontSize: 15, lineHeight: 24 },
+  body: { color: colors.muted, fontSize: 16, lineHeight: 26 },
   heading: {
     fontFamily: serif,
     color: colors.ink,
@@ -535,7 +535,7 @@ const styles = StyleSheet.create({
     color: colors.ink,
     fontFamily: serif,
     fontSize: 43,
-    letterSpacing: -2,
+    letterSpacing: -1.2,
   },
   headerRight: { flexDirection: "row", alignItems: "center", gap: 15 },
   mode: {
@@ -589,7 +589,7 @@ const styles = StyleSheet.create({
     lineHeight: 46,
     marginBottom: 10,
     maxWidth: 760,
-    letterSpacing: -0.7,
+    letterSpacing: -0.5,
   },
   subtitle: {
     color: colors.muted,
@@ -683,8 +683,8 @@ const styles = StyleSheet.create({
   },
   articleTitle: {
     fontFamily: serif,
-    fontSize: 25,
-    lineHeight: 31,
+    fontSize: 24,
+    lineHeight: 33,
     color: colors.ink,
     paddingRight: 4,
   },
@@ -731,7 +731,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.sagePale,
     marginBottom: 5,
   },
-  body: { color: colors.muted, fontSize: 15, lineHeight: 24, maxWidth: 430 },
+  body: { color: colors.muted, fontSize: 16, lineHeight: 26, maxWidth: 430 },
   loading: { padding: 35, alignItems: "center", gap: 15 },
   footer: { alignItems: "center", paddingTop: 42, paddingBottom: 16, gap: 7 },
   footerLine: {

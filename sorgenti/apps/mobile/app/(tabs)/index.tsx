@@ -1,5 +1,6 @@
+import { Text } from "../../src/typography";
 import React from "react";
-import { Text, View, Pressable, useWindowDimensions } from "react-native";
+import { View, Pressable, useWindowDimensions } from "react-native";
 import { router } from "expo-router";
 import { calculateJourney, recommendArticles, disclaimer } from "@nido/core";
 import { useApp } from "../../src/state";
