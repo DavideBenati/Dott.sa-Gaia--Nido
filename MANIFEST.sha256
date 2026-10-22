@@ -82,7 +82,7 @@ d1e5f84ffe3648e6f07882ce9e8055751f6c6b6fa328356b6d4b3aaf861479c0  sorgenti/apps/
 84aa9570e6986a0346516de8f0c38f51a18c12f09c0064ad1b6d2bd5d585a5fc  sorgenti/apps/mobile/app/(tabs)/profile.tsx
 bf5f464d97c9defad46aa67ae18b44871ec57901b4d47768902b650483d4e93d  sorgenti/apps/mobile/app/+not-found.tsx
 ae589c83931feebd5f828e11d679a291a0504aaf54eec7231d9ca64fc268b0a7  sorgenti/apps/mobile/app/_layout.tsx
-a4d2e9b67daea09cd563c7ee1bfc05e8de2917870f88219c60e91ccc99c263ad  sorgenti/apps/mobile/app/account.tsx
+92f36ae3727092bd80a0e961ac18d5e9cc3638842a1ed69e4e1fed1e49ad6c5f  sorgenti/apps/mobile/app/account.tsx
 781a34665fa3b7d800727b0b537913434a0eb61fd6ce0fca5744d6d3db9345e0  sorgenti/apps/mobile/app/article/[id].tsx
 c8daa80206dc888bb365b3174a851d542524f8a4fb38d3e1b5de5a47c662bc42  sorgenti/apps/mobile/app/chat.tsx
 fb224c6bf69322c01181bdc7184eed53d1e143d39e2b457cd9f0ccebf116eb75  sorgenti/apps/mobile/app/checklist/[id].tsx

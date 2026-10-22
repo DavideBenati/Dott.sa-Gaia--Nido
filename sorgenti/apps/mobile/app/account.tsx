@@ -54,9 +54,14 @@ export default function Account() {
       setMessage(result);
       // The auth event reloads the account's own state. Keep this route open:
       // its signed-in panel offers personalization after hydration completes.
-    } catch {
+    } catch (error) {
+      const detail = error instanceof Error ? error.message.toLowerCase() : "";
       setMessage(
-        "Operazione non riuscita. Verifica i dati e la connessione. Se hai già un account, prova ad accedere.",
+        detail.includes("rate limit") || detail.includes("too many")
+          ? "Troppe richieste. Attendi qualche minuto prima di riprovare. Il servizio email potrebbe aver raggiunto il limite di invio."
+          : detail.includes("sending confirmation") || detail.includes("smtp")
+            ? "Il servizio non riesce a inviare l’email di conferma. Occorre verificare la configurazione email in Supabase."
+            : "Operazione non riuscita. Verifica i dati e la connessione. Se hai già un account, prova ad accedere.",
       );
     } finally {
       setBusy(false);
@@ -281,6 +286,11 @@ export default function Account() {
                     Almeno 8 caratteri. Nessuna data personale obbligatoria.
                   </Text>
                 )}
+                {message !== "" && (
+                  <View accessibilityRole="alert" accessibilityLiveRegion="polite">
+                    <Notice>{message}</Notice>
+                  </View>
+                )}
                 <Button disabled={busy || demo} onPress={() => void submit()}>
                   {busy ? "Attendi…" : create ? "Crea account" : "Accedi"}
                 </Button>
@@ -327,7 +337,7 @@ export default function Account() {
             </Text>
           </View>
         )}
-        {message !== "" && (
+        {message !== "" && (Boolean(accountEmail) || reset) && (
           <View accessibilityRole="alert">
             <Notice>{message}</Notice>
           </View>
