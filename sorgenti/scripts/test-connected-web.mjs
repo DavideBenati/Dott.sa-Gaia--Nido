@@ -59,6 +59,8 @@ async function context() {
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
   });
+  if (process.env.MAIA_TEST_FONT_FAILURE === "1")
+    await context.route("**/*.ttf", (route) => route.abort("failed"));
   await context.route("https://*.supabase.co/**", async (route) => {
     const request = route.request();
     const url = new URL(request.url());

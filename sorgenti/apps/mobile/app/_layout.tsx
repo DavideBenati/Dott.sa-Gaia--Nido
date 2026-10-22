@@ -6,7 +6,6 @@ import NidoSansSemibold from "../assets/fonts/DMSans_600SemiBold.ttf";
 import NidoSansBold from "../assets/fonts/DMSans_700Bold.ttf";
 import React from "react";
 import { useFonts } from "expo-font";
-import { Text } from "../src/typography";
 import { Stack } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -50,22 +49,7 @@ export default function Layout() {
         />
       </View>
     );
-  if (fontError)
-    return (
-      <View
-        style={{
-          flex: 1,
-          padding: 24,
-          justifyContent: "center",
-          backgroundColor: "#FAF7F2",
-        }}
-      >
-        <Text accessibilityRole="alert">
-          Non è stato possibile caricare MAIA. Controlla la connessione e riapri
-          l’app.
-        </Text>
-      </View>
-    );
+  // A font download failure must not block access; use the system fallback.
   return (
     <SafeAreaProvider>
       <AppProvider>
