@@ -277,6 +277,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ...current,
         preferences: {
           ...preferences,
+          marketing: false,
           date:
             preferences.personalized && preferences.sensitiveConsent
               ? preferences.date
@@ -287,6 +288,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         client
           ? savePreferences(client, {
               ...preferences,
+              marketing: false,
               date:
                 preferences.personalized && preferences.sensitiveConsent
                   ? preferences.date

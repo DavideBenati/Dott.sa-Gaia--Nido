@@ -38,6 +38,7 @@ export default function Welcome() {
       await updatePreferences({
         ...draft,
         onboarded: true,
+        marketing: false,
         personalized: guest ? false : draft.personalized,
         sensitiveConsent: guest ? false : draft.sensitiveConsent,
         date: guest ? null : draft.date,
@@ -240,8 +241,10 @@ export default function Welcome() {
                   >
                     <Text style={ui.body}>
                       {draft.sensitiveConsent ? "✓ " : ""}Acconsento al
-                      salvataggio della data facoltativa per personalizzare il
-                      mio percorso.
+                      trattamento della data facoltativa, che può rivelare
+                      informazioni sulla salute, per personalizzare il mio
+                      percorso. Posso revocare il consenso dal profilo e
+                      continuare senza data.
                     </Text>
                   </Pressable>
                   {draft.sensitiveConsent && (
@@ -332,22 +335,10 @@ export default function Welcome() {
                   }
                 />
               </View>
-              <View style={ui.row}>
-                <View style={{ flex: 1 }}>
-                  <Text style={ui.label}>Novità di MAIA</Text>
-                  <Text style={ui.body}>
-                    Consenso marketing facoltativo e separato. Nessun invio
-                    attivo.
-                  </Text>
-                </View>
-                <Switch
-                  accessibilityLabel="Consenso marketing facoltativo"
-                  value={draft.marketing}
-                  onValueChange={(marketing) =>
-                    setDraft({ ...draft, marketing })
-                  }
-                />
-              </View>
+              <Text style={ui.body}>
+                Le comunicazioni promozionali non sono attive. Non ti chiediamo
+                un consenso per invii futuri.
+              </Text>
             </>
           )}
           {error && (

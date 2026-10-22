@@ -106,7 +106,7 @@ export default function Profile() {
           <View style={{ flex: 1 }}>
             <Text style={ui.label}>Promemoria del percorso</Text>
             <Text style={ui.body}>
-              Preferenza salvata. L’invio arriverà in un prossimo aggiornamento.
+              Preferenza salvata. Nessuna notifica push viene inviata.
             </Text>
           </View>
           <Switch
@@ -115,19 +115,10 @@ export default function Profile() {
             onValueChange={(notifications) => change({ notifications })}
           />
         </View>
-        <View style={ui.row}>
-          <View style={{ flex: 1 }}>
-            <Text style={ui.label}>Novità di MAIA</Text>
-            <Text style={ui.body}>
-              Consenso marketing facoltativo, nessun invio attivo.
-            </Text>
-          </View>
-          <Switch
-            accessibilityLabel="Consenso marketing facoltativo"
-            value={state.preferences.marketing}
-            onValueChange={(marketing) => change({ marketing })}
-          />
-        </View>
+        <Text style={ui.body}>
+          Comunicazioni promozionali non attive. Nessun consenso marketing viene
+          richiesto per servizi futuri.
+        </Text>
       </View>
       <SectionHeader title="Conosci MAIA" />
       <Button
@@ -159,7 +150,7 @@ export default function Profile() {
         Quando chiedere aiuto
       </Button>
       <Button variant="quiet" onPress={() => router.push("/privacy")}>
-        Privacy e informazioni educative
+        Privacy e dati personali
       </Button>
       <SectionHeader title="Account e dati" />
       <Button variant="secondary" onPress={() => router.push("/account")}>
@@ -191,8 +182,9 @@ export default function Profile() {
         <View style={[ui.card, { gap: 16 }]}>
           <Text style={ui.heading}>Confermi la cancellazione?</Text>
           <Text style={ui.body}>
-            Rimuove definitivamente preferenze, data facoltativa, salvati e
-            progressi. Puoi esportarli prima di continuare.
+            {email
+              ? "Elimina l’account, preferenze, data, salvati, progressi e la conversazione dalla base dati attiva. Eventuali backup, log e obblighi di conservazione sono descritti nell’informativa. Puoi esportare i dati prima di continuare."
+              : "Rimuove preferenze, data, salvati e progressi da questo browser o dispositivo. Non cancella copie su altri dispositivi. Puoi esportare i dati prima di continuare."}
           </Text>
           <Button
             disabled={busy}

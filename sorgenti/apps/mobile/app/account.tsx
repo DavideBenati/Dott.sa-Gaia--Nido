@@ -168,8 +168,9 @@ export default function Account() {
               Come trattiamo i tuoi dati
             </Button>
             <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 20 }}>
-              L’email serve per accedere e confermare l’account. Il consenso
-              marketing rimane separato e facoltativo.
+              L’email serve per accedere e confermare l’account. Leggere
+              l’informativa non equivale a un consenso generale. Non inviamo
+              comunicazioni promozionali.
             </Text>
           </View>
         )}

@@ -187,7 +187,7 @@ test("postpartum onboarding, optional consent, export and local deletion", async
       name: "Consenso marketing facoltativo",
       exact: true,
     }),
-  ).not.toBeChecked();
+  ).toHaveCount(0);
   await page
     .getByRole("button", { name: "Entra in MAIA", exact: true })
     .click();
@@ -442,4 +442,50 @@ test("quick registration preview and private chat clearly distinguish demo from 
   ).toBeDisabled();
   await expect(page.getByLabel("Scrivi un messaggio")).not.toBeEditable();
   await page.screenshot({ path: "test-results/maia-chat.png", fullPage: true });
+});
+
+test("privacy explains the real demo, controller and rights without a marketing consent", async ({
+  page,
+}) => {
+  await page.goto(appPath("/privacy"));
+  await expect(
+    page.getByRole("heading", {
+      name: "Privacy e dati personali",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/Titolare del trattamento: Gaia Brunetti/),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/Via San Godenzo 33, Roma, Italia/),
+  ).toBeVisible();
+  await expect(page.getByText(/Informativa in completamento/)).toBeVisible();
+  await expect(
+    page.getByText(/Contatto privacy: ostetricamaia@gmail.com/),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", {
+      name: "Contatta il titolare per la privacy",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "11. I tuoi diritti", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/La gestione delle conversazioni è affidata esclusivamente/),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Gestisci preferenze e dati", exact: true })
+    .click();
+  await expect(
+    page.getByRole("switch", {
+      name: "Consenso marketing facoltativo",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Esporta i miei dati", exact: true }),
+  ).toBeVisible();
 });

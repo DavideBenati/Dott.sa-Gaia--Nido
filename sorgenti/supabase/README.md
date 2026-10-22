@@ -33,3 +33,9 @@ Per attivare il servizio reale:
 6. Prima del lancio verificare con almeno due account utente e quello della professionista: conferma email, login/logout, isolamento delle sessioni, profilo condiviso fra browser/app, invio e risposta, revoca del ruolo chat, export e cancellazione. I test PostgreSQL locali esercitano le policy, ma non sostituiscono un collaudo Supabase Auth/HTTPS reale. Applicare protezioni antiabuso, configurare i limiti del servizio e concordare la gestione dei messaggi prima di aprire la chat pubblicamente.
 
 La chat non è un servizio di emergenza. Prima di ricevere dati reali occorre aggiornare l’informativa privacy, definire base giuridica e conservazione, verificare gli accordi con il fornitore e concordare con la professionista modalità di utilizzo e accesso. Non attivare la ricezione di dati sanitari sulla sola base della demo. Non è implementata cifratura end-to-end.
+
+## Informativa e contatti privacy
+
+Titolare indicato dall’utente: Gaia Brunetti, Via San Godenzo 33, Roma, Italia. La gestione delle chat è riservata alla Dott.ssa Gaia Brunetti: non abilitare redattori o altri account in `private.chat_staff`. Resta da verificare che i ruoli privacy del titolare e della professionista corrispondano all’organizzazione effettiva.
+
+I dettagli pubblici dell’informativa sono configurabili tramite le variabili `EXPO_PUBLIC_PRIVACY_*` descritte in `docs/privacy-launch.md`. Non inserire credenziali. La pagina rimane segnalata come in completamento finché i dettagli obbligatori di contatto, fornitori, conservazione e trasferimenti non sono disponibili. Questo avviso non impedisce tecnicamente l’attivazione di Supabase: il gestore deve completare gli adempimenti prima di abilitarlo.

@@ -102,6 +102,9 @@ function Conversation({
     <View
       style={{ width: "100%", maxWidth: 720, alignSelf: "center", gap: 16 }}
     >
+      <Button variant="quiet" onPress={() => router.push("/privacy")}>
+        Privacy della conversazione
+      </Button>
       <Notice warm icon="help">
         Le risposte non sono immediate. Per urgenze contatta i servizi di
         emergenza.
