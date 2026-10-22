@@ -46,6 +46,8 @@ export function Screen({
   style?: StyleProp<ViewStyle>;
 }) {
   const { demo, email, mutationError, clearError } = useApp();
+  const { width } = useWindowDimensions();
+  const desktop = width >= 900;
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <View style={styles.topBar}>
@@ -58,12 +60,23 @@ export function Screen({
             <Brand compact />
           </Pressable>
           <View style={styles.headerRight}>
-            <View style={styles.mode}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={
+                demo
+                  ? "Informazioni sulla modalità demo"
+                  : email
+                    ? "Gestisci account"
+                    : "Accedi al tuo account"
+              }
+              onPress={() => router.push("/account")}
+              style={styles.mode}
+            >
               <View style={styles.modeDot} />
               <Text style={styles.modeText}>
-                {demo ? "DEMO MODE" : email ? "Il tuo spazio" : "Ospite"}
+                {demo ? "DEMO MODE" : email ? "Il tuo account" : "Accedi"}
               </Text>
-            </View>
+            </Pressable>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Quando chiedere aiuto"
@@ -76,7 +89,11 @@ export function Screen({
         </View>
       </View>
       <ScrollView
-        contentContainerStyle={[styles.scroll, style]}
+        contentContainerStyle={[
+          styles.scroll,
+          !desktop && { paddingHorizontal: 20, paddingTop: 24 },
+          style,
+        ]}
         keyboardShouldPersistTaps="handled"
       >
         {back && (
@@ -105,7 +122,10 @@ export function Screen({
         )}
         {eyebrow && <Text style={styles.eyebrow}>{eyebrow}</Text>}
         {title && (
-          <Text accessibilityRole="header" style={styles.title}>
+          <Text
+            accessibilityRole="header"
+            style={[styles.title, !desktop && { fontSize: 32, lineHeight: 39 }]}
+          >
             {title}
           </Text>
         )}
@@ -117,6 +137,23 @@ export function Screen({
           <Text style={styles.footerSmall}>
             Uno spazio educativo, da vivere con i tuoi tempi.
           </Text>
+          <View style={ui.row}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push("/privacy")}
+              style={styles.sectionAction}
+            >
+              <Text style={styles.actionText}>Privacy e dati</Text>
+            </Pressable>
+            <Text style={styles.footerSmall}>·</Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push("/help")}
+              style={styles.sectionAction}
+            >
+              <Text style={styles.actionText}>Quando chiedere aiuto</Text>
+            </Pressable>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -143,6 +180,7 @@ export function Button({
       accessibilityLabel={accessibilityLabel ?? children}
       onPress={onPress}
       disabled={disabled}
+      accessibilityState={{ disabled: Boolean(disabled) }}
       style={({ pressed }) => [
         styles.button,
         variant === "secondary" && styles.buttonSecondary,
@@ -309,7 +347,9 @@ export function ArticleGrid({ items }: { items: Article[] }) {
         <View
           key={article.id}
           style={{
-            width: width > 900 ? "31.8%" : width > 600 ? "48.5%" : "100%",
+            width: width >= 1000 ? "31.8%" : width >= 700 ? "48.5%" : "100%",
+            flexGrow: 1,
+            maxWidth: width >= 1000 ? "32.5%" : width >= 700 ? "49%" : "100%",
           }}
         >
           <ArticleCard article={article} />
@@ -318,6 +358,56 @@ export function ArticleGrid({ items }: { items: Article[] }) {
     </View>
   );
 }
+export function Progress({
+  completed,
+  total,
+}: {
+  completed: number;
+  total: number;
+}) {
+  const percent = total ? Math.round((completed / total) * 100) : 0;
+  return (
+    <View style={{ gap: 9 }}>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          gap: 12,
+        }}
+      >
+        <Text style={{ color: colors.muted, fontSize: 13 }}>
+          {completed} di {total} completati
+        </Text>
+        <Text
+          style={{ color: colors.sageDark, fontSize: 13, fontWeight: "700" }}
+        >
+          {percent}%
+        </Text>
+      </View>
+      <View
+        accessibilityRole="progressbar"
+        accessibilityLabel="Avanzamento checklist"
+        accessibilityValue={{ min: 0, max: total, now: completed }}
+        style={{
+          height: 6,
+          borderRadius: 3,
+          backgroundColor: colors.sagePale,
+          overflow: "hidden",
+        }}
+      >
+        <View
+          style={{
+            width: `${percent}%`,
+            height: "100%",
+            backgroundColor: colors.sageDark,
+            borderRadius: 3,
+          }}
+        />
+      </View>
+    </View>
+  );
+}
+
 export function EmptyState({
   title,
   text,
@@ -427,14 +517,14 @@ const styles = StyleSheet.create({
   topBar: {
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    backgroundColor: colors.cream,
+    backgroundColor: colors.paper,
   },
   topInner: {
     width: "100%",
     maxWidth: 1176,
     alignSelf: "center",
     paddingHorizontal: 24,
-    height: 82,
+    height: 76,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -455,7 +545,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.sagePale,
     borderRadius: 20,
     paddingHorizontal: 10,
-    paddingVertical: 7,
+    paddingVertical: 12,
   },
   modeDot: {
     width: 5,
@@ -464,7 +554,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.sageDark,
   },
   modeText: {
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: "700",
     color: colors.sageDark,
     letterSpacing: 1,
@@ -587,7 +677,7 @@ const styles = StyleSheet.create({
   articleCategory: {
     color: colors.sageDark,
     textTransform: "uppercase",
-    fontSize: 9,
+    fontSize: 11,
     fontWeight: "700",
     letterSpacing: 1.2,
   },
@@ -606,7 +696,7 @@ const styles = StyleSheet.create({
     gap: 5,
     marginTop: 5,
   },
-  metaText: { fontSize: 10, color: colors.muted },
+  metaText: { fontSize: 12, color: colors.muted },
   metaDot: { color: colors.sage },
   bookmark: {
     position: "absolute",
@@ -656,7 +746,7 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     fontSize: 18,
   },
-  footerSmall: { color: colors.muted, fontSize: 10 },
+  footerSmall: { color: colors.muted, fontSize: 12 },
   back: {
     flexDirection: "row",
     alignItems: "center",

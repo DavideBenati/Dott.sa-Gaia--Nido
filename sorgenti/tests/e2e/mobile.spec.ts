@@ -300,3 +300,66 @@ test("partner onboarding works without another person’s health details", async
     }),
   ).toHaveCount(0);
 });
+
+test("responsive shortcuts, checklist progress and resettable search", async ({
+  page,
+}) => {
+  for (const viewport of [
+    { width: 390, height: 844 },
+    { width: 1440, height: 1000 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto(appPath("/"));
+    const guest = page.getByText("Esplora come ospite", { exact: true });
+    if (await guest.isVisible()) await guest.click();
+    await expect(
+      page.getByRole("button", { name: "Le tue letture", exact: true }),
+    ).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: `test-results/nido-home-${viewport.width}.png`,
+      fullPage: true,
+    });
+    await page
+      .getByRole("button", { name: "Le tue checklist", exact: true })
+      .click();
+    await expect(page.getByRole("progressbar").first()).toBeVisible();
+    await openDiscover(page);
+    await page.getByLabel("Cerca un articolo").fill("primo trimestre");
+    await page
+      .getByRole("button", { name: "Cancella ricerca", exact: true })
+      .click();
+    await expect(page.getByLabel("Cerca un articolo")).toHaveValue("");
+    await page
+      .getByRole("button", {
+        name: "Categoria: Il ruolo del partner",
+        exact: true,
+      })
+      .click();
+    await page
+      .getByRole("button", { name: "Azzera filtri", exact: true })
+      .click();
+    await expect(
+      page.getByRole("button", {
+        name: "Categoria: Tutti gli argomenti",
+        exact: true,
+      }),
+    ).toHaveAttribute("aria-pressed", "true");
+    await expect(
+      page.getByRole("button", { name: "Azzera filtri", exact: true }),
+    ).toHaveCount(0);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= window.innerWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: `test-results/nido-discover-${viewport.width}.png`,
+      fullPage: true,
+    });
+  }
+});

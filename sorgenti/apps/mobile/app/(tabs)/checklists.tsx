@@ -2,7 +2,14 @@ import React from "react";
 import { View, Text, Pressable } from "react-native";
 import { router } from "expo-router";
 import { useApp } from "../../src/state";
-import { ContentStatus, EmptyState, Notice, Screen, ui } from "../../src/ui";
+import {
+  ContentStatus,
+  EmptyState,
+  Notice,
+  Progress,
+  Screen,
+  ui,
+} from "../../src/ui";
 export default function Checklists() {
   const { checklists, state, contentLoading, contentError } = useApp();
   return (
@@ -33,10 +40,12 @@ export default function Checklists() {
           >
             <Text style={ui.heading}>{checklist.title}</Text>
             <Text style={ui.body}>{checklist.description}</Text>
-            <Text style={ui.body}>
-              {checklist.items.filter((i) => state.progress[i.id]).length} di{" "}
-              {checklist.items.length} completati
-            </Text>
+            <Progress
+              completed={
+                checklist.items.filter((i) => state.progress[i.id]).length
+              }
+              total={checklist.items.length}
+            />
           </Pressable>
         ))}
       </View>

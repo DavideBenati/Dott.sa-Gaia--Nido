@@ -11,8 +11,10 @@ import {
   Screen,
   SectionHeader,
   Tag,
+  Progress,
   ui,
 } from "../../src/ui";
+import { Icon, type IconName } from "../../src/icons";
 import { NestArt } from "../../src/art";
 import { colors, serif } from "../../src/theme";
 export default function Home() {
@@ -36,7 +38,7 @@ export default function Home() {
           flexDirection: width > 680 ? "row" : "column",
         }}
       >
-        <View style={{ padding: 30, flex: 1, gap: 18 }}>
+        <View style={{ padding: width > 680 ? 32 : 24, flex: 1, gap: 16 }}>
           <Tag>
             {postpartum
               ? "IL TEMPO DEI PRIMI INCONTRI"
@@ -45,8 +47,8 @@ export default function Home() {
           <Text
             style={{
               fontFamily: serif,
-              fontSize: 35,
-              lineHeight: 43,
+              fontSize: width > 680 ? 38 : 29,
+              lineHeight: width > 680 ? 46 : 37,
               color: colors.ink,
             }}
           >
@@ -67,8 +69,63 @@ export default function Home() {
         </View>
         <NestArt
           variant={postpartum ? 1 : 0}
-          style={{ width: width > 680 ? "45%" : "100%", height: 240 }}
+          style={{
+            width: width > 680 ? "45%" : "100%",
+            height: width > 680 ? 270 : 165,
+          }}
         />
+      </View>
+      <View
+        style={{
+          flexDirection: "row",
+          gap: 12,
+          marginTop: 20,
+          flexWrap: "wrap",
+        }}
+      >
+        {(
+          [
+            {
+              title: "Le tue letture",
+              description: "Ritrova gli articoli salvati",
+              icon: "bookmark",
+              href: "/saved",
+            },
+            {
+              title: "Le tue checklist",
+              description: "Riprendi da dove eri",
+              icon: "checklist",
+              href: "/(tabs)/checklists",
+            },
+          ] as const
+        ).map((item) => (
+          <Pressable
+            key={item.title}
+            accessibilityRole="button"
+            accessibilityLabel={item.title}
+            onPress={() => router.push(item.href)}
+            style={({ pressed }) => [
+              ui.card,
+              {
+                flex: 1,
+                minWidth: 140,
+                padding: 18,
+                gap: 10,
+                opacity: pressed ? 0.75 : 1,
+              },
+            ]}
+          >
+            <Icon name={item.icon as IconName} />
+            <Text
+              style={{ color: colors.ink, fontWeight: "600", fontSize: 16 }}
+            >
+              {item.title}
+            </Text>
+            <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>
+              {item.description}
+            </Text>
+          </Pressable>
+        ))}
       </View>
       <View
         style={[
@@ -115,10 +172,21 @@ export default function Home() {
             <Text style={ui.body}>
               Suggerimenti da adattare alla tua famiglia.
             </Text>
-            <Text style={ui.body}>
-              {next.items.filter((i) => state.progress[i.id]).length} di{" "}
-              {next.items.length} suggerimenti completati
-            </Text>
+            <Progress
+              completed={next.items.filter((i) => state.progress[i.id]).length}
+              total={next.items.length}
+            />
+            <View
+              style={[
+                ui.row,
+                { justifyContent: "space-between", marginTop: 6 },
+              ]}
+            >
+              <Text style={{ color: colors.sageDark, fontWeight: "600" }}>
+                Apri checklist
+              </Text>
+              <Icon name="arrow" />
+            </View>
           </Pressable>
         </>
       )}
