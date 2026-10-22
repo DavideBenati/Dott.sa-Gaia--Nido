@@ -1,0 +1,51 @@
+NIDO — ARCHIVIO COMPLETO DEL PROGETTO
+Snapshot del 22 ottobre 2026
+
+Contenuto
+- sorgenti/: app mobile Expo/React Native, pannello amministrativo Next.js,
+  librerie condivise, 14 articoli, 6 checklist, Supabase, test e configurazione.
+- demo-web/: versione web già esportata con le illustrazioni e gli asset.
+- anteprime/: quattro schermate catturate durante lo sviluppo; sono istantanee
+  di quel momento. Sorgenti e demo-web contengono le ultime modifiche.
+- MANIFEST.sha256: impronte dei file per controllare l'integrità dell'archivio.
+
+APRIRE NIDO SENZA INSTALLAZIONI
+https://davidebenati.github.io/GAIA_NIDO/
+
+Pagine dei documenti
+https://davidebenati.github.io/GAIA_NIDO/article/borsa-parto
+https://davidebenati.github.io/GAIA_NIDO/article/messaggio-nascita
+https://davidebenati.github.io/GAIA_NIDO/article/sonno-sicuro
+Gli aggiornamenti del sito compaiono quando GitHub Pages termina la pubblicazione.
+
+I tre documenti caricati sono attribuiti alla Dott.ssa Gaia Brunetti nei contenuti
+integrati. Il messaggio di nascita è riprodotto integralmente; Borsa parto e
+Sonno sicuro sono rielaborazioni indicate come adattamenti Nido. I testi sono
+nel file sorgenti/packages/core/src/fixtures.ts. I DOCX originali restano i
+file forniti dall'utente e non sono duplicati in questo archivio.
+
+USARE IL CODICE
+Per sviluppo locale servono Node.js 24 e npm 11. Dalla cartella sorgenti:
+  npm ci
+  npm run web
+Per il pannello amministrativo, in un altro terminale:
+  npm run admin
+Le istruzioni complete, incluse Supabase e le verifiche, sono in
+sorgenti/README.md e sorgenti/supabase/README.md.
+
+USARE LA DEMO WEB ESPORTATA
+La cartella demo-web va servita da un server HTTP sotto il percorso
+/GAIA_NIDO/, con 404.html come fallback per le pagine interne e .nojekyll
+preservato. Non è sufficiente aprire index.html con doppio clic.
+Per ricostruirla dalla cartella sorgenti:
+  NIDO_WEB_BASE_PATH=/GAIA_NIDO EXPO_OFFLINE=1 npm run build:web
+Il risultato sarà in apps/mobile/dist-web.
+
+Questo archivio contiene codice ed esportazione web, non un APK/IPA firmato.
+In assenza di configurazione Supabase l'app usa la modalità demo. Le istruzioni
+sulla configurazione del servizio reale si trovano nei README e nei due
+.env.example. Dipendenze installate, cache, cronologia Git e credenziali private
+non fanno parte del pacchetto.
+
+Versione sorgenti: e37c3aac54a4350a02b9a50dabb3b7bd0174dc00
+Versione demo web: 5caf667e6e4896602dbc4922cc618df9b964fb3d

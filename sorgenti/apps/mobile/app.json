@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "Nido",
+    "slug": "nido-companion",
+    "scheme": "nido",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "it.nido.companion",
+      "infoPlist": { "ITSAppUsesNonExemptEncryption": false }
+    },
+    "android": { "package": "it.nido.companion", "edgeToEdgeEnabled": true },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "name": "Nido — Insieme, passo dopo passo."
+    },
+    "plugins": ["expo-router", "expo-secure-store"],
+    "experiments": { "typedRoutes": true }
+  }
+}
