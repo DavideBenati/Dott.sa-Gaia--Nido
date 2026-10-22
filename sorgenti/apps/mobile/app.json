@@ -21,11 +21,13 @@
     "web": {
       "bundler": "metro",
       "output": "single",
-      "name": "MAIA — Insieme, passo dopo passo."
+      "name": "MAIA — Insieme, passo dopo passo.",
+      "favicon": "./assets/brand/maia-icon.png"
     },
     "plugins": ["expo-router", "expo-secure-store"],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "icon": "./assets/brand/maia-icon.png"
   }
 }

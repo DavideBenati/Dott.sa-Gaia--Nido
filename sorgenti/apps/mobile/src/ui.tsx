@@ -28,8 +28,8 @@ export function Brand({ compact = false }: { compact?: boolean }) {
       accessibilityRole="image"
       resizeMode="contain"
       style={{
-        width: compact ? 102 : 240,
-        height: compact ? 68 : 160,
+        width: compact ? 102 : 200,
+        height: compact ? 76 : 200,
         alignSelf: "flex-start",
       }}
     />
