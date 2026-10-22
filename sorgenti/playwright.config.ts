@@ -41,11 +41,14 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: "npm run web --workspace @nido/mobile -- --port 8081",
+      command: "npm run web --workspace @nido/mobile -- --port 8081 --clear",
       url: "http://127.0.0.1:8081",
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,
       env: {
+        EXPO_NO_DOTENV: "1",
+        EXPO_PUBLIC_SUPABASE_URL: "",
+        EXPO_PUBLIC_SUPABASE_ANON_KEY: "",
         EXPO_OFFLINE: "1",
         EXPO_NO_TELEMETRY: "1",
         XDG_CACHE_HOME: process.env.XDG_CACHE_HOME || "/workspace/.cache",
@@ -54,6 +57,7 @@ export default defineConfig({
     {
       command:
         "npm run dev --workspace @nido/admin -- --hostname 127.0.0.1 --port 3000",
+      env: { NEXT_PUBLIC_SUPABASE_URL: "", NEXT_PUBLIC_SUPABASE_ANON_KEY: "" },
       url: "http://127.0.0.1:3000",
       reuseExistingServer: !process.env.CI,
       timeout: 120_000,

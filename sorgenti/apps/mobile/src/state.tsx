@@ -45,9 +45,18 @@ const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 const configured = Boolean(url || anonKey);
 let configurationError: string | null = null;
+// Capture only the recovery intent before Supabase consumes and clears URL tokens.
+// Fonts can finish loading after the SDK's initial PASSWORD_RECOVERY event.
+let pendingRecovery =
+  Platform.OS === "web" &&
+  typeof window !== "undefined" &&
+  new URLSearchParams(window.location.hash.slice(1)).get("type") === "recovery";
 export const client = (() => {
   try {
-    return createNidoClient(url, anonKey, { storage: authStorage });
+    return createNidoClient(url, anonKey, {
+      storage: authStorage,
+      detectSessionInUrl: Platform.OS === "web",
+    });
   } catch {
     configurationError =
       "Configurazione Supabase non valida o incompleta. Controlla URL e chiave pubblica.";
@@ -77,6 +86,9 @@ interface AppContextValue {
     password: string,
     signUp?: boolean,
   ) => Promise<string>;
+  passwordRecovery: boolean;
+  requestPasswordReset: (email: string) => Promise<void>;
+  changePassword: (password: string) => Promise<void>;
   signOut: () => Promise<void>;
   exportData: () => Promise<object>;
   eraseData: () => Promise<void>;
@@ -111,6 +123,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const stateRef = useRef(state);
   const [ready, setReady] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
   const signedInRef = useRef(false);
   const userIdRef = useRef<string | null | undefined>(undefined);
   const sessionEpoch = useRef(0);
@@ -163,6 +176,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     let authRevision = 0;
     function scheduleHydrate(user: { id: string; email?: string } | null) {
       const userId = user?.id ?? null;
+      if (user && pendingRecovery) {
+        pendingRecovery = false;
+        setPasswordRecovery(true);
+      }
       if (userIdRef.current === userId && hydratedRef.current) return;
       if (userIdRef.current !== userId) {
         userIdRef.current = userId;
@@ -214,7 +231,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }, 0);
     }
     let authEventReceived = false;
-    const subscription = client?.auth.onAuthStateChange((_event, session) => {
+    const subscription = client?.auth.onAuthStateChange((event, session) => {
+      if (alive && event === "PASSWORD_RECOVERY") setPasswordRecovery(true);
+      if (alive && event === "SIGNED_OUT") setPasswordRecovery(false);
       authEventReceived = true;
       if (alive) scheduleHydrate(session?.user ?? null);
     });
@@ -337,7 +356,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       await queue.current;
       const result = signUp
-        ? await client.auth.signUp({ email: loginEmail.trim(), password })
+        ? await client.auth.signUp({
+            email: loginEmail.trim(),
+            password,
+            options: { emailRedirectTo: "https://metimaia.com/account" },
+          })
         : await client.auth.signInWithPassword({
             email: loginEmail.trim(),
             password,
@@ -349,6 +372,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } finally {
       authTransitionRef.current = false;
     }
+  };
+  const requestPasswordReset = async (loginEmail: string) => {
+    if (!client) throw new Error("Servizio account non disponibile.");
+    const { error } = await client.auth.resetPasswordForEmail(
+      loginEmail.trim(),
+      { redirectTo: "https://metimaia.com/account" },
+    );
+    if (error) throw error;
+  };
+  const changePassword = async (password: string) => {
+    if (!client || !signedInRef.current)
+      throw new Error(
+        "Apri un link valido di recupero o accedi al tuo account.",
+      );
+    if (password.length < 8) throw new Error("Usa almeno 8 caratteri.");
+    const { error } = await client.auth.updateUser({ password });
+    if (error) throw error;
+    setPasswordRecovery(false);
   };
   const signOut = async () => {
     if (authTransitionRef.current)
@@ -417,6 +458,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         toggleProgress,
         signIn,
         signOut,
+        passwordRecovery,
+        requestPasswordReset,
+        changePassword,
         exportData,
         eraseData,
       }}

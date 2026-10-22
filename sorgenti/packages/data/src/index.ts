@@ -24,7 +24,7 @@ type StorageAdapter = {
 export function createNidoClient(
   url?: string,
   key?: string,
-  options?: { storage?: StorageAdapter },
+  options?: { storage?: StorageAdapter; detectSessionInUrl?: boolean },
 ): SupabaseClient | null {
   if (!url && !key) return null;
   if (!url || !key)
@@ -58,7 +58,7 @@ export function createNidoClient(
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: !options?.storage,
+      detectSessionInUrl: options?.detectSessionInUrl ?? !options?.storage,
       ...(options?.storage ? { storage: options.storage } : {}),
     },
   });
