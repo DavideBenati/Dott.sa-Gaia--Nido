@@ -45,7 +45,7 @@ export default function Layout() {
         }}
       >
         <ActivityIndicator
-          accessibilityLabel="Caricamento Nido"
+          accessibilityLabel="Caricamento MAIA"
           color="#42624B"
         />
       </View>
@@ -61,7 +61,7 @@ export default function Layout() {
         }}
       >
         <Text accessibilityRole="alert">
-          Non è stato possibile caricare Nido. Controlla la connessione e riapri
+          Non è stato possibile caricare MAIA. Controlla la connessione e riapri
           l’app.
         </Text>
       </View>

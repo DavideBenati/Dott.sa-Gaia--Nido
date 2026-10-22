@@ -189,7 +189,7 @@ test("postpartum onboarding, optional consent, export and local deletion", async
     }),
   ).not.toBeChecked();
   await page
-    .getByRole("button", { name: "Entra nel tuo Nido", exact: true })
+    .getByRole("button", { name: "Entra in MAIA", exact: true })
     .click();
   await expect(
     page.getByText("3 settimane insieme", { exact: true }),
@@ -280,7 +280,7 @@ test("partner onboarding works without another person’s health details", async
   ).not.toBeChecked();
   await page.getByRole("button", { name: "Continua", exact: true }).click();
   await page
-    .getByRole("button", { name: "Entra nel tuo Nido", exact: true })
+    .getByRole("button", { name: "Entra in MAIA", exact: true })
     .click();
   await expect(
     page.getByText("Insieme, in attesa", { exact: true }),
@@ -305,6 +305,7 @@ test("responsive shortcuts, checklist progress and resettable search", async ({
   page,
 }) => {
   for (const viewport of [
+    { width: 320, height: 740 },
     { width: 390, height: 844 },
     { width: 1440, height: 1000 },
   ]) {
@@ -319,6 +320,21 @@ test("responsive shortcuts, checklist progress and resettable search", async ({
     await expect(
       page.getByRole("button", { name: "Le tue letture", exact: true }),
     ).toBeVisible();
+    await expect(
+      page.getByRole("img", { name: "MAIA", exact: true }).first(),
+    ).toBeVisible();
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          Array.from(document.images).some(
+            (image) =>
+              image.src.includes("maia-logo") &&
+              image.complete &&
+              image.naturalWidth > 0,
+          ),
+        ),
+      )
+      .toBe(true);
     await expect(
       page.getByRole("heading", {
         name: "Ogni nuovo inizio, insieme.",

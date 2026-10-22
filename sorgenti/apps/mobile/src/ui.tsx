@@ -1,7 +1,9 @@
+import maiaLogo from "../assets/brand/maia-logo.png";
 import { Text } from "./typography";
 import React from "react";
 import {
   ActivityIndicator,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -20,14 +22,17 @@ import { ArticleCover } from "./art";
 
 export function Brand({ compact = false }: { compact?: boolean }) {
   return (
-    <View style={styles.brand}>
-      <View style={styles.brandIcon}>
-        <Icon name="leaf" size={compact ? 23 : 29} color={colors.sageDark} />
-      </View>
-      <Text style={[styles.brandText, compact && { fontSize: 30 }]}>
-        nido<Text style={{ color: colors.terracotta }}>.</Text>
-      </Text>
-    </View>
+    <Image
+      source={maiaLogo}
+      accessibilityLabel="MAIA"
+      accessibilityRole="image"
+      resizeMode="contain"
+      style={{
+        width: compact ? 102 : 240,
+        height: compact ? 68 : 160,
+        alignSelf: "flex-start",
+      }}
+    />
   );
 }
 export function Screen({
@@ -517,27 +522,19 @@ const styles = StyleSheet.create({
   topBar: {
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    backgroundColor: colors.paper,
+    backgroundColor: colors.cream,
   },
   topInner: {
     width: "100%",
     maxWidth: 1176,
     alignSelf: "center",
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     height: 76,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  brand: { flexDirection: "row", gap: 4, alignItems: "center" },
-  brandIcon: { transform: [{ rotate: "-10deg" }], marginRight: 3 },
-  brandText: {
-    color: colors.ink,
-    fontFamily: serif,
-    fontSize: 43,
-    letterSpacing: -1.2,
-  },
-  headerRight: { flexDirection: "row", alignItems: "center", gap: 15 },
+  headerRight: { flexDirection: "row", alignItems: "center", gap: 8 },
   mode: {
     flexDirection: "row",
     alignItems: "center",

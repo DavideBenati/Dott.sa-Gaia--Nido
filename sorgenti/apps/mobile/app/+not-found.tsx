@@ -7,7 +7,7 @@ export default function Missing() {
       title="Pagina non trovata"
       subtitle="Ritroviamo insieme il tuo percorso."
     >
-      <Button onPress={() => router.replace("/")}>Torna al tuo Nido</Button>
+      <Button onPress={() => router.replace("/")}>Torna a MAIA</Button>
     </Screen>
   );
 }

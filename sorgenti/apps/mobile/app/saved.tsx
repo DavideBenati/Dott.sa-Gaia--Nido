@@ -11,7 +11,7 @@ export default function Saved() {
         <ArticleGrid items={items} />
       ) : (
         <EmptyState
-          title="Il tuo Nido cresce con te"
+          title="Il tuo spazio MAIA cresce con te"
           text="Conserva le letture che vorresti ritrovare."
           action="Esplora la biblioteca"
           onPress={() => router.navigate("/(tabs)/discover")}

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Nido",
+    "name": "MAIA",
     "slug": "nido-companion",
     "scheme": "nido",
     "version": "0.1.0",
@@ -10,15 +10,22 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "it.nido.companion",
-      "infoPlist": { "ITSAppUsesNonExemptEncryption": false }
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
-    "android": { "package": "it.nido.companion", "edgeToEdgeEnabled": true },
+    "android": {
+      "package": "it.nido.companion",
+      "edgeToEdgeEnabled": true
+    },
     "web": {
       "bundler": "metro",
       "output": "single",
-      "name": "Nido — Insieme, passo dopo passo."
+      "name": "MAIA — Insieme, passo dopo passo."
     },
     "plugins": ["expo-router", "expo-secure-store"],
-    "experiments": { "typedRoutes": true }
+    "experiments": {
+      "typedRoutes": true
+    }
   }
 }

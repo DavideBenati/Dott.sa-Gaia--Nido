@@ -9,7 +9,7 @@ export default function Help() {
       <Notice warm icon="help">
         Se hai una preoccupazione urgente per la tua salute o quella del
         bambino, contatta subito i servizi sanitari appropriati o il servizio di
-        emergenza del paese in cui ti trovi. Nido non valuta sintomi, non
+        emergenza del paese in cui ti trovi. MAIA non valuta sintomi, non
         gestisce emergenze e non può confermare che una situazione sia sicura.
       </Notice>
       <View style={{ gap: 20, marginVertical: 25 }}>

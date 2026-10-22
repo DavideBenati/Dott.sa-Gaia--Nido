@@ -118,7 +118,7 @@ export default function Article() {
           void toggleFavorite(article.id).catch(() => {});
         }}
       >
-        {saved ? "Salvato nel tuo Nido" : "Conserva questa lettura"}
+        {saved ? "Salvato in MAIA" : "Conserva questa lettura"}
       </Button>
       <Notice>{disclaimer}</Notice>
     </Screen>

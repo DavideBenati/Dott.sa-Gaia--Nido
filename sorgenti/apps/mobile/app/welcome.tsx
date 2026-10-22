@@ -94,7 +94,7 @@ export default function Welcome() {
             Uno spazio per ogni nuovo inizio.
           </Text>
           <Text style={ui.body}>
-            Gravidanza, nascita e primi giorni insieme. Nido ti accompagna con
+            Gravidanza, nascita e primi giorni insieme. MAIA ti accompagna con
             contenuti educativi e piccoli strumenti, da vivere con i tuoi tempi.
           </Text>
           <Text style={[ui.heading, { fontStyle: "italic" }]}>
@@ -166,7 +166,7 @@ export default function Welcome() {
                 </Pressable>
               ))}
               <Notice>
-                Il partner può utilizzare Nido senza condividere date o
+                Il partner può utilizzare MAIA senza condividere date o
                 informazioni sulla salute di un’altra persona.
               </Notice>
             </>
@@ -329,7 +329,7 @@ export default function Welcome() {
               </View>
               <View style={ui.row}>
                 <View style={{ flex: 1 }}>
-                  <Text style={ui.label}>Novità di Nido</Text>
+                  <Text style={ui.label}>Novità di MAIA</Text>
                   <Text style={ui.body}>
                     Consenso marketing facoltativo e separato. Nessun invio
                     attivo.
@@ -357,11 +357,7 @@ export default function Welcome() {
               else next();
             }}
           >
-            {busy
-              ? "Salvataggio…"
-              : step === 3
-                ? "Entra nel tuo Nido"
-                : "Continua"}
+            {busy ? "Salvataggio…" : step === 3 ? "Entra in MAIA" : "Continua"}
           </Button>
           <Button
             variant="quiet"

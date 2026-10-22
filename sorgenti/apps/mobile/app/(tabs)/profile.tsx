@@ -36,7 +36,7 @@ export default function Profile() {
         a.download = "nido-i-miei-dati.json";
         a.click();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
-      } else await Share.share({ title: "I miei dati Nido", message: content });
+      } else await Share.share({ title: "I miei dati MAIA", message: content });
       setMessage(
         "Esportazione preparata. Il file può contenere dati personali.",
       );
@@ -117,7 +117,7 @@ export default function Profile() {
         </View>
         <View style={ui.row}>
           <View style={{ flex: 1 }}>
-            <Text style={ui.label}>Novità di Nido</Text>
+            <Text style={ui.label}>Novità di MAIA</Text>
             <Text style={ui.body}>
               Consenso marketing facoltativo, nessun invio attivo.
             </Text>
@@ -129,12 +129,12 @@ export default function Profile() {
           />
         </View>
       </View>
-      <SectionHeader title="Conosci Nido" />
+      <SectionHeader title="Conosci MAIA" />
       <Button
         variant="quiet"
         onPress={() => setInfo(info === "midwife" ? "" : "midwife")}
       >
-        L’ostetrica di Nido
+        L’ostetrica di MAIA
       </Button>
       {info === "midwife" && (
         <Notice>

@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   articles as fixtureArticles,
@@ -289,7 +290,15 @@ export default function Dashboard({ configured }: { configured: boolean }) {
     return (
       <main className="loading" aria-live="polite">
         <span className="brand">
-          nido<span>✳</span>
+          <Image
+            src="/maia-logo.png"
+            loading="eager"
+            alt="MAIA"
+            width={120}
+            height={80}
+            unoptimized
+            style={{ display: "block", objectFit: "contain" }}
+          />
         </span>
         <p>Prepariamo il tuo spazio editoriale…</p>
       </main>
@@ -299,7 +308,15 @@ export default function Dashboard({ configured }: { configured: boolean }) {
       <main className="login-shell">
         <div className="login-art">
           <div className="brand">
-            nido<span>✳</span>
+            <Image
+              src="/maia-logo.png"
+              loading="eager"
+              alt="MAIA"
+              width={120}
+              height={80}
+              unoptimized
+              style={{ display: "block", objectFit: "contain" }}
+            />
           </div>
           <span className="eyebrow">LO STUDIO EDITORIALE</span>
           <h1>
@@ -318,7 +335,7 @@ export default function Dashboard({ configured }: { configured: boolean }) {
         <div className="login-form">
           <span className="eyebrow">BENTORNATA, BENTORNATO</span>
           <h2>Accedi al tuo studio</h2>
-          <p>Riservato ai professionisti editoriali autorizzati da Nido.</p>
+          <p>Riservato ai professionisti editoriali autorizzati da MAIA.</p>
           {error && (
             <div role="alert" className="notice error">
               {error}
@@ -360,8 +377,16 @@ export default function Dashboard({ configured }: { configured: boolean }) {
   return (
     <div className="studio-shell">
       <aside className="sidebar">
-        <a className="brand" href="/" aria-label="Nido, studio editoriale">
-          nido<span>✳</span>
+        <a className="brand" href="/" aria-label="MAIA, studio editoriale">
+          <Image
+            src="/maia-logo.png"
+            loading="eager"
+            alt="MAIA"
+            width={120}
+            height={80}
+            unoptimized
+            style={{ display: "block", objectFit: "contain" }}
+          />
         </a>
         <p className="sidebar-caption">STUDIO EDITORIALE</p>
         <nav aria-label="Navigazione editoriale">
@@ -404,7 +429,7 @@ export default function Dashboard({ configured }: { configured: boolean }) {
             <div className="avatar">N</div>
             <div>
               <strong>
-                {demo ? "Laboratorio Nido" : "Account editoriale"}
+                {demo ? "Laboratorio MAIA" : "Account editoriale"}
               </strong>
               <small>{demo ? "Ambiente dimostrativo" : email}</small>
             </div>
@@ -414,7 +439,7 @@ export default function Dashboard({ configured }: { configured: boolean }) {
       <div className="main-column">
         <header className="topbar">
           <span>
-            Nido <span className="slash">/</span> Studio editoriale
+            MAIA <span className="slash">/</span> Studio editoriale
           </span>
           <div className="topbar-actions">
             <span className={`mode-dot ${demo ? "demo" : ""}`}>
@@ -848,7 +873,7 @@ export default function Dashboard({ configured }: { configured: boolean }) {
                   <p>
                     Per preoccupazioni urgenti sulla salute, invita a contattare
                     subito i servizi sanitari appropriati nel proprio Paese.
-                    Nido non offre triage o assistenza medica.
+                    MAIA non offre triage o assistenza medica.
                   </p>
                   <p>{disclaimer}</p>
                 </div>
