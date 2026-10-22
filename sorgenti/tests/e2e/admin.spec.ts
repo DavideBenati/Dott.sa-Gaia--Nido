@@ -184,3 +184,32 @@ test("demo editorial checklist and category changes persist", async ({
     page.getByLabel("Nome categoria Risorse del territorio"),
   ).toHaveValue("Risorse del territorio");
 });
+
+test("private inbox and APIs require separate authorization", async ({
+  request,
+  page,
+}) => {
+  const read = await request.get("/api/messages");
+  expect([401, 403, 503]).toContain(read.status());
+  expect(await read.json()).not.toHaveProperty("messages");
+  const write = await request.post("/api/messages", {
+    headers: { origin: "https://untrusted.example" },
+    data: {
+      conversation: "11111111-1111-4111-8111-111111111111",
+      body: "Tentativo",
+    },
+  });
+  expect(write.status()).toBe(403);
+  const login = await request.post("/api/messages/session", {
+    headers: { origin: "https://untrusted.example" },
+    data: { email: "test@example.com", password: "not-a-real-password" },
+  });
+  expect(login.status()).toBe(403);
+  await page.goto("/messages");
+  await expect(
+    page.getByRole("heading", { name: "Messaggi privati", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(/Nessun messaggio reale viene ricevuto/),
+  ).toBeVisible();
+});

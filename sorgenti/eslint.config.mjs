@@ -30,6 +30,8 @@ export default tseslint.config(
         localStorage: "readonly",
         setTimeout: "readonly",
         clearTimeout: "readonly",
+        setInterval: "readonly",
+        clearInterval: "readonly",
         __dirname: "readonly",
         module: "readonly",
         require: "readonly",

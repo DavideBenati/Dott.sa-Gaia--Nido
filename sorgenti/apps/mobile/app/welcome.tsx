@@ -100,7 +100,12 @@ export default function Welcome() {
           <Text style={[ui.heading, { fontStyle: "italic" }]}>
             Insieme, passo dopo passo.
           </Text>
-          <Button onPress={() => setStep(1)}>Iniziamo insieme</Button>
+          <Button onPress={() => router.push("/account")}>
+            Crea il tuo account
+          </Button>
+          <Button variant="secondary" onPress={() => setStep(1)}>
+            Iniziamo insieme
+          </Button>
           <Button
             variant="quiet"
             disabled={busy}

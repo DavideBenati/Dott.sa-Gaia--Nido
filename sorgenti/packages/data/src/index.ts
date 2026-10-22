@@ -313,3 +313,47 @@ export async function uploadEditorialImage(
   check(signError);
   return data!.signedUrl;
 }
+
+export interface CareMessage {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+}
+export async function loadCareMessages(
+  client: SupabaseClient,
+  conversationId?: string,
+): Promise<CareMessage[]> {
+  const id = conversationId ?? (await userId(client));
+  const { data, error } = await client
+    .from("care_messages")
+    .select("id,conversation_id,sender_id,body,created_at")
+    .eq("conversation_id", id)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(100);
+  check(error);
+  return ((data ?? []) as CareMessage[]).reverse();
+}
+export async function sendCareMessage(
+  client: SupabaseClient,
+  body: string,
+  conversationId?: string,
+): Promise<void> {
+  const text = body.trim();
+  if (!text || text.length > 4000)
+    throw new Error("Scrivi un messaggio tra 1 e 4000 caratteri.");
+  const ownId = await userId(client);
+  const id = conversationId ?? ownId;
+  if (!conversationId) {
+    const { error } = await client
+      .from("care_conversations")
+      .insert({ user_id: ownId });
+    if (error && error.code !== "23505") check(error);
+  }
+  const { error } = await client
+    .from("care_messages")
+    .insert({ conversation_id: id, body: text });
+  check(error);
+}

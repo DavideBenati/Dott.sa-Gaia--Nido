@@ -401,3 +401,45 @@ test("responsive shortcuts, checklist progress and resettable search", async ({
     });
   }
 });
+
+test("quick registration preview and private chat clearly distinguish demo from delivery", async ({
+  page,
+}) => {
+  await page.goto(appPath("/account"));
+  await expect(
+    page.getByRole("heading", { name: "Il tuo spazio MAIA", exact: true }),
+  ).toBeVisible();
+  await page.screenshot({
+    path: "test-results/maia-registration.png",
+    fullPage: true,
+  });
+  await expect(page.getByLabel("Email account")).not.toBeEditable();
+  await expect(
+    page.getByRole("button", { name: "Crea account", exact: true }),
+  ).toBeDisabled();
+  await page
+    .getByRole("button", { name: "Mostra password", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Nascondi password", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Hai già un account? Accedi", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Accedi", exact: true }),
+  ).toBeDisabled();
+  await page.goto(appPath("/chat"));
+  await expect(
+    page.getByRole("heading", { name: "Dott.ssa Gaia Brunetti", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText(/ESEMPIO VISIVO/)).toBeVisible();
+  await expect(
+    page.getByText(/Nessun messaggio è stato inviato/),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Invia messaggio", exact: true }),
+  ).toBeDisabled();
+  await expect(page.getByLabel("Scrivi un messaggio")).not.toBeEditable();
+  await page.screenshot({ path: "test-results/maia-chat.png", fullPage: true });
+});

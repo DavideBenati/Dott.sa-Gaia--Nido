@@ -389,6 +389,9 @@ export default function Dashboard({ configured }: { configured: boolean }) {
           />
         </a>
         <p className="sidebar-caption">STUDIO EDITORIALE</p>
+        <a href="/messages" className="nav-link">
+          Messaggi privati
+        </a>
         <nav aria-label="Navigazione editoriale">
           {(
             [

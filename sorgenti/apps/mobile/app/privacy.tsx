@@ -14,6 +14,13 @@ export default function Privacy() {
         Informazioni sul prototipo: informativa e base giuridica richiedono una
         revisione indipendente prima del lancio pubblico.
       </Notice>
+      <Notice icon="mail">
+        La chat privata è disponibile solo dopo l’accesso e l’attivazione della
+        professionista. Le risposte non sono immediate. La demo mostra
+        esclusivamente esempi non inviati. Nel servizio reale, messaggi e
+        risposte fanno parte dell’esportazione personale e vengono rimossi con
+        l’eliminazione dell’account.
+      </Notice>
       <View style={{ gap: 22, marginVertical: 24 }}>
         {[
           [

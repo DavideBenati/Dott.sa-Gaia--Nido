@@ -64,3 +64,7 @@ Per produzione rimangono necessari un progetto Supabase configurato e collaudato
 Le notifiche sono preferenze salvate: l'invio push è un incremento successivo. Prevedere consenso volontario, permessi del sistema, token privati per dispositivo, invio server con messaggi generici e cancellazione/revoca dei token. Nessun dato sanitario sul blocco schermo o negli eventi analitici.
 
 L'archivio contiene sorgenti, lockfile, esempi di configurazione e test. Esclude dipendenze installate, cache, build, cronologia Git e valori di ambiente privati.
+
+## Account e conversazioni MAIA
+
+`/account`: registrazione rapida email/password e accesso allo stesso profilo sul sito e nell’app. `/chat`: conversazione privata con la professionista; `/messages` sul pannello Next.js: casella riservata per le risposte. In assenza di Supabase l’interfaccia resta una demo con invio e registrazione disabilitati. Per attivazione, migrazione e abilitazione della Dott.ssa Brunetti vedere `supabase/README.md`. Il ramo `nido-web` contiene solo il sito statico; la casella professionale richiede il pannello Next.js su un hosting compatibile.
