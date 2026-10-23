@@ -27,3 +27,6 @@ enable_confirmations = true
 
 [functions.newsletter]
 verify_jwt = false
+
+[functions.site-actions]
+verify_jwt = false

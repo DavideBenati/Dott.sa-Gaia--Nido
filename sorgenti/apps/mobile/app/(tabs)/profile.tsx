@@ -18,7 +18,7 @@ export default function Profile() {
   const [confirm, setConfirm] = useState(false);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const [info, setInfo] = useState("");
+
   const journey = calculateJourney(state.preferences);
   function change(patch: Partial<typeof state.preferences>) {
     void updatePreferences({ ...state.preferences, ...patch }).catch(() => {});
@@ -116,36 +116,20 @@ export default function Profile() {
           />
         </View>
         <Text style={ui.body}>
-          Comunicazioni promozionali non attive. Nessun consenso marketing viene
-          richiesto per servizi futuri.
+          La newsletter è facoltativa e separata dall’account. Puoi iscriverti
+          dalla pagina dedicata, confermando la tua scelta via email.
         </Text>
       </View>
-      <SectionHeader title="Conosci MAIA" />
-      <Button
-        variant="quiet"
-        onPress={() => setInfo(info === "midwife" ? "" : "midwife")}
-      >
-        L’ostetrica di MAIA
+      <SectionHeader title="Conosci metiMaia" />
+      <Button variant="secondary" onPress={() => router.push("/gaia")}>
+        Gaia e servizi
       </Button>
-      {info === "midwife" && (
-        <Notice>
-          Nessuna ostetrica è stata ancora associata a questa demo. Prima della
-          produzione saranno verificati identità, qualifica e revisione dei
-          contenuti. Non attribuiamo approvazioni agli esempi.
-        </Notice>
-      )}
-      <Button
-        variant="quiet"
-        onPress={() => setInfo(info === "contact" ? "" : "contact")}
-      >
-        Contatti
+      <Button variant="quiet" onPress={() => router.push("/prenota")}>
+        Contatta Gaia e richiedi un incontro
       </Button>
-      {info === "contact" && (
-        <Notice>
-          I contatti professionali reali saranno pubblicati prima del lancio.
-          Per esigenze sanitarie rivolgiti ai tuoi servizi abituali.
-        </Notice>
-      )}
+      <Button variant="quiet" onPress={() => router.push("/sicurezza")}>
+        Sicurezza del mio account
+      </Button>
       <Button variant="quiet" onPress={() => router.push("/help")}>
         Quando chiedere aiuto
       </Button>

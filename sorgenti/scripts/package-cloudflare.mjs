@@ -23,6 +23,11 @@ await rm(resolve(output, ".nojekyll"), { force: true });
 // Pages enables SPA fallback without 404.html. Workers Static Assets additionally
 // needs physical HTML entry points for known direct URLs under its default handling.
 for (const route of [
+  "gaia",
+  "impostazioni",
+  "messaggi",
+  "richieste",
+  "sicurezza",
   "prenota",
   "account",
   "studio",

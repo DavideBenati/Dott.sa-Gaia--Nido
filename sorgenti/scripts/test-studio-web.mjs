@@ -57,6 +57,29 @@ const user = {
 const calls = [];
 let savedArticles = [];
 let savedChecklists = [];
+let profile = {
+  id: 1,
+  bio: "Presentazione verificata per il test",
+  portrait_url: "",
+  qualifications: "",
+  service_area: "Modalità da concordare",
+  services: [],
+  contact_email: "contact@example.invalid",
+  privacy_providers: "Fornitori di test",
+  privacy_retention: "",
+  privacy_transfers: "",
+  privacy_reviewed: false,
+};
+const conversation = "22222222-2222-4222-8222-222222222222";
+let careMessages = [
+  {
+    id: "message-1",
+    conversation_id: conversation,
+    sender_id: conversation,
+    body: "Messaggio fittizio di test",
+    created_at: new Date().toISOString(),
+  },
+];
 async function context(editor = false) {
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
@@ -84,7 +107,28 @@ async function context(editor = false) {
       body: request.postDataJSON(),
     });
     let body = [];
-    if (url.pathname.endsWith("/signup")) body = { user, session: null };
+    if (url.pathname.endsWith("/site_profile")) {
+      if (request.method() === "POST") {
+        profile = request.postDataJSON();
+        body = profile;
+      } else body = profile;
+    } else if (url.pathname.endsWith("/rpc/is_chat_staff")) body = editor;
+    else if (url.pathname.endsWith("/care_conversations"))
+      body = [{ user_id: conversation, created_at: new Date().toISOString() }];
+    else if (url.pathname.endsWith("/care_messages")) {
+      if (request.method() === "POST") {
+        const incoming = request.postDataJSON();
+        careMessages.push({
+          ...incoming,
+          id: "reply-1",
+          created_at: new Date().toISOString(),
+        });
+        body = careMessages.at(-1);
+      } else body = careMessages;
+    } else if (url.pathname.endsWith("/booking_requests")) body = [];
+    else if (url.pathname.endsWith("/functions/v1/site-actions"))
+      body = { message: "Richiesta acquisita. Attendi il ricontatto di Gaia." };
+    else if (url.pathname.endsWith("/signup")) body = { user, session: null };
     else if (url.pathname.endsWith("/rpc/is_editor")) body = editor;
     else if (url.pathname.endsWith("/rpc/save_article")) {
       body = request.postDataJSON().document;
@@ -286,6 +330,54 @@ try {
     rp.getByText("Secondo paragrafo.", { exact: true }),
   ).toBeVisible();
   await reader.close();
+  await page.goto("http://127.0.0.1:8095/impostazioni");
+  await page
+    .getByLabel("Presentazione", { exact: true })
+    .fill("Presentazione aggiornata dal pannello");
+  await page
+    .getByRole("button", { name: "Salva modifiche", exact: true })
+    .click();
+  await expect(
+    page.getByText(
+      "Modifiche salvate. La pagina Gaia e servizi è aggiornata.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await page.goto("http://127.0.0.1:8095/gaia");
+  await expect(
+    page.getByText("Presentazione aggiornata dal pannello", { exact: true }),
+  ).toBeVisible();
+  await page.goto("http://127.0.0.1:8095/messaggi");
+  await page.getByRole("button", { name: /Conversazione 22222222/ }).click();
+  await expect(
+    page.getByText("Messaggio fittizio di test", { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByLabel("Risposta di Gaia")
+    .fill("Risposta di test della professionista");
+  await page
+    .getByRole("button", { name: "Invia risposta", exact: true })
+    .click();
+  await expect(
+    page.getByText("Risposta di test della professionista", { exact: true }),
+  ).toBeVisible();
+  expect(
+    calls.some(
+      (c) => c.path.endsWith("/care_conversations") && c.method === "POST",
+    ),
+  ).toBe(false);
+  await page.goto("http://127.0.0.1:8095/richieste");
+  await expect(
+    page.getByText("Nessuna richiesta in questa pagina.", { exact: true }),
+  ).toBeVisible();
+  const deniedContext = await context(false);
+  const deniedPage = await deniedContext.newPage();
+  await login(deniedPage);
+  await deniedPage.goto("http://127.0.0.1:8095/messaggi");
+  await expect(
+    deniedPage.getByText(/Accesso chat non autorizzato/),
+  ).toBeVisible();
+  await deniedContext.close();
   await editor.close();
   const nl = await context();
   const np = await nl.newPage();
@@ -309,8 +401,39 @@ try {
   ).toBeVisible();
   await expect.poll(() => new URL(np.url()).search).toBe("");
   await nl.close();
+  const bookingContext = await context();
+  const bookingPage = await bookingContext.newPage();
+  await bookingPage.goto("http://127.0.0.1:8095/prenota");
+  await bookingPage
+    .getByLabel("Nome per la richiesta")
+    .fill("Persona di prova");
+  await bookingPage
+    .getByLabel("Email di ricontatto")
+    .fill("booking@example.invalid");
+  await bookingPage
+    .getByRole("button", { name: "Rivedi la richiesta", exact: true })
+    .click();
+  await bookingPage
+    .getByRole("button", { name: "Invia richiesta a Gaia", exact: true })
+    .click();
+  await expect(
+    bookingPage.getByText(
+      "Richiesta acquisita. Attendi il ricontatto di Gaia.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await expect(
+    bookingPage.getByRole("button", {
+      name: "Richiesta acquisita",
+      exact: true,
+    }),
+  ).toBeDisabled();
+  expect(
+    calls.filter((c) => c.path.endsWith("/functions/v1/site-actions")),
+  ).toHaveLength(1);
+  await bookingContext.close();
   console.log(
-    "PASS: guest/normal-user access denied, editor draft/preview/publication/checklist, optional signup newsletter consent, explicit email confirmation. All backend requests mocked; no real data or email sent.",
+    "PASS: guest/normal-user access denied, editor draft/preview/publication/checklist, optional signup newsletter consent, explicit email confirmation, public profile editing, staff-only inbox/reply, requests page and booking submission. All backend requests mocked; no real data or email sent.",
   );
 } finally {
   await browser.close();

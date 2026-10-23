@@ -79,5 +79,30 @@
     "title": "Newsletter | metiMaia",
     "description": "Iscrizione facoltativa e gestione del consenso alla newsletter metiMaia.",
     "index": false
+  },
+  "/gaia": {
+    "title": "Gaia Brunetti e servizi | metiMaia",
+    "description": "Conosci Gaia e scopri come richiedere informazioni sui servizi.",
+    "index": true
+  },
+  "/impostazioni": {
+    "title": "Impostazioni del sito | metiMaia",
+    "description": "Area riservata agli account autorizzati.",
+    "index": false
+  },
+  "/messaggi": {
+    "title": "Casella della professionista | metiMaia",
+    "description": "Area riservata agli account autorizzati.",
+    "index": false
+  },
+  "/richieste": {
+    "title": "Richieste di incontro | metiMaia",
+    "description": "Area riservata agli account autorizzati.",
+    "index": false
+  },
+  "/sicurezza": {
+    "title": "Sicurezza account | metiMaia",
+    "description": "Area riservata agli account autorizzati.",
+    "index": false
   }
 }

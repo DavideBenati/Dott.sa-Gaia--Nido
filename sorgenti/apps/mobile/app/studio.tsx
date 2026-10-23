@@ -109,6 +109,8 @@ export default function Studio() {
         <Notice>
           Accesso riservato. Questo account non ha i permessi editoriali.
           L’abilitazione viene assegnata in Supabase dal titolare del progetto.
+          Se hai attivato il secondo fattore, verifica il codice dalla pagina
+          Sicurezza nel profilo.
         </Notice>
       ) : (
         <Workspace key={email} />
@@ -121,6 +123,18 @@ function Workspace() {
   const [content, setContent] = useState<Content | null>(null);
   const [article, setArticle] = useState<Article | null>(null);
   const [checklist, setChecklist] = useState<Checklist | null>(null);
+  const [baseline, setBaseline] = useState("");
+  const currentDraft = JSON.stringify({ article, checklist });
+  const dirty = Boolean((article || checklist) && currentDraft !== baseline);
+  useEffect(() => {
+    if (Platform.OS !== "web" || !dirty) return;
+    const guard = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", guard);
+    return () => window.removeEventListener("beforeunload", guard);
+  }, [dirty]);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [preview, setPreview] = useState(false);
@@ -200,6 +214,7 @@ function Workspace() {
         }
         const saved = await saveArticle(client, document);
         setArticle(saved);
+        setBaseline(JSON.stringify({ article: saved, checklist: null }));
         setContent(
           (c) =>
             c && {
@@ -234,6 +249,7 @@ function Workspace() {
           throw new Error("Completa le voci prima di pubblicare.");
         const saved = await saveChecklist(client, document);
         setChecklist(saved);
+        setBaseline(JSON.stringify({ article: null, checklist: saved }));
         setContent(
           (c) =>
             c && {
@@ -318,6 +334,29 @@ function Workspace() {
       setBusy(false);
     }
   }
+  function backup() {
+    if (Platform.OS !== "web" || !content) return;
+    const blob = new Blob(
+      [
+        JSON.stringify(
+          { version: 1, exportedAt: new Date().toISOString(), content },
+          null,
+          2,
+        ),
+      ],
+      { type: "application/json" },
+    );
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download =
+      "metimaia-contenuti-" + new Date().toISOString().slice(0, 10) + ".json";
+    link.click();
+    URL.revokeObjectURL(url);
+    setMessage(
+      "Copia dei contenuti scaricata. Conservala in luogo riservato: comprende anche bozze. Non comprende account, conversazioni, immagini o iscritti newsletter.",
+    );
+  }
   function chooseImage() {
     if (Platform.OS !== "web" || busy || !client) return;
     const input = document.createElement("input");
@@ -343,6 +382,27 @@ function Workspace() {
     <View
       style={{ width: "100%", maxWidth: 840, alignSelf: "center", gap: 20 }}
     >
+      <Text style={ui.heading}>Il pannello di Gaia</Text>
+      <Button variant="quiet" disabled={!content || busy} onPress={backup}>
+        Scarica copia dei contenuti (JSON)
+      </Button>
+      {dirty && (
+        <Notice>
+          Modifiche non salvate. Salva la bozza prima di lasciare questa pagina.
+        </Notice>
+      )}
+      <Button variant="secondary" onPress={() => router.push("/impostazioni")}>
+        Gaia, servizi e informazioni privacy
+      </Button>
+      <Button variant="secondary" onPress={() => router.push("/messaggi")}>
+        Conversazioni riservate
+      </Button>
+      <Button variant="secondary" onPress={() => router.push("/richieste")}>
+        Richieste d’incontro
+      </Button>
+      <Button variant="quiet" onPress={() => router.push("/sicurezza")}>
+        Sicurezza e verifica a due fattori
+      </Button>
       <Button variant="secondary" onPress={() => router.push("/shop")}>
         Gestisci shop e merchandise
       </Button>
@@ -437,9 +497,17 @@ function Workspace() {
                   onPress={() => {
                     setMessage("");
                     setPreview(false);
-                    if (tab === "articles")
+                    if (tab === "articles") {
                       setArticle(structuredClone(item as Article));
-                    else setChecklist(structuredClone(item as Checklist));
+                      setBaseline(
+                        JSON.stringify({ article: item, checklist: null }),
+                      );
+                    } else {
+                      setChecklist(structuredClone(item as Checklist));
+                      setBaseline(
+                        JSON.stringify({ article: null, checklist: item }),
+                      );
+                    }
                   }}
                 >{`Modifica ${item.title}`}</Button>
               </View>
@@ -628,6 +696,34 @@ function Workspace() {
                         }
                         multiline
                       />
+                      <Button
+                        variant="quiet"
+                        disabled={i === 0}
+                        onPress={() => {
+                          const sections = [...article.sections];
+                          [sections[i - 1], sections[i]] = [
+                            sections[i],
+                            sections[i - 1],
+                          ];
+                          updateArticle({ sections });
+                        }}
+                      >{`Sposta su sezione ${i + 1}`}</Button>
+                      <Button
+                        variant="quiet"
+                        disabled={i === article.sections.length - 1}
+                        onPress={() => {
+                          const sections = [...article.sections];
+                          [sections[i + 1], sections[i]] = [
+                            sections[i],
+                            sections[i + 1],
+                          ];
+                          updateArticle({ sections });
+                        }}
+                      >{`Sposta giù sezione ${i + 1}`}</Button>
+                      <Text style={ui.body}>
+                        Separa i paragrafi con una riga vuota. Per un elenco usa
+                        una riga per voce preceduta da •.
+                      </Text>
                       <Button
                         variant="quiet"
                         onPress={() =>

@@ -67,6 +67,13 @@ export function Screen({
             <Brand compact />
           </Pressable>
           <View style={styles.headerRight}>
+            <Link
+              href="/gaia"
+              accessibilityLabel="Conosci Gaia e i servizi"
+              style={{ padding: 12, color: colors.sageDark, fontSize: 14 }}
+            >
+              Gaia e servizi
+            </Link>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={

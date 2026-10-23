@@ -1,13 +1,33 @@
 import { Text } from "../src/typography";
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { loadProfile, defaultProfile } from "../src/professional";
 import { Linking, View } from "react-native";
 import { router } from "expo-router";
 import { useApp } from "../src/state";
-import { privacyComplete, privacyDetails } from "../src/privacy";
+import {
+  privacyComplete,
+  privacyDetails as basePrivacyDetails,
+} from "../src/privacy";
 import { Screen, Notice, Button, ui } from "../src/ui";
 const missing =
   "Da completare prima dell’attivazione del servizio con dati personali.";
 export default function Privacy() {
+  const [profile, setProfile] = useState(defaultProfile);
+  useEffect(() => {
+    let active = true;
+    void loadProfile().then((p) => {
+      if (active) setProfile(p);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+  const privacyDetails = {
+    ...basePrivacyDetails,
+    providers: profile.privacy_providers || basePrivacyDetails.providers,
+    retention: profile.privacy_retention || basePrivacyDetails.retention,
+    transfers: profile.privacy_transfers || basePrivacyDetails.transfers,
+  };
   const { demo } = useApp();
   const sections: [string, string][] = [
     [
@@ -56,7 +76,7 @@ export default function Privacy() {
     ],
     [
       "Richieste di incontro",
-      "Il modulo di richiesta disponibilità mantiene i campi soltanto nella memoria della pagina, senza salvarli nel database o nella memoria locale. Il riepilogo passa alla tua app email solo se scegli di aprirla; sei tu a confermare l’invio. Il testo contiene nome, email di ricontatto e preferenze di data/modalità. Non inserire dati sanitari o referti. I messaggi email effettivamente inviati saranno trattati dal titolare e dai fornitori email per rispondere alla richiesta precontrattuale; conservazione e fornitori devono essere definiti nella presente informativa. Non è una prenotazione confermata e non iscrive alla newsletter.",
+      "Prima dell’invio il modulo mantiene i campi nella memoria della pagina. Premendo Invia richiesta a Gaia, nome, email e preferenze vengono salvati nel database Supabase e consultati dagli editor autorizzati per rispondere alla richiesta. Resend invia alla professionista una notifica priva dei dati del modulo. L’alternativa email passa invece il riepilogo alla tua app email, dove confermi l’invio. Il testo contiene nome, email di ricontatto e preferenze di data/modalità. Non inserire dati sanitari o referti. I messaggi email effettivamente inviati saranno trattati dal titolare e dai fornitori email per rispondere alla richiesta precontrattuale; conservazione e fornitori devono essere definiti nella presente informativa. Non è una prenotazione confermata e non iscrive alla newsletter.",
     ],
     [
       "Shop e pagamenti",
@@ -78,6 +98,13 @@ export default function Privacy() {
       subtitle="Le informazioni che ti servono per scegliere cosa condividere."
     >
       <View style={{ width: "100%", maxWidth: 760, alignSelf: "center" }}>
+        <Notice>{profile.privacy_providers}</Notice>
+        {profile.privacy_retention !== "" && (
+          <Notice>{`Conservazione: ${profile.privacy_retention}`}</Notice>
+        )}
+        {profile.privacy_transfers !== "" && (
+          <Notice>{`Trasferimenti e garanzie: ${profile.privacy_transfers}`}</Notice>
+        )}
         <Notice icon="lock">
           {demo
             ? "Stai usando la demo: i dati delle tue scelte restano su questo dispositivo. Account e invio di messaggi non sono attivi."

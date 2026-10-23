@@ -9,6 +9,7 @@ import {
 import { Text, TextInput } from "../src/typography";
 import { Button, Notice, Screen, ui } from "../src/ui";
 import { useApp } from "../src/state";
+import { invokeSiteAction } from "../src/professional";
 const contact = "ostetricamaia@gmail.com";
 export default function Booking() {
   const { email } = useApp();
@@ -23,6 +24,30 @@ export default function Booking() {
   const [review, setReview] = useState(false);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [requestId] = useState(() => globalThis.crypto?.randomUUID?.() ?? "");
+  const [sent, setSent] = useState(false);
+  async function sendRequest() {
+    if (busy || sent) return;
+    setBusy(true);
+    setMessage("");
+    try {
+      const result = await invokeSiteAction({
+        action: "booking",
+        id: requestId,
+        request,
+      });
+      setSent(true);
+      setMessage(result.message);
+    } catch (e) {
+      setMessage(
+        e instanceof Error
+          ? e.message
+          : "Invio non confermato. Riprova dalla stessa pagina, oppure usa l’email.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
   function update(patch: Partial<BookingRequest>) {
     setRequest((r) => ({ ...r, ...patch }));
     setMessage("");
@@ -98,7 +123,27 @@ export default function Booking() {
                 <Notice>{message}</Notice>
               </View>
             )}
-            <Button disabled={busy} onPress={() => void openEmail()}>
+            <Button
+              disabled={busy || sent || !requestId}
+              onPress={() => void sendRequest()}
+            >
+              {sent
+                ? "Richiesta acquisita"
+                : busy
+                  ? "Invio…"
+                  : "Invia richiesta a Gaia"}
+            </Button>
+            {!sent && (
+              <Notice>
+                Se l’invio non è disponibile, puoi usare l’alternativa email qui
+                sotto. Evita di inviare due volte la stessa richiesta.
+              </Notice>
+            )}
+            <Button
+              variant="secondary"
+              disabled={busy || sent}
+              onPress={() => void openEmail()}
+            >
               Apri l’email per inviare
             </Button>
             <Button
@@ -113,7 +158,7 @@ export default function Booking() {
             </Text>
             <Button
               variant="quiet"
-              disabled={busy}
+              disabled={busy || sent}
               onPress={() => {
                 setReview(false);
                 setMessage("");
@@ -182,11 +227,11 @@ export default function Booking() {
               >{`${request.mode === mode ? "✓ " : ""}${mode}`}</Button>
             ))}
             <Text style={ui.body}>
-              I campi restano in questa pagina finché non la chiudi; non vengono
-              salvati nel database o nella memoria locale. Scegliendo l’invio,
-              il testo passerà alla tua app email e sarà trattato dai relativi
-              fornitori. Nessuna iscrizione newsletter è collegata alla
-              richiesta.
+              Prima dell’invio i campi restano nella memoria della pagina. Con
+              “Invia richiesta a Gaia” nome, email e preferenze vengono salvati
+              in Supabase e resi disponibili nel pannello riservato. Con
+              l’alternativa email il testo passa alla tua app email. Nessuna
+              iscrizione newsletter è collegata alla richiesta.
             </Text>
             {message !== "" && (
               <View accessibilityRole="alert">
