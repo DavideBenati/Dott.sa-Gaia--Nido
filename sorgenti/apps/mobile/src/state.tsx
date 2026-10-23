@@ -51,6 +51,12 @@ let pendingRecovery =
   Platform.OS === "web" &&
   typeof window !== "undefined" &&
   new URLSearchParams(window.location.hash.slice(1)).get("type") === "recovery";
+// Only retain a public error code, never the full callback URL or its tokens.
+export const initialAuthLinkError =
+  Platform.OS === "web" && typeof window !== "undefined"
+    ? (new URLSearchParams(window.location.hash.slice(1)).get("error_code") ??
+      new URLSearchParams(window.location.search).get("error_code"))
+    : null;
 export const client = (() => {
   try {
     return createNidoClient(url, anonKey, {

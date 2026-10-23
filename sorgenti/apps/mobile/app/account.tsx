@@ -2,7 +2,7 @@ import { Text, TextInput } from "../src/typography";
 import React, { useEffect, useState } from "react";
 import { View, Pressable, Platform } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { useApp } from "../src/state";
+import { client, initialAuthLinkError, useApp } from "../src/state";
 import { Screen, Notice, Button, ui } from "../src/ui";
 import { useEditorAccess } from "../src/editor-access";
 import { requestNewsletterSubscription } from "../src/newsletter";
@@ -19,6 +19,9 @@ export default function Account() {
   } = useApp();
   const params = useLocalSearchParams<{ mode?: string }>();
   const { allowed: editorAllowed } = useEditorAccess();
+  const [pendingEmail, setPendingEmail] = useState("");
+  const [resendUntil, setResendUntil] = useState(0);
+  const [remaining, setRemaining] = useState(0);
   const [newsletter, setNewsletter] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,7 +31,51 @@ export default function Account() {
   const [change, setChange] = useState(false);
   const editingPassword = Boolean(accountEmail) && (passwordRecovery || change);
   const [busy, setBusy] = useState(false);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(
+    initialAuthLinkError === "otp_expired"
+      ? "Il collegamento email è scaduto o è già stato usato. Se hai già confermato, accedi; altrimenti richiedi una nuova conferma."
+      : initialAuthLinkError
+        ? "Il collegamento email non è valido. Accedi o richiedi una nuova conferma."
+        : "",
+  );
+  useEffect(() => {
+    if (!resendUntil) return;
+    const update = () =>
+      setRemaining(Math.max(0, Math.ceil((resendUntil - Date.now()) / 1000)));
+    update();
+    const timer = setInterval(update, 1000);
+    return () => clearInterval(timer);
+  }, [resendUntil]);
+  async function resendConfirmation() {
+    const destination = pendingEmail || email.trim();
+    if (busy || demo || remaining > 0 || !client) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(destination)) {
+      setMessage("Inserisci l’email usata per la registrazione.");
+      return;
+    }
+    setBusy(true);
+    setMessage("");
+    try {
+      const { error } = await client.auth.resend({
+        type: "signup",
+        email: destination,
+        options: { emailRedirectTo: "https://metimaia.com/account" },
+      });
+      if (error) throw error;
+      setPendingEmail(destination);
+      setResendUntil(Date.now() + 60000);
+      setRemaining(60);
+      setMessage(
+        "Se l’indirizzo richiede una conferma, riceverai una nuova email. Usa soltanto il link più recente e controlla anche lo spam.",
+      );
+    } catch {
+      setMessage(
+        "Non è stato possibile richiedere la conferma. Attendi qualche minuto e riprova: il servizio email potrebbe aver raggiunto il limite di invio.",
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
   useEffect(() => {
     if (
       Platform.OS === "web" &&
@@ -55,6 +102,8 @@ export default function Account() {
     try {
       const result = await signIn(email.trim(), password, create);
       setPassword("");
+      if (create && result.startsWith("Controlla"))
+        setPendingEmail(email.trim());
       if (create && newsletter) {
         try {
           await requestNewsletterSubscription(email.trim());
@@ -73,12 +122,15 @@ export default function Account() {
       // its signed-in panel offers personalization after hydration completes.
     } catch (error) {
       const detail = error instanceof Error ? error.message.toLowerCase() : "";
+      if (detail.includes("email not confirmed")) setPendingEmail(email.trim());
       setMessage(
-        detail.includes("rate limit") || detail.includes("too many")
-          ? "Troppe richieste. Attendi qualche minuto prima di riprovare. Il servizio email potrebbe aver raggiunto il limite di invio."
-          : detail.includes("sending confirmation") || detail.includes("smtp")
-            ? "Il servizio non riesce a inviare l’email di conferma. Occorre verificare la configurazione email in Supabase."
-            : "Operazione non riuscita. Verifica i dati e la connessione. Se hai già un account, prova ad accedere.",
+        detail.includes("email not confirmed")
+          ? "L’email non è ancora confermata. Controlla la posta o richiedi un nuovo collegamento."
+          : detail.includes("rate limit") || detail.includes("too many")
+            ? "Troppe richieste. Attendi qualche minuto prima di riprovare. Il servizio email potrebbe aver raggiunto il limite di invio."
+            : detail.includes("sending confirmation") || detail.includes("smtp")
+              ? "Il servizio non riesce a inviare l’email di conferma. Occorre verificare la configurazione email in Supabase."
+              : "Operazione non riuscita. Verifica i dati e la connessione. Se hai già un account, prova ad accedere.",
       );
     } finally {
       setBusy(false);
@@ -177,6 +229,70 @@ export default function Account() {
                 Annulla
               </Button>
             )}
+          </View>
+        ) : !accountEmail && pendingEmail && !reset ? (
+          <View style={[ui.card, { gap: 18 }]}>
+            <Text accessibilityRole="header" style={ui.heading}>
+              Controlla la tua email
+            </Text>
+            <Text style={ui.body}>
+              Indirizzo usato: {pendingEmail}. Per attivare l’account, apri
+              l’email di metiMaia e conferma dal link più recente. Poi torna qui
+              per accedere. Se l’indirizzo è già registrato, puoi accedere senza
+              creare un altro account.
+            </Text>
+            {message !== "" && (
+              <View accessibilityRole="alert" accessibilityLiveRegion="polite">
+                <Notice>{message}</Notice>
+              </View>
+            )}
+            <Button
+              disabled={busy || remaining > 0}
+              onPress={() => void resendConfirmation()}
+            >
+              {busy
+                ? "Attendi…"
+                : remaining > 0
+                  ? `Nuovo link tra ${remaining} s`
+                  : "Invia nuovamente la conferma"}
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={busy}
+              onPress={() => {
+                setPendingEmail("");
+                setCreate(false);
+                setMessage("");
+              }}
+            >
+              Ho confermato, accedi
+            </Button>
+            <Button
+              variant="quiet"
+              disabled={busy}
+              onPress={() => {
+                setPendingEmail("");
+                setCreate(true);
+                setMessage("");
+              }}
+            >
+              Correggi indirizzo email
+            </Button>
+            <Button
+              variant="quiet"
+              disabled={busy}
+              onPress={() => {
+                setPendingEmail("");
+                setReset(true);
+                setMessage("");
+              }}
+            >
+              Password dimenticata?
+            </Button>
+            <Text style={ui.body}>
+              Non trovi l’email? Controlla spam e posta indesiderata. Questa
+              pagina non conferma la consegna o l’apertura dell’email.
+            </Text>
           </View>
         ) : accountEmail ? (
           <View style={[ui.card, { gap: 18 }]}>
@@ -366,6 +482,26 @@ export default function Account() {
                     ? "Hai già un account? Accedi"
                     : "Non hai un account? Registrati"}
                 </Button>
+                {create && initialAuthLinkError && (
+                  <Button
+                    variant="quiet"
+                    disabled={busy || demo || remaining > 0}
+                    onPress={() => void resendConfirmation()}
+                  >
+                    Richiedi una nuova conferma email
+                  </Button>
+                )}
+                {!create && (
+                  <Button
+                    variant="quiet"
+                    disabled={busy || remaining > 0 || demo}
+                    onPress={() => void resendConfirmation()}
+                  >
+                    {remaining > 0
+                      ? `Nuovo link tra ${remaining} s`
+                      : "Non ho ricevuto la conferma"}
+                  </Button>
+                )}
                 <Button
                   variant="quiet"
                   disabled={busy}

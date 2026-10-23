@@ -1,4 +1,5 @@
 import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { metadata, pageHTML, sitemap, site } from "./web-seo.mjs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 const destination = process.argv[2];
@@ -22,6 +23,7 @@ await rm(resolve(output, ".nojekyll"), { force: true });
 // Pages enables SPA fallback without 404.html. Workers Static Assets additionally
 // needs physical HTML entry points for known direct URLs under its default handling.
 for (const route of [
+  "prenota",
   "account",
   "studio",
   "shop",
@@ -37,9 +39,28 @@ for (const route of [
   "checklists",
   "profile",
 ])
-  await writeFile(resolve(output, `${route}.html`), html);
+  await writeFile(
+    resolve(output, `${route}.html`),
+    pageHTML(html, `/${route}`),
+  );
+await writeFile(resolve(output, "index.html"), pageHTML(html, "/"));
+await cp(
+  fileURLToPath(
+    new URL("../apps/mobile/assets/brand/maia-logo.png", import.meta.url),
+  ),
+  resolve(output, "social-preview.png"),
+);
+await writeFile(resolve(output, "sitemap.xml"), sitemap);
+await writeFile(
+  resolve(output, "robots.txt"),
+  `User-agent: *\nAllow: /\nSitemap: ${site}/sitemap.xml\n`,
+);
 await writeFile(
   resolve(output, "_headers"),
-  "/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n  X-Frame-Options: DENY\n  Permissions-Policy: camera=(), microphone=(), geolocation=()\n/newsletter*\n  Referrer-Policy: no-referrer\n",
+  "/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n  X-Frame-Options: DENY\n  Permissions-Policy: camera=(), microphone=(), geolocation=()\n/newsletter*\n  Referrer-Policy: no-referrer\n" +
+    Object.entries(metadata)
+      .filter(([, page]) => !page.index)
+      .map(([path]) => `${path}*\n  X-Robots-Tag: noindex, nofollow\n`)
+      .join(""),
 );
 console.log(`Cloudflare assets ready: ${output}`);

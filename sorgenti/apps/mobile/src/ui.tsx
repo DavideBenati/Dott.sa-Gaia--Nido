@@ -13,11 +13,12 @@ import {
   type ViewStyle,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { Link, router } from "expo-router";
 import { type Article } from "@nido/core";
 import { Icon, type IconName } from "./icons";
 import { colors, serif, shadow } from "./theme";
 import { useApp } from "./state";
+import { usePageMetadata } from "./seo";
 import { ArticleCover } from "./art";
 
 export function Brand({ compact = false }: { compact?: boolean }) {
@@ -50,6 +51,7 @@ export function Screen({
   back?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
+  usePageMetadata();
   const { demo, email, mutationError, clearError } = useApp();
   const { width } = useWindowDimensions();
   const desktop = width >= 900;
@@ -142,6 +144,9 @@ export function Screen({
           <Text style={styles.footerSmall}>
             Uno spazio educativo, da vivere con i tuoi tempi.
           </Text>
+          <Button variant="secondary" onPress={() => router.push("/prenota")}>
+            Richiedi un incontro
+          </Button>
           <Button variant="quiet" onPress={() => router.push("/shop")}>
             Shop metiMaia
           </Button>
@@ -289,45 +294,58 @@ export function ArticleCard({
   const saved = state.favorites.includes(article.id);
   return (
     <View style={[styles.articleCard, compact && styles.compactCard]}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={article.title}
-        style={{ flex: 1 }}
-        onPress={() =>
-          router.push({ pathname: "/article", params: { id: article.id } })
-        }
-      >
-        <ArticleCover
-          uri={article.imageUrl}
-          demo={article.isDemo}
-          variant={article.title.length % 3}
-          style={[styles.articleImage, compact && { height: 130 }]}
-        />
-        <View style={styles.articleBody}>
-          <Text style={styles.articleCategory}>
-            {categories.find((category) => category.id === article.categoryId)
-              ?.name ?? "Da scoprire"}
-          </Text>
-          <Text style={[styles.articleTitle, compact && { fontSize: 22 }]}>
-            {article.title}
-          </Text>
-          {!compact && (
-            <Text numberOfLines={2} style={styles.articleSubtitle}>
-              {article.subtitle}
+      <Link href={{ pathname: "/article", params: { id: article.id } }} asChild>
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel={article.title}
+          style={{ flex: 1 }}
+        >
+          <ArticleCover
+            uri={article.imageUrl}
+            demo={article.isDemo}
+            variant={article.title.length % 3}
+            style={[styles.articleImage, compact && { height: 130 }]}
+          />
+          <View style={styles.articleBody}>
+            <Text style={styles.articleCategory}>
+              {categories.find((category) => category.id === article.categoryId)
+                ?.name ?? "Da scoprire"}
             </Text>
-          )}
-          <View style={styles.articleMeta}>
-            <Icon name="clock" size={14} color={colors.muted} />
-            <Text style={styles.metaText}>
-              {article.readingMinutes} min di lettura
+            <Text style={[styles.articleTitle, compact && { fontSize: 22 }]}>
+              {article.title}
             </Text>
-            <Text style={styles.metaDot}>·</Text>
-            <Text style={styles.metaText}>
-              {article.isDemo ? "Esempio da revisionare" : "Revisionato"}
-            </Text>
+            {!compact && (
+              <Text numberOfLines={2} style={styles.articleSubtitle}>
+                {article.subtitle}
+              </Text>
+            )}
+            {!compact && (
+              <Text style={styles.metaText}>
+                {article.authorName} · {article.authorRole}
+              </Text>
+            )}
+            {!compact && article.reviewedAt && (
+              <Text
+                style={styles.metaText}
+              >{`Ultima revisione: ${article.reviewedAt}`}</Text>
+            )}
+            <View style={styles.articleMeta}>
+              <Icon name="clock" size={14} color={colors.muted} />
+              <Text style={styles.metaText}>
+                {article.readingMinutes} min di lettura
+              </Text>
+              <Text style={styles.metaDot}>·</Text>
+              <Text style={styles.metaText}>
+                {article.isDemo
+                  ? "Esempio da revisionare"
+                  : article.approved && article.reviewedAt
+                    ? "Revisionato"
+                    : "Da revisionare"}
+              </Text>
+            </View>
           </View>
-        </View>
-      </Pressable>
+        </Pressable>
+      </Link>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={

@@ -1,9 +1,12 @@
 import { Text } from "../../src/typography";
-import React from "react";
-import { View, Pressable } from "react-native";
-import { router } from "expo-router";
+import React, { useState } from "react";
+import { type Stage, normalizeSearch } from "@nido/core";
+import { TextInput } from "../../src/typography";
+import { View, Pressable, StyleSheet } from "react-native";
+import { Link } from "expo-router";
 import { useApp } from "../../src/state";
 import {
+  Button,
   ContentStatus,
   EmptyState,
   Notice,
@@ -13,6 +16,15 @@ import {
 } from "../../src/ui";
 export default function Checklists() {
   const { checklists, state, contentLoading, contentError } = useApp();
+  const [query, setQuery] = useState("");
+  const [stage, setStage] = useState<Stage>("all");
+  const visible = checklists.filter(
+    (item) =>
+      (stage === "all" || item.stage === "all" || item.stage === stage) &&
+      normalizeSearch(
+        `${item.title} ${item.description} ${item.items.map((i) => i.label).join(" ")}`,
+      ).includes(normalizeSearch(query)),
+  );
   return (
     <Screen
       eyebrow="CHECKLIST"
@@ -24,32 +36,81 @@ export default function Checklists() {
         indicazioni della struttura e del tuo professionista sanitario hanno la
         precedenza.
       </Notice>
+      <View style={{ gap: 12, marginTop: 20 }}>
+        <TextInput
+          accessibilityLabel="Cerca una checklist"
+          placeholder="Cerca una checklist o un’attività…"
+          value={query}
+          onChangeText={setQuery}
+          style={ui.input}
+        />
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          {(
+            [
+              ["all", "Tutte le checklist"],
+              ["pregnancy", "Gravidanza"],
+              ["postpartum", "Dopo la nascita"],
+            ] as const
+          ).map(([value, label]) => (
+            <Pressable
+              key={value}
+              accessibilityRole="button"
+              aria-pressed={stage === value}
+              onPress={() => setStage(value)}
+              style={[ui.pill, stage === value && ui.pillActive]}
+            >
+              <Text style={[ui.pillText, stage === value && ui.pillTextActive]}>
+                {label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+        {(query || stage !== "all") && (
+          <Button
+            variant="quiet"
+            onPress={() => {
+              setQuery("");
+              setStage("all");
+            }}
+          >
+            Azzera ricerca checklist
+          </Button>
+        )}
+      </View>
       <ContentStatus />
       <View style={{ gap: 18, marginTop: 24 }}>
-        {checklists.map((checklist) => (
-          <Pressable
+        {visible.map((checklist) => (
+          <Link
             key={checklist.id}
-            accessibilityRole="button"
-            accessibilityLabel={checklist.title}
-            style={[ui.card, { gap: 12 }]}
-            onPress={() =>
-              router.push({
-                pathname: "/checklist",
-                params: { id: checklist.id },
-              })
-            }
+            href={{ pathname: "/checklist", params: { id: checklist.id } }}
+            asChild
           >
-            <Text style={ui.heading}>{checklist.title}</Text>
-            <Text style={ui.body}>{checklist.description}</Text>
-            <Progress
-              completed={
-                checklist.items.filter((i) => state.progress[i.id]).length
-              }
-              total={checklist.items.length}
-            />
-          </Pressable>
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel={checklist.title}
+              style={StyleSheet.flatten([ui.card, { gap: 12 }])}
+            >
+              <Text style={ui.heading}>{checklist.title}</Text>
+              <Text style={ui.body}>{checklist.description}</Text>
+              <Progress
+                completed={
+                  checklist.items.filter((i) => state.progress[i.id]).length
+                }
+                total={checklist.items.length}
+              />
+            </Pressable>
+          </Link>
         ))}
       </View>
+      {!visible.length &&
+        checklists.length > 0 &&
+        !contentLoading &&
+        !contentError && (
+          <Notice>
+            Nessuna checklist corrisponde alla ricerca. Cambia parola o azzera i
+            filtri.
+          </Notice>
+        )}
       {!checklists.length && !contentLoading && !contentError && (
         <EmptyState
           title="Presto, nuovi piccoli passi"

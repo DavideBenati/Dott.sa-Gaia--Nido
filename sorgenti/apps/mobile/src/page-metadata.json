@@ -1,0 +1,83 @@
+{
+  "/": {
+    "title": "metiMaia | Ostetrica Gaia Brunetti",
+    "description": "Informazioni e strumenti per gravidanza, nascita e dopo il parto, con la Dott.ssa Gaia Brunetti. Scopri letture, checklist e come richiedere un incontro.",
+    "canonical": "/welcome",
+    "index": true
+  },
+  "/welcome": {
+    "title": "metiMaia | Ostetrica Gaia Brunetti",
+    "description": "Uno spazio per gravidanza, nascita e primi giorni insieme. Letture, checklist e richieste di incontro con la Dott.ssa Gaia Brunetti.",
+    "index": true
+  },
+  "/discover": {
+    "title": "Letture su gravidanza, nascita e dopo il parto | metiMaia",
+    "description": "Esplora gli articoli di metiMaia per percorso e argomento. Consulta autore, fonti e data di revisione dei contenuti pubblicati.",
+    "index": true
+  },
+  "/checklists": {
+    "title": "Checklist per gravidanza e dopo la nascita | metiMaia",
+    "description": "Liste pratiche adattabili al tuo percorso. Cerca una checklist per gravidanza o dopo la nascita e ritrova i tuoi progressi.",
+    "index": true
+  },
+  "/prenota": {
+    "title": "Richiedi un incontro con Gaia Brunetti | metiMaia",
+    "description": "Chiedi disponibilità per un incontro con la Dott.ssa Gaia Brunetti. Data, modalità ed eventuali costi vengono concordati direttamente.",
+    "index": true
+  },
+  "/article": {
+    "title": "Letture e approfondimenti | metiMaia",
+    "description": "Contenuti educativi di metiMaia: autore, fonti e informazioni sulla revisione clinica sono indicati nella lettura.",
+    "index": true
+  },
+  "/checklist": {
+    "title": "Una checklist per il tuo percorso | metiMaia",
+    "description": "Una lista pratica da adattare alle tue esigenze, senza sostituire le indicazioni del tuo professionista sanitario.",
+    "index": true
+  },
+  "/help": {
+    "title": "Quando chiedere aiuto | metiMaia",
+    "description": "Informazioni per orientarti verso i servizi sanitari e riconoscere quando chiedere aiuto. metiMaia non è un servizio di emergenza.",
+    "index": true
+  },
+  "/shop": {
+    "title": "Shop: selezione Amazon e prodotti della dottoressa | metiMaia",
+    "description": "Scopri la selezione Amazon e lo spazio dedicato ai prodotti della Dott.ssa Gaia Brunetti. Consulta disponibilità e condizioni dei singoli prodotti.",
+    "index": false
+  },
+  "/privacy": {
+    "title": "Privacy e dati personali | metiMaia",
+    "description": "Informazioni sul trattamento dei dati, sul titolare e sui tuoi diritti.",
+    "index": false
+  },
+  "/account": {
+    "title": "Il tuo account | metiMaia",
+    "description": "Accesso, registrazione e conferma email per il tuo spazio personale.",
+    "index": false
+  },
+  "/chat": {
+    "title": "Conversazione privata | metiMaia",
+    "description": "Accedi alla tua conversazione privata con la Dott.ssa Gaia Brunetti.",
+    "index": false
+  },
+  "/studio": {
+    "title": "Area professionista | metiMaia",
+    "description": "Area riservata agli account professionali autorizzati.",
+    "index": false
+  },
+  "/profile": {
+    "title": "Il tuo profilo | metiMaia",
+    "description": "Le tue preferenze e il tuo account personale.",
+    "index": false
+  },
+  "/saved": {
+    "title": "Le tue letture salvate | metiMaia",
+    "description": "Le letture salvate nel tuo spazio personale.",
+    "index": false
+  },
+  "/newsletter": {
+    "title": "Newsletter | metiMaia",
+    "description": "Iscrizione facoltativa e gestione del consenso alla newsletter metiMaia.",
+    "index": false
+  }
+}

@@ -26,13 +26,13 @@ test("guest navigation, search, category filtering and empty results", async ({
   const search = page.getByLabel("Cerca un articolo");
   await search.fill("primo trimestre");
   await expect(
-    page.getByRole("button", {
+    page.getByRole("link", {
       name: "Il primo trimestre, un passo alla volta",
       exact: true,
     }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", {
+    page.getByRole("link", {
       name: "Il puerperio: dare spazio al recupero",
       exact: true,
     }),
@@ -52,13 +52,13 @@ test("guest navigation, search, category filtering and empty results", async ({
     })
     .click();
   await expect(
-    page.getByRole("button", {
+    page.getByRole("link", {
       name: "Esserci: il partner durante il travaglio",
       exact: true,
     }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", {
+    page.getByRole("link", {
       name: "Il primo trimestre, un passo alla volta",
       exact: true,
     }),
@@ -72,13 +72,15 @@ test("article details, favorites and saved articles persist after reload", async
   await openDiscover(page);
   await page.getByLabel("Cerca un articolo").fill("primo trimestre");
   await page
-    .getByRole("button", {
+    .getByRole("link", {
       name: "Il primo trimestre, un passo alla volta",
       exact: true,
     })
     .click();
   await expect(page).toHaveURL(/\/article\?id=/);
-  await expect(page.getByText(/contenuto dimostrativo/i).first()).toBeVisible();
+  await expect(
+    page.getByText(/^CONTENUTO DIMOSTRATIVO · Questo testo/),
+  ).toBeVisible();
   await page.getByLabel("Salva articolo", { exact: true }).click();
   await expect(
     page.getByLabel("Rimuovi dai salvati", { exact: true }),
@@ -89,7 +91,7 @@ test("article details, favorites and saved articles persist after reload", async
   ).toBeVisible();
   await page.goto(appPath("/saved"));
   await expect(
-    page.getByRole("button", {
+    page.getByRole("link", {
       name: "Il primo trimestre, un passo alla volta",
       exact: true,
     }),
@@ -108,7 +110,7 @@ test("checklist items can be checked, restored and unchecked", async ({
     }),
   ).toBeVisible();
   await page
-    .getByRole("button", {
+    .getByRole("link", {
       name: "Preparare la borsa per il parto",
       exact: true,
     })
@@ -195,7 +197,7 @@ test("postpartum onboarding, optional consent, export and local deletion", async
     page.getByText("3 settimane insieme", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", {
+    page.getByRole("link", {
       name: "I primi giorni: conoscersi, con calma",
       exact: true,
     }),

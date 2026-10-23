@@ -38,6 +38,9 @@ function Conversation({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(!demo && Boolean(email));
+  const [reload, setReload] = useState(0);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [sentNotice, setSentNotice] = useState("");
   const [available, setAvailable] = useState(false);
   useEffect(() => {
     let alive = true;
@@ -55,6 +58,12 @@ function Conversation({
         if (status.error) throw status.error;
         if (alive) {
           setMessages(data);
+          setLastUpdated(
+            new Date().toLocaleTimeString("it-IT", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          );
           setAvailable(status.data === true);
           setError("");
         }
@@ -74,14 +83,18 @@ function Conversation({
       alive = false;
       clearInterval(timer);
     };
-  }, [demo, email]);
+  }, [demo, email, reload]);
   async function send() {
     if (!client || !email || demo || busy || !available || !body.trim()) return;
     setBusy(true);
     setError("");
+    setSentNotice("");
     try {
       await sendCareMessage(client, body);
       setBody("");
+      setSentNotice(
+        "Messaggio salvato nella conversazione. Non sono disponibili conferme di lettura o garanzie sui tempi di risposta.",
+      );
       // Delivery succeeded even if the following refresh fails. Never resend automatically.
       try {
         setMessages(await loadCareMessages(client));
@@ -92,7 +105,7 @@ function Conversation({
       }
     } catch {
       setError(
-        "Invio non riuscito. Il testo è ancora qui: controlla la connessione prima di riprovare.",
+        "Invio non confermato. Il testo è ancora qui: aggiorna la conversazione e controlla se il messaggio compare prima di riprovare, per evitare duplicati.",
       );
     } finally {
       setBusy(false);
@@ -106,8 +119,9 @@ function Conversation({
         Privacy della conversazione
       </Button>
       <Notice warm icon="help">
-        Le risposte non sono immediate. Per urgenze contatta i servizi di
-        emergenza.
+        Le risposte non sono immediate e non è un servizio di assistenza
+        continua. Orari e tempi di risposta sono da concordare con la
+        dottoressa. Per urgenze chiama il 112 o rivolgiti ai servizi sanitari.
       </Notice>
       {demo && (
         <Notice>
@@ -124,6 +138,18 @@ function Conversation({
             Crea account o accedi
           </Button>
         </View>
+      )}
+      {!demo && email && available && (
+        <Notice>
+          Messaggistica attiva: questo non indica che la dottoressa sia online.
+          La conversazione si aggiorna ogni 15 secondi; non vengono inviate
+          notifiche email con il testo dei messaggi.
+        </Notice>
+      )}
+      {lastUpdated && (
+        <Text accessibilityLiveRegion="polite" style={ui.body}>
+          Conversazione aggiornata alle {lastUpdated}
+        </Text>
       )}
       {loading && <Text style={ui.body}>Caricamento della conversazione…</Text>}
       {!demo && email && !loading && !available && !error && (
@@ -179,6 +205,11 @@ function Conversation({
                   minute: "2-digit",
                 })}
               </Text>
+              {!demo && own && (
+                <Text style={{ color: colors.muted, fontSize: 12 }}>
+                  Salvato nella conversazione · lettura non verificabile
+                </Text>
+              )}
             </View>
           );
         })}
@@ -186,9 +217,20 @@ function Conversation({
       {error !== "" && (
         <View accessibilityRole="alert">
           <Notice warm>{error}</Notice>
-          <Button variant="quiet" onPress={() => router.replace("/chat")}>
+          <Button
+            variant="quiet"
+            onPress={() => {
+              setLoading(true);
+              setReload((value) => value + 1);
+            }}
+          >
             Ricarica conversazione
           </Button>
+        </View>
+      )}
+      {sentNotice !== "" && (
+        <View accessibilityRole="status" accessibilityLiveRegion="polite">
+          <Notice>{sentNotice}</Notice>
         </View>
       )}
       <View style={[ui.card, { gap: 12, padding: 16 }]}>

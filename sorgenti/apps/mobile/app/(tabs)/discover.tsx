@@ -18,13 +18,36 @@ export default function Discover() {
   const { articles, categories, demo, contentLoading, contentError } = useApp();
   const [query, setQuery] = useState("");
   const [categoryId, setCategory] = useState("all");
-  const [stage, setStage] = useState<Stage>("all");
-  const result = filterArticles(articles, { query, categoryId, stage });
-  const filtered = Boolean(query || categoryId !== "all" || stage !== "all");
+  const [stage, setStage] = useState<Stage | "birth">("all");
+  const [shortOnly, setShortOnly] = useState(false);
+  const [sort, setSort] = useState<"recent" | "short" | "title">("recent");
+  const result = filterArticles(articles, {
+    query,
+    categoryId,
+    stage: stage === "birth" ? "all" : stage,
+    birth: stage === "birth",
+    maxMinutes: shortOnly ? 5 : undefined,
+  }).sort((a, b) =>
+    sort === "short"
+      ? a.readingMinutes - b.readingMinutes
+      : sort === "title"
+        ? a.title.localeCompare(b.title, "it")
+        : (Date.parse(b.reviewedAt || b.publishedAt || "") || 0) -
+          (Date.parse(a.reviewedAt || a.publishedAt || "") || 0),
+  );
+  const filtered = Boolean(
+    query ||
+    categoryId !== "all" ||
+    stage !== "all" ||
+    shortOnly ||
+    sort !== "recent",
+  );
   function resetFilters() {
     setQuery("");
     setCategory("all");
     setStage("all");
+    setShortOnly(false);
+    setSort("recent");
   }
   return (
     <Screen
@@ -78,6 +101,7 @@ export default function Discover() {
           [
             ["all", "Tutti i percorsi"],
             ["pregnancy", "Gravidanza"],
+            ["birth", "Nascita"],
             ["postpartum", "Dopo la nascita"],
           ] as const
         ).map(([id, label]) => (
@@ -127,6 +151,42 @@ export default function Discover() {
           ),
         )}
       </View>
+      <View style={{ gap: 10, marginBottom: 20 }}>
+        <Pressable
+          accessibilityRole="checkbox"
+          accessibilityLabel="Solo letture entro 5 minuti"
+          accessibilityState={{ checked: shortOnly }}
+          onPress={() => setShortOnly(!shortOnly)}
+          style={{ paddingVertical: 10 }}
+        >
+          <Text style={ui.body}>
+            {shortOnly ? "☑" : "☐"} Ho poco tempo: letture entro 5 minuti
+          </Text>
+        </Pressable>
+        <Text style={ui.label}>Ordina le letture</Text>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9 }}>
+          {(
+            [
+              ["recent", "Revisioni più recenti"],
+              ["short", "Più brevi"],
+              ["title", "Titolo A–Z"],
+            ] as const
+          ).map(([value, label]) => (
+            <Pressable
+              key={value}
+              accessibilityRole="button"
+              accessibilityLabel={label}
+              aria-pressed={sort === value}
+              onPress={() => setSort(value)}
+              style={[ui.pill, sort === value && ui.pillActive]}
+            >
+              <Text style={[ui.pillText, sort === value && ui.pillTextActive]}>
+                {label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      </View>
       <ContentStatus />
       {!contentLoading && !contentError && (
         <View
@@ -162,9 +222,7 @@ export default function Discover() {
           text="Nessuna lettura corrisponde alla ricerca. Prova con un’altra parola o esplora tutti gli argomenti."
           action="Mostra tutto"
           onPress={() => {
-            setQuery("");
-            setCategory("all");
-            setStage("all");
+            resetFilters();
           }}
         />
       )}

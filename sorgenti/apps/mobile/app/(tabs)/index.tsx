@@ -144,6 +144,9 @@ export default function Home() {
         action="Scopri tutto"
         onPress={() => router.navigate("/(tabs)/discover")}
       />
+      <Button variant="secondary" onPress={() => router.push("/prenota")}>
+        Prenota un incontro con Gaia
+      </Button>
       <ContentStatus />
       <ArticleGrid
         items={recommendArticles(articles, state.preferences).slice(0, 3)}

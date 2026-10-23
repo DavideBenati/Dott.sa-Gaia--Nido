@@ -116,6 +116,9 @@ export default function Welcome() {
           >
             Esplora come ospite
           </Button>
+          <Button variant="quiet" onPress={() => router.push("/prenota")}>
+            Chiedi disponibilità per un incontro
+          </Button>
           <Text style={ui.body}>
             Nessun account necessario. Nessuna data obbligatoria.
           </Text>

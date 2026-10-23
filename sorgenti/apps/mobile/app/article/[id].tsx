@@ -1,3 +1,4 @@
+import { usePageMetadata } from "../../src/seo";
 import { Text } from "../../src/typography";
 import React from "react";
 import { View, Linking } from "react-native";
@@ -10,6 +11,19 @@ export default function Article() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { articles, categories, state, toggleFavorite } = useApp();
   const article = articles.find((a) => a.id === id);
+  usePageMetadata(
+    article
+      ? {
+          id: article.id,
+          title: article.title,
+          subtitle: article.subtitle,
+          published:
+            article.status === "published" &&
+            article.approved &&
+            !article.isDemo,
+        }
+      : undefined,
+  );
   if (!article)
     return (
       <Screen back>

@@ -102,10 +102,20 @@ export const normalizeSearch = (text: string): string =>
     .trim();
 export function filterArticles(
   items: Article[],
-  filters: { query?: string; categoryId?: string; stage?: Stage } = {},
+  filters: {
+    query?: string;
+    categoryId?: string;
+    stage?: Stage;
+    birth?: boolean;
+    maxMinutes?: number;
+  } = {},
 ): Article[] {
   const query = normalizeSearch(filters.query || "");
   return items.filter((article) => {
+    if (filters.birth && !["preparation", "birth"].includes(article.categoryId))
+      return false;
+    if (filters.maxMinutes && article.readingMinutes > filters.maxMinutes)
+      return false;
     if (
       filters.categoryId &&
       filters.categoryId !== "all" &&
