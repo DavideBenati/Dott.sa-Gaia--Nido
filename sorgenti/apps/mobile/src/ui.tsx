@@ -142,6 +142,9 @@ export function Screen({
           <Text style={styles.footerSmall}>
             Uno spazio educativo, da vivere con i tuoi tempi.
           </Text>
+          <Button variant="quiet" onPress={() => router.push("/shop")}>
+            Shop metiMaia
+          </Button>
           <View style={ui.row}>
             <Pressable
               accessibilityRole="button"

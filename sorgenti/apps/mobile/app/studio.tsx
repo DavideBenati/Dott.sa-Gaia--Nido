@@ -343,6 +343,9 @@ function Workspace() {
     <View
       style={{ width: "100%", maxWidth: 840, alignSelf: "center", gap: 20 }}
     >
+      <Button variant="secondary" onPress={() => router.push("/shop")}>
+        Gestisci shop e merchandise
+      </Button>
       <Notice>
         Solo contenuti pubblicati e approvati saranno visibili alle famiglie. Le
         modifiche a contenuti già pubblicati richiedono una nuova approvazione.

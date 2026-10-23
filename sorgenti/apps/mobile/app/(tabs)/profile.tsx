@@ -155,6 +155,9 @@ export default function Profile() {
       <Button variant="secondary" onPress={() => router.push("/newsletter")}>
         Newsletter metiMaia
       </Button>
+      <Button variant="secondary" onPress={() => router.push("/shop")}>
+        Shop metiMaia
+      </Button>
       <SectionHeader title="Account e dati" />
       <Button variant="secondary" onPress={() => router.push("/account")}>
         {email ? "Il mio account" : "Accedi o crea un account"}

@@ -24,6 +24,7 @@ await rm(resolve(output, ".nojekyll"), { force: true });
 for (const route of [
   "account",
   "studio",
+  "shop",
   "article",
   "checklist",
   "newsletter",
