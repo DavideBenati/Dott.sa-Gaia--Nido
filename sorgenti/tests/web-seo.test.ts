@@ -30,3 +30,17 @@ test("private routes are noindex and are never advertised in the sitemap", () =>
   expect(sitemap).toContain("https://metimaia.com/discover");
   expect(sitemap).toContain("https://metimaia.com/prenota");
 });
+
+test("Google verification uses only the original uploaded HTML file and no meta tag", async () => {
+  const { readFile } = await import("node:fs/promises");
+  expect(
+    await readFile(
+      new URL(
+        "../apps/mobile/public/googlee8a922f3d8a9d320.html",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  ).toBe("google-site-verification: googlee8a922f3d8a9d320.html");
+  expect(pageHTML(html, "/")).not.toContain('name="google-site-verification"');
+});

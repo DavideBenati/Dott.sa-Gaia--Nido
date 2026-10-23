@@ -82,6 +82,8 @@ beforeEach(async () => {
       TextEncoder,
       Date,
       fetch: async (_url: string, options: { body: string }) => {
+        if (_url.endsWith("/newsletter-sync"))
+          return new Response("{}", { status: 200 });
         sent.push(JSON.parse(options.body));
         return new Response("{}", { status: 200 });
       },

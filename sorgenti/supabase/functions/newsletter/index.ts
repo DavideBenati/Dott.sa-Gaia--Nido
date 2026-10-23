@@ -41,7 +41,7 @@ Deno.serve(async (request) => {
   const secret = Deno.env.get("RESEND_API_KEY");
   const backend = Deno.env.get("SUPABASE_URL");
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!secret || !backend || !serviceKey)
+  if (!backend || !serviceKey)
     return json({ error: "Newsletter non ancora configurata." }, 503);
   const db = createClient(backend, serviceKey, {
     auth: { persistSession: false },
@@ -97,13 +97,42 @@ Deno.serve(async (request) => {
           },
           400,
         );
+      // Queue is written atomically by migration 006. Failed delivery remains
+      // pending for the scheduled retry; never log subscriber identifiers/tokens.
+      try {
+        await fetch(`${backend}/functions/v1/newsletter-sync`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${serviceKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ action: "retry", subscriber_id: data[0].id }),
+          signal: AbortSignal.timeout(12000),
+        });
+      } catch {
+        /* Scheduled reconciliation retries the durable outbox. */
+      }
+      if (body.action === "confirm") {
+        const checked = await db
+          .from("newsletter_subscribers")
+          .select("status")
+          .eq("id", data[0].id)
+          .maybeSingle();
+        if (!checked.error && checked.data?.status === "unsubscribed")
+          return json({
+            message:
+              "La preferenza risulta disattivata sul servizio di invio. Scrivi a Gaia se desideri richiedere una nuova iscrizione.",
+          });
+      }
       return json({
         message:
           body.action === "confirm"
             ? "Iscrizione confermata. Grazie!"
-            : "Disiscrizione completata. Non riceverai più la newsletter.",
+            : "Disiscrizione registrata. Eventuali email già in consegna potrebbero ancora arrivare.",
       });
     }
+    if (!secret)
+      return json({ error: "Invio newsletter non ancora configurato." }, 503);
     const email =
       typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     if (

@@ -127,6 +127,17 @@ export function Screen({
             Gaia e servizi
           </Link>
           <Link
+            href="/contatti"
+            style={{
+              padding: 12,
+              minHeight: 44,
+              color: colors.sageDark,
+              fontSize: 14,
+            }}
+          >
+            Contatti
+          </Link>
+          <Link
             href="/shop"
             accessibilityLabel="Apri lo Shop metiMaia"
             style={{
@@ -192,6 +203,9 @@ export function Screen({
           </Text>
           <Button variant="secondary" onPress={() => router.push("/prenota")}>
             Richiedi un incontro
+          </Button>
+          <Button variant="quiet" onPress={() => router.push("/contatti")}>
+            Come contattare Gaia
           </Button>
           <Button variant="quiet" onPress={() => router.push("/shop")}>
             Shop metiMaia

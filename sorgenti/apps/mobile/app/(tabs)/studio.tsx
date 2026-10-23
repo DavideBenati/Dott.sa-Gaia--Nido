@@ -327,7 +327,7 @@ function Workspace() {
       );
     } catch {
       setMessage(
-        "Elenco newsletter non disponibile. Applica prima la configurazione newsletter in Supabase.",
+        "Elenco non disponibile. Verifica ruolo e secondo fattore; poi apri Gestisci newsletter e revoche, completa la sincronizzazione e riprova.",
       );
     } finally {
       setBusy(false);
@@ -386,6 +386,9 @@ function Workspace() {
           Modifiche non salvate. Salva la bozza prima di lasciare questa pagina.
         </Notice>
       )}
+      <Button variant="secondary" onPress={() => router.push("/verifiche")}>
+        Verifiche prima di promuovere il sito
+      </Button>
       <Button variant="secondary" onPress={() => router.push("/impostazioni")}>
         Gaia, servizi e informazioni privacy
       </Button>
@@ -409,6 +412,12 @@ function Workspace() {
         modifiche a contenuti già pubblicati richiedono una nuova approvazione.
       </Notice>
       <View style={{ gap: 8 }}>
+        <Button
+          variant="secondary"
+          onPress={() => router.push("/newsletter-admin")}
+        >
+          Gestisci newsletter e revoche
+        </Button>
         <Button variant="secondary" onPress={() => router.push("/newsletter")}>
           Newsletter: iscrizione e informazioni
         </Button>

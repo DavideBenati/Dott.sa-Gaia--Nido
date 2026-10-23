@@ -104,5 +104,20 @@
     "title": "Sicurezza account | metiMaia",
     "description": "Area riservata agli account autorizzati.",
     "index": false
+  },
+  "/contatti": {
+    "title": "Contatti e richieste di incontro | metiMaia",
+    "description": "Scegli come contattare Gaia Brunetti: informazioni sui servizi, richiesta di disponibilità o chat privata.",
+    "index": true
+  },
+  "/verifiche": {
+    "title": "Verifiche del sito | metiMaia",
+    "description": "Area riservata alla gestione editoriale.",
+    "index": false
+  },
+  "/newsletter-admin": {
+    "title": "Gestione newsletter | metiMaia",
+    "description": "Area riservata alla gestione newsletter.",
+    "index": false
   }
 }

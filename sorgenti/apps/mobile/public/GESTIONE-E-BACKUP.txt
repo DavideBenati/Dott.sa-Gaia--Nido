@@ -1,0 +1,35 @@
+metiMaia — gestione, backup e prove prima di promuovere il sito
+
+Questo documento è una procedura, non la conferma che un backup o un acquisto siano già stati provati.
+
+1. CONTENUTI E SERVIZI
+Apri Studio > Gaia, servizi e informazioni privacy. Inserisci solo dati confermati: presentazione, qualifiche/iscrizione verificata, modalità/zone, contatto, servizi effettivi. Finché non sono definiti, il sito invita a concordarli direttamente. Non inserire dati di pazienti.
+Prima di pubblicare un articolo verifica nome dell’autore, fonti, data di revisione, comprensibilità e assenza di esempi dimostrativi presentati come consigli clinici. Il ruolo editor e la verifica professionale sono distinti.
+
+2. PRODOTTI E PAGAMENTI
+Pubblica soltanto schede reali con foto utilizzabili, caratteristiche e prezzo coerenti con Stripe. Per oli o prodotti destinati ai bambini verifica anche composizione/materiali, modalità d’uso e avvertenze pertinenti nella documentazione del produttore. Non inventare benefici sanitari.
+Completa venditore, assistenza, spedizioni, resi e condizioni. Un campo compilato non dimostra che le condizioni siano corrette.
+In Stripe usa l’ambiente di test e le credenziali/carte di test documentate da Stripe, mai dati di carte reali. Non pubblicare sul sito un Payment Link di prova come acquisto reale. Controlla variante, importo finale, spedizione, ricevuta e rimborso nell’ambiente di test. Se necessario usa una copia separata del sito non pubblicizzata. Non è presente un archivio ordini o inventario automatico in metiMaia.
+Per Amazon verifica il link, il venditore e la dichiarazione di affiliazione quando applicabile.
+
+3. NEWSLETTER
+La conferma esplicita resta necessaria e separata dall’account. Con il pacchetto Supabase v5 attivato, modifiche e revoche vengono accodate, ritentate e controllate rispetto a Resend. I webhook richiedono una firma valida.
+Prima di una campagna: Studio > Gestisci newsletter e revoche > Controlla iscritti e revoche su Resend. Risolvi ogni errore prima di esportare o inviare. Un CSV già scaricato non viene aggiornato dalle revoche successive: non riutilizzarlo senza riconciliazione e mantieni le soppressioni del provider.
+Prova con una tua email di test: iscrizione, conferma, presenza in Resend, revoca dal sito, revoca da Resend. Non usare dati sanitari per segmentare i contatti. Un contatto disiscritto su Resend non viene riattivato automaticamente; un nuovo consenso richiede una verifica dedicata con Gaia.
+
+4. BACKUP COMPLETO
+Il pulsante JSON di Studio esporta soltanto contenuti editoriali. Non è un backup di account, chat, richieste, immagini, newsletter o configurazione.
+Nel progetto Supabase verifica Database > Backups e le funzioni incluse nel piano. Verifica la data dell’ultima copia, il periodo di conservazione e la procedura ufficiale di recupero. Documentazione: https://supabase.com/docs/guides/platform/backups
+Se il piano non offre una copia scaricabile adatta, pianifica un’esportazione PostgreSQL con un client locale o la procedura CLI ufficiale, usando un collegamento protetto. Non pubblicare la stringa di connessione, non incollarla nella chat e non inserirla negli asset del sito. Un’esportazione CSV di alcune tabelle non è un backup completo.
+I file di Supabase Storage richiedono una copia separata degli oggetti: il backup del database non conserva da solo il contenuto dei file. Registra anche configurazione Auth, redirect, funzioni, migrazioni e DNS. Conserva le credenziali in un gestore sicuro separato dalle copie del sito.
+Il titolare deve scegliere frequenza, accessi e tempi di conservazione coerenti con la gestione effettiva. Non sono impostati automaticamente da questa guida.
+
+5. PROVA DI RIPRISTINO
+Usa un progetto separato, senza dominio di produzione e senza invii email o pagamenti attivi. Segui le istruzioni ufficiali di ripristino appropriate alla copia, al piano e alla versione PostgreSQL.
+Controlla tabelle, conteggi, vincoli, ruoli/RLS, immagini e collegamenti. Usa dati fittizi dove possibile; tratta le copie che contengono dati personali con accesso riservato.
+Verifica che un account normale non legga chat o pannelli di altri utenti e che il secondo fattore richiesto non sia aggirabile. Registra data, copia usata, risultato e problemi. Una copia non provata non è una garanzia di recupero.
+Non fare prove di ripristino sul progetto di produzione e non lasciare copie di dati personali accessibili pubblicamente.
+
+6. PRIVACY E ACCESSIBILITÀ
+Completa conservazione, fornitori effettivi, trasferimenti e garanzie con il titolare. La compilazione del pannello non certifica conformità legale.
+Prova navigazione con tastiera, zoom e lettore di schermo, oltre a telefono e desktop. Controlla leggibilità dei testi e messaggi di errore. I test di sviluppo non sostituiscono una valutazione completa con utenti reali.

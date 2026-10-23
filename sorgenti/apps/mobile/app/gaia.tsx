@@ -44,7 +44,12 @@ export default function Gaia() {
             </>
           )}
         </View>
-        <Text style={ui.heading}>Come possiamo incontrarci</Text>
+        <Button onPress={() => router.push("/contatti")}>
+          Scegli come contattare Gaia
+        </Button>
+        <Text accessibilityRole="header" style={ui.heading}>
+          Servizi e modalità d’incontro
+        </Text>
         <Text style={ui.body}>{profile.service_area}</Text>
         {profile.services.length ? (
           profile.services.map((service, index) => (
@@ -61,14 +66,31 @@ export default function Gaia() {
           ))
         ) : (
           <Notice>
-            Per conoscere i servizi effettivamente disponibili, le modalità e
-            gli eventuali costi, contatta Gaia. Le schede dei servizi verranno
-            pubblicate dopo la loro definizione.
+            Servizi, zone, modalità e costi sono da concordare direttamente con
+            Gaia. Puoi chiedere informazioni senza creare un account e senza
+            inserire dati sanitari.
           </Notice>
         )}
-        <Button onPress={() => router.push("/prenota")}>
-          Richiedi un incontro
-        </Button>
+        <View style={[ui.card, { gap: 12 }]}>
+          <Text accessibilityRole="header" style={ui.heading}>
+            Cosa succede dopo la richiesta?
+          </Text>
+          <Text style={ui.body}>
+            1. Indichi come ricontattarti e le tue preferenze, senza referti o
+            dati sanitari.
+          </Text>
+          <Text style={ui.body}>
+            2. Gaia valuta la disponibilità e ti ricontatta per concordare
+            modalità, luogo ed eventuali costi.
+          </Text>
+          <Text style={ui.body}>
+            3. L’incontro è confermato soltanto dopo un accordo diretto. I tempi
+            di risposta non sono ancora definiti.
+          </Text>
+          <Button onPress={() => router.push("/prenota")}>
+            Richiedi disponibilità
+          </Button>
+        </View>
         <Button
           variant="secondary"
           onPress={() => {

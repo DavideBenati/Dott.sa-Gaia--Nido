@@ -121,6 +121,26 @@ function Editor() {
             servizi effettivamente disponibili. Foto: indirizzo HTTPS di
             un’immagine che puoi utilizzare.
           </Notice>
+          <Text style={ui.heading}>Prima di pubblicare la presentazione</Text>
+          <Text style={ui.body}>
+            {[
+              !profile.portrait_url && "Foto professionale facoltativa",
+              !profile.qualifications && "Qualifiche/iscrizione da verificare",
+              !profile.services.length && "Servizi da definire",
+              !profile.privacy_retention &&
+                "Criteri di conservazione da definire",
+              !profile.privacy_transfers &&
+                "Trasferimenti e garanzie da verificare",
+            ]
+              .filter(Boolean)
+              .join(" · ") ||
+              "I campi principali sono compilati: verifica che siano corretti e aggiornati."}
+          </Text>
+          <Notice>
+            I campi non compilati non vengono sostituiti con informazioni
+            inventate. Non pubblicare prezzi o disponibilità provvisori come
+            confermati.
+          </Notice>
           {field("Presentazione", "bio")}
           {field("Foto: URL HTTPS (facoltativo)", "portrait_url")}
           {field(

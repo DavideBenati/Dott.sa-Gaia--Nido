@@ -112,7 +112,18 @@ async function context(editor = false, mfaPending = false) {
         profile = request.postDataJSON();
         body = profile;
       } else body = profile;
-    } else if (url.pathname.endsWith("/rpc/is_chat_staff")) body = editor;
+    } else if (url.pathname.endsWith("/rpc/newsletter_sync_status"))
+      body = {
+        pending: 0,
+        errors: 0,
+        synced: 2,
+        confirmed: 2,
+        last_update: new Date().toISOString(),
+        last_webhook: null,
+      };
+    else if (url.pathname.endsWith("/functions/v1/newsletter-sync"))
+      body = { pending: 0, errors: 0, processed: 2 };
+    else if (url.pathname.endsWith("/rpc/is_chat_staff")) body = editor;
     else if (url.pathname.endsWith("/care_conversations"))
       body = [{ user_id: conversation, created_at: new Date().toISOString() }];
     else if (url.pathname.endsWith("/care_messages")) {
@@ -452,6 +463,24 @@ try {
       (c) => c.path.endsWith("/care_conversations") && c.method === "POST",
     ),
   ).toBe(false);
+  await page.goto("http://127.0.0.1:8095/verifiche");
+  await expect(
+    page.getByRole("heading", { name: "Verifiche del sito", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(
+      /Servizi non definiti: il sito invita a chiedere informazioni/,
+    ),
+  ).toBeVisible();
+  await page.goto("http://127.0.0.1:8095/newsletter-admin");
+  await expect(page.getByText("Confermati: 2", { exact: false })).toBeVisible();
+  await page
+    .getByRole("button", {
+      name: "Controlla iscritti e revoche su Resend",
+      exact: true,
+    })
+    .click();
+  await expect(page.getByText(/Controllo terminato/)).toBeVisible();
   await page.goto("http://127.0.0.1:8095/richieste");
   await expect(
     page.getByText("Nessuna richiesta in questa pagina.", { exact: true }),
@@ -489,7 +518,25 @@ try {
   await nl.close();
   const bookingContext = await context();
   const bookingPage = await bookingContext.newPage();
-  await bookingPage.goto("http://127.0.0.1:8095/prenota");
+  await bookingPage.goto("http://127.0.0.1:8095/contatti");
+  await expect(
+    bookingPage.getByRole("heading", {
+      name: "Come contattare Gaia",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    bookingPage.getByRole("button", {
+      name: "Apri email per informazioni",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await bookingPage
+    .getByRole("button", {
+      name: "Richiedi disponibilità per un incontro",
+      exact: true,
+    })
+    .click();
   await bookingPage
     .getByLabel("Nome per la richiesta")
     .fill("Persona di prova");
@@ -517,9 +564,29 @@ try {
   expect(
     calls.filter((c) => c.path.endsWith("/functions/v1/site-actions")),
   ).toHaveLength(1);
+  await bookingPage.goto("http://127.0.0.1:8095/welcome");
+  await bookingPage
+    .getByRole("button", { name: "Esplora come ospite", exact: true })
+    .click();
+  const personal = await bookingPage
+    .getByRole("button", { name: "Personalizza il tuo percorso", exact: true })
+    .elementHandle();
+  const commerce = await bookingPage
+    .getByRole("button", { name: "Esplora lo Shop", exact: true })
+    .elementHandle();
+  expect(
+    await personal.evaluate(
+      (el, other) =>
+        Boolean(
+          el.compareDocumentPosition(other) &
+          window.Node.DOCUMENT_POSITION_FOLLOWING,
+        ),
+      commerce,
+    ),
+  ).toBe(true);
   await bookingContext.close();
   console.log(
-    "PASS: guest/normal-user access denied, editor draft/preview/publication/checklist, optional signup newsletter consent, explicit email confirmation, public profile editing, staff-only inbox/reply, requests page, booking submission, responsive Shop tab and membership-controlled Studio tab including MFA enforcement. All backend requests mocked; no real data or email sent.",
+    "PASS: guest/normal-user access denied, editor draft/preview/publication/checklist, optional signup newsletter consent, explicit email confirmation, public profile editing, contact choices, personal journey before shop, editorial checks, newsletter reconciliation, staff-only inbox/reply, requests page, booking submission, responsive Shop tab and membership-controlled Studio tab including MFA enforcement. All backend requests mocked; no real data or email sent.",
   );
 } finally {
   await browser.close();

@@ -30,3 +30,6 @@ verify_jwt = false
 
 [functions.site-actions]
 verify_jwt = false
+
+[functions.newsletter-sync]
+verify_jwt = false

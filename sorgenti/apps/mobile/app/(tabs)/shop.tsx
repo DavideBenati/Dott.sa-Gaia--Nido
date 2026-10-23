@@ -5,6 +5,7 @@ import {
   Linking,
   Pressable,
   Modal,
+  ScrollView,
   useWindowDimensions,
 } from "react-native";
 import Svg, { Path, Rect } from "react-native-svg";
@@ -13,6 +14,7 @@ import logo from "../../assets/brand/maia-logo.png";
 import { Text, TextInput } from "../../src/typography";
 import { Screen, Notice, Button, ui } from "../../src/ui";
 import { colors } from "../../src/theme";
+import { useDialogFocus } from "../../src/dialog-focus";
 import { useApp } from "../../src/state";
 import { useEditorAccess } from "../../src/editor-access";
 import {
@@ -180,6 +182,9 @@ function ShopContent({ editor }: { editor: boolean }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [checkout, setCheckout] = useState<ShopProduct | null>(null);
+  useDialogFocus(Boolean(checkout), "metimaia-checkout", () =>
+    setCheckout(null),
+  );
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -370,6 +375,15 @@ function ShopContent({ editor }: { editor: boolean }) {
                   setProduct({ ...product, checkout_url })
                 }
               />
+              {product.kind === "doctor" && (
+                <Notice>
+                  Prima di pubblicare completa nella descrizione
+                  caratteristiche, modalità d’uso, ingredienti/materiali ed
+                  eventuali avvertenze o limiti d’età pertinenti. Verifica i
+                  dati con la documentazione del produttore: non inventare
+                  indicazioni o benefici sanitari.
+                </Notice>
+              )}
               <Notice>
                 {product.kind === "amazon"
                   ? "Inserisci il link originale al prodotto, o il tuo link affiliato autorizzato. Prezzi, disponibilità e acquisti restano su Amazon. Non copiare immagini Amazon senza i relativi diritti: puoi lasciare l’immagine vuota. Nessuna commissione è attivata automaticamente dal sito."
@@ -772,11 +786,25 @@ function ShopContent({ editor }: { editor: boolean }) {
               padding: 20,
             }}
           >
-            <View
-              style={[ui.card, { width: "100%", maxWidth: 520, gap: 15 }]}
+            <ScrollView
+              style={{
+                width: "100%",
+                maxWidth: 520,
+                maxHeight: "90%",
+                flexGrow: 0,
+              }}
+              contentContainerStyle={[ui.card, { gap: 15 }]}
+              nativeID="metimaia-checkout"
+              role="dialog"
+              accessibilityLabel="Conferma apertura pagamento Stripe"
               accessibilityViewIsModal
             >
               <Text style={ui.heading}>Prosegui al pagamento</Text>
+              <Text style={ui.body}>Venditore: {settings.seller_name}</Text>
+              <Text style={ui.body}>Spedizioni: {settings.shipping_terms}</Text>
+              <Text style={ui.body}>
+                Resi e recesso: {settings.returns_terms}
+              </Text>
               <Text style={ui.body}>
                 {checkout.title} · {formatPrice(checkout.price_cents)}. Il
                 pagamento si apre su Stripe. Controlla variante, disponibilità,
@@ -789,7 +817,7 @@ function ShopContent({ editor }: { editor: boolean }) {
               <Button variant="quiet" onPress={() => setCheckout(null)}>
                 Annulla acquisto
               </Button>
-            </View>
+            </ScrollView>
           </View>
         </Modal>
       )}

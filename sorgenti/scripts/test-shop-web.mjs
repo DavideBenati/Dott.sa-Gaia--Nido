@@ -267,6 +267,33 @@ try {
   await expect(
     page.getByText("Prosegui al pagamento", { exact: true }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Continua su Stripe", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("Shift+Tab");
+  await expect(
+    page.getByRole("button", { name: "Annulla acquisto", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(
+    page.getByRole("button", { name: "Continua su Stripe", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(
+    page.getByRole("dialog", { name: "Conferma apertura pagamento Stripe" }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", {
+      name: "Acquista Prodotto della dottoressa",
+      exact: true,
+    }),
+  ).toBeFocused();
+  await page
+    .getByRole("button", {
+      name: "Acquista Prodotto della dottoressa",
+      exact: true,
+    })
+    .click();
   const stripePromise = page.waitForEvent("popup");
   await page
     .getByRole("button", { name: "Continua su Stripe", exact: true })
