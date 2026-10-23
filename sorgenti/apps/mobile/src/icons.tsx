@@ -21,7 +21,9 @@ export type IconName =
   | "download"
   | "trash"
   | "mail"
-  | "lock";
+  | "lock"
+  | "shop"
+  | "studio";
 export function Icon({
   name,
   size = 23,
@@ -34,6 +36,18 @@ export function Icon({
   filled?: boolean;
 }) {
   const paths: Record<string, React.ReactNode> = {
+    shop: (
+      <>
+        <Path d="M5 7h14l1 14H4L5 7Z" />
+        <Path d="M8 8V6a4 4 0 0 1 8 0v2" />
+      </>
+    ),
+    studio: (
+      <>
+        <Rect x="3" y="5" width="18" height="16" rx="2" />
+        <Path d="M8 5V3h8v2M3 11h18M10 11v3h4v-3" />
+      </>
+    ),
     home: (
       <>
         <Path d="m3 10 9-7 9 7M5 9v11h14V9M9 20v-7h6v7" />

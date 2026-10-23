@@ -80,7 +80,7 @@ let careMessages = [
     created_at: new Date().toISOString(),
   },
 ];
-async function context(editor = false) {
+async function context(editor = false, mfaPending = false) {
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
   });
@@ -129,7 +129,15 @@ async function context(editor = false) {
     else if (url.pathname.endsWith("/functions/v1/site-actions"))
       body = { message: "Richiesta acquisita. Attendi il ricontatto di Gaia." };
     else if (url.pathname.endsWith("/signup")) body = { user, session: null };
-    else if (url.pathname.endsWith("/rpc/is_editor")) body = editor;
+    else if (url.pathname.endsWith("/rpc/professional_access_status"))
+      body = {
+        editor,
+        chat: editor,
+        mfa_required: mfaPending,
+        mfa_satisfied: !mfaPending,
+      };
+    else if (url.pathname.endsWith("/rpc/is_editor"))
+      body = editor && !mfaPending;
     else if (url.pathname.endsWith("/rpc/save_article")) {
       body = request.postDataJSON().document;
       savedArticles = [body, ...savedArticles.filter((a) => a.id !== body.id)];
@@ -241,13 +249,91 @@ try {
   await expect(
     normalPage.getByRole("button", { name: "Nuovo articolo", exact: true }),
   ).toHaveCount(0);
+  await expect(
+    normalPage.getByRole("tab", { name: "Studio", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    normalPage.getByRole("tab", { name: "Shop", exact: true }),
+  ).toBeVisible();
+  await normalPage.getByRole("tab", { name: "Shop", exact: true }).click();
+  await expect(
+    normalPage.getByText("Lo Shop di metiMaia", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    normalPage.getByRole("tab", { name: "Profilo", exact: true }),
+  ).toBeVisible();
   await normal.close();
+  const pendingContext = await context(true, true);
+  const pendingPage = await pendingContext.newPage();
+  await login(pendingPage);
+  await pendingPage.goto("http://127.0.0.1:8095/discover");
+  await expect(
+    pendingPage.getByRole("tab", { name: "Studio", exact: true }),
+  ).toBeVisible();
+  await pendingPage.getByRole("tab", { name: "Studio", exact: true }).click();
+  await expect(
+    pendingPage.getByText(/Questo account non ha i permessi editoriali/),
+  ).toBeVisible();
+  await expect(
+    pendingPage.getByRole("button", { name: "Nuovo articolo", exact: true }),
+  ).toHaveCount(0);
+  await pendingContext.close();
   const editor = await context(true);
   const page = await editor.newPage();
   await login(page);
   await page
     .getByRole("button", { name: "Area professionista", exact: true })
     .click();
+  await expect(
+    page.getByRole("tab", { name: "Studio", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("tab", { name: "Shop", exact: true }).click();
+  await expect(
+    page.getByText("Lo Shop di metiMaia", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("tab", { name: "Studio", exact: true }).click();
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+      )
+      .toBe(true);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect
+      .poll(
+        async () =>
+          (
+            await page
+              .getByRole("tab", { name: "Studio", exact: true })
+              .boundingBox()
+          )?.y ?? -1,
+      )
+      .toBeGreaterThanOrEqual(0);
+    if (width === 320) {
+      await expect(
+        page.getByRole("button", { name: "Vai al mio percorso", exact: true }),
+      ).toBeInViewport();
+      await expect(
+        page.getByRole("tab", { name: "Studio", exact: true }),
+      ).toBeInViewport();
+      await page.screenshot({
+        path: "/workspace/shared/downloads/MAIA-Studio-v4-320.png",
+      });
+    }
+    for (const name of ["Shop", "Studio", "Profilo"]) {
+      const box = await page
+        .getByRole("tab", { name, exact: true })
+        .boundingBox();
+      expect(box.width).toBeGreaterThanOrEqual(44);
+      expect(box.y).toBeGreaterThanOrEqual(0);
+      expect(box.y + box.height).toBeLessThanOrEqual(901);
+      expect(box.x + box.width).toBeLessThanOrEqual(width + 1);
+    }
+  }
+  await page.setViewportSize({ width: 390, height: 844 });
   await page
     .getByRole("button", { name: "Nuovo articolo", exact: true })
     .click();
@@ -433,7 +519,7 @@ try {
   ).toHaveLength(1);
   await bookingContext.close();
   console.log(
-    "PASS: guest/normal-user access denied, editor draft/preview/publication/checklist, optional signup newsletter consent, explicit email confirmation, public profile editing, staff-only inbox/reply, requests page and booking submission. All backend requests mocked; no real data or email sent.",
+    "PASS: guest/normal-user access denied, editor draft/preview/publication/checklist, optional signup newsletter consent, explicit email confirmation, public profile editing, staff-only inbox/reply, requests page, booking submission, responsive Shop tab and membership-controlled Studio tab including MFA enforcement. All backend requests mocked; no real data or email sent.",
   );
 } finally {
   await browser.close();

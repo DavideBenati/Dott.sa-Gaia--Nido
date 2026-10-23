@@ -14,10 +14,10 @@ import {
   uploadEditorialImage,
   type Content,
 } from "@nido/data";
-import { client, useApp } from "../src/state";
-import { useEditorAccess } from "../src/editor-access";
-import { Text, TextInput } from "../src/typography";
-import { Screen, Notice, Button, ui } from "../src/ui";
+import { client, useApp } from "../../src/state";
+import { useEditorAccess } from "../../src/editor-access";
+import { Text, TextInput } from "../../src/typography";
+import { Screen, Notice, Button, ui } from "../../src/ui";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const statusLabel = (value: string) =>
@@ -92,9 +92,8 @@ export default function Studio() {
   const { allowed, checking } = useEditorAccess();
   return (
     <Screen
-      back
-      title="Area professionista"
-      subtitle="Articoli e checklist di metiMaia"
+      title="Studio"
+      subtitle="Il pannello di Gaia: contenuti, conversazioni, richieste e Shop."
     >
       {!email ? (
         <>
@@ -382,10 +381,6 @@ function Workspace() {
     <View
       style={{ width: "100%", maxWidth: 840, alignSelf: "center", gap: 20 }}
     >
-      <Text style={ui.heading}>Il pannello di Gaia</Text>
-      <Button variant="quiet" disabled={!content || busy} onPress={backup}>
-        Scarica copia dei contenuti (JSON)
-      </Button>
       {dirty && (
         <Notice>
           Modifiche non salvate. Salva la bozza prima di lasciare questa pagina.
@@ -405,6 +400,9 @@ function Workspace() {
       </Button>
       <Button variant="secondary" onPress={() => router.push("/shop")}>
         Gestisci shop e merchandise
+      </Button>
+      <Button variant="quiet" disabled={!content || busy} onPress={backup}>
+        Scarica copia dei contenuti (JSON)
       </Button>
       <Notice>
         Solo contenuti pubblicati e approvati saranno visibili alle famiglie. Le

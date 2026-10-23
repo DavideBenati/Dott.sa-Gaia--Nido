@@ -29,7 +29,26 @@ export default function Home() {
       }
       subtitle="Ciao! Oggi facciamo un altro passo insieme."
     >
-      <View style={[ui.card, { gap: 12, backgroundColor: colors.sagePale }]}>
+      <View style={[ui.card, { gap: 12, backgroundColor: colors.peach }]}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <Icon name="shop" size={28} />
+          <Text style={ui.heading}>Lo Shop di metiMaia</Text>
+        </View>
+        <Text style={ui.body}>
+          Scopri la selezione Amazon e lo spazio dedicato ai prodotti della
+          dottoressa. Prezzi e disponibilità sono indicati nelle schede e sui
+          siti di acquisto.
+        </Text>
+        <Button variant="secondary" onPress={() => router.navigate("/shop")}>
+          Esplora lo Shop
+        </Button>
+      </View>
+      <View
+        style={[
+          ui.card,
+          { gap: 12, backgroundColor: colors.sagePale, marginTop: 18 },
+        ]}
+      >
         <View
           style={{
             flexDirection: "row",

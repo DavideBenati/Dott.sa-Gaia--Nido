@@ -9,12 +9,12 @@ import {
 } from "react-native";
 import Svg, { Path, Rect } from "react-native-svg";
 import { router } from "expo-router";
-import logo from "../assets/brand/maia-logo.png";
-import { Text, TextInput } from "../src/typography";
-import { Screen, Notice, Button, ui } from "../src/ui";
-import { colors } from "../src/theme";
-import { useApp } from "../src/state";
-import { useEditorAccess } from "../src/editor-access";
+import logo from "../../assets/brand/maia-logo.png";
+import { Text, TextInput } from "../../src/typography";
+import { Screen, Notice, Button, ui } from "../../src/ui";
+import { colors } from "../../src/theme";
+import { useApp } from "../../src/state";
+import { useEditorAccess } from "../../src/editor-access";
 import {
   emptyShopSettings,
   formatPrice,
@@ -26,7 +26,7 @@ import {
   validAmazonLink,
   type ShopProduct,
   type ShopSettings,
-} from "../src/shop";
+} from "../../src/shop";
 function Field({
   label,
   value,
@@ -159,9 +159,8 @@ export default function Shop() {
   const { allowed } = useEditorAccess();
   return (
     <Screen
-      back
       eyebrow="IL MONDO METIMAIA"
-      title="Piccole cose, da portare con te."
+      title="Lo Shop di metiMaia"
       subtitle="La selezione Amazon e i prodotti della Dott.ssa Gaia Brunetti."
     >
       <ShopContent key={email ?? "guest"} editor={allowed} />

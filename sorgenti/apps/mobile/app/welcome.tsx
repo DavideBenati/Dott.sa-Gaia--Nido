@@ -122,6 +122,19 @@ export default function Welcome() {
           <Text style={ui.body}>
             Nessun account necessario. Nessuna data obbligatoria.
           </Text>
+          <View style={[ui.card, { gap: 12, backgroundColor: colors.peach }]}>
+            <Text style={ui.heading}>Scopri lo Shop di metiMaia</Text>
+            <Text style={ui.body}>
+              La selezione Amazon e i prodotti della dottoressa, in uno spazio
+              dedicato. Puoi esplorarlo anche senza account.
+            </Text>
+            <Button
+              variant="secondary"
+              onPress={() => router.navigate("/shop")}
+            >
+              Esplora lo Shop
+            </Button>
+          </View>
           {demo && (
             <Notice warm>
               DEMO MODE · Contenuti e percorsi sono esempi, non ancora

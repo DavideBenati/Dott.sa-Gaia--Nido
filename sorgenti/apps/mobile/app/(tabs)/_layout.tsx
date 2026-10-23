@@ -1,15 +1,23 @@
 import React from "react";
+import { Text } from "../../src/typography";
 import { useWindowDimensions } from "react-native";
 import { colors } from "../../src/theme";
 import { Tabs } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useProfessionalNavigation } from "../../src/professional-navigation";
 import { Icon, type IconName } from "../../src/icons";
 export default function Layout() {
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const isAdministrator = useProfessionalNavigation();
+  const compact = width < 420;
   const tabs: [string, string, IconName][] = [
     ["index", "Il mio percorso", "home"],
     ["discover", "Scopri", "discover"],
     ["checklists", "Checklist", "checklist"],
+    ["shop", "Shop", "shop"],
     ["profile", "Profilo", "profile"],
+    ["studio", "Studio", "studio"],
   ];
   return (
     <Tabs
@@ -22,13 +30,19 @@ export default function Layout() {
           borderTopColor: colors.border,
           paddingHorizontal:
             width >= 900 ? Math.max(24, (width - 1100) / 2) : 8,
-          height: 74,
-          paddingBottom: 12,
+          height: 62 + Math.max(12, insets.bottom),
+          paddingBottom: Math.max(12, insets.bottom),
           paddingTop: 8,
         },
-        tabBarLabelStyle: { fontSize: 12, fontFamily: "NidoSansSemibold" },
+        tabBarLabelStyle: {
+          fontSize: compact ? 10 : 12,
+          fontFamily: "NidoSansSemibold",
+        },
         tabBarActiveBackgroundColor: colors.sagePale,
-        tabBarItemStyle: { borderRadius: 14, marginHorizontal: 3 },
+        tabBarItemStyle: {
+          borderRadius: 12,
+          marginHorizontal: compact ? 0 : 3,
+        },
       }}
     >
       {tabs.map(([name, title, icon]) => (
@@ -36,11 +50,35 @@ export default function Layout() {
           key={name}
           name={name}
           options={{
+            ...(name === "studio" && !isAdministrator
+              ? {
+                  tabBarItemStyle: { display: "none" as const },
+                  tabBarButton: () => null,
+                }
+              : {}),
             title,
-            tabBarLabel: name === "index" ? "Percorso" : title,
+            tabBarLabel: ({ color }) => (
+              <Text
+                numberOfLines={1}
+                style={{
+                  width: "100%",
+                  textAlign: "center",
+                  color,
+                  fontSize: compact ? (isAdministrator ? 10 : 11) : 12,
+                  fontFamily: "NidoSansSemibold",
+                  marginHorizontal: 0,
+                }}
+              >
+                {name === "index" ? "Percorso" : title}
+              </Text>
+            ),
             tabBarAccessibilityLabel: title,
             tabBarIcon: ({ color }) => (
-              <Icon name={icon} color={String(color)} />
+              <Icon
+                name={icon}
+                size={compact ? 21 : 23}
+                color={String(color)}
+              />
             ),
           }}
         />

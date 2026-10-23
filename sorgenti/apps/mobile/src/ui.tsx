@@ -67,13 +67,6 @@ export function Screen({
             <Brand compact />
           </Pressable>
           <View style={styles.headerRight}>
-            <Link
-              href="/gaia"
-              accessibilityLabel="Conosci Gaia e i servizi"
-              style={{ padding: 12, color: colors.sageDark, fontSize: 14 }}
-            >
-              Gaia e servizi
-            </Link>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={
@@ -100,6 +93,52 @@ export function Screen({
               <Icon name="help" size={22} />
             </Pressable>
           </View>
+        </View>
+      </View>
+      <View
+        style={{
+          backgroundColor: colors.cream,
+          borderBottomWidth: 1,
+          borderBottomColor: colors.border,
+        }}
+      >
+        <View
+          accessibilityRole="navigation"
+          style={{
+            width: "100%",
+            maxWidth: 1176,
+            alignSelf: "center",
+            paddingHorizontal: 20,
+            flexDirection: "row",
+            flexWrap: "wrap",
+            gap: 8,
+          }}
+        >
+          <Link
+            href="/gaia"
+            accessibilityLabel="Conosci Gaia e i servizi"
+            style={{
+              padding: 12,
+              minHeight: 44,
+              color: colors.sageDark,
+              fontSize: 14,
+            }}
+          >
+            Gaia e servizi
+          </Link>
+          <Link
+            href="/shop"
+            accessibilityLabel="Apri lo Shop metiMaia"
+            style={{
+              padding: 12,
+              minHeight: 44,
+              color: colors.sageDark,
+              fontSize: 14,
+              fontWeight: "700",
+            }}
+          >
+            Shop
+          </Link>
         </View>
       </View>
       <ScrollView
