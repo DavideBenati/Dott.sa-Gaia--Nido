@@ -77,7 +77,7 @@ test("article details, favorites and saved articles persist after reload", async
       exact: true,
     })
     .click();
-  await expect(page).toHaveURL(/\/article\//);
+  await expect(page).toHaveURL(/\/article\?id=/);
   await expect(page.getByText(/contenuto dimostrativo/i).first()).toBeVisible();
   await page.getByLabel("Salva articolo", { exact: true }).click();
   await expect(
@@ -113,7 +113,7 @@ test("checklist items can be checked, restored and unchecked", async ({
       exact: true,
     })
     .click();
-  await expect(page).toHaveURL(/\/checklist\//);
+  await expect(page).toHaveURL(/\/checklist\?id=/);
   const firstItem = page.getByRole("checkbox").first();
   await expect(firstItem).not.toBeChecked();
   await firstItem.click();

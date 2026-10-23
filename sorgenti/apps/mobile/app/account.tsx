@@ -4,6 +4,8 @@ import { View, Pressable, Platform } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useApp } from "../src/state";
 import { Screen, Notice, Button, ui } from "../src/ui";
+import { useEditorAccess } from "../src/editor-access";
+import { requestNewsletterSubscription } from "../src/newsletter";
 import { colors } from "../src/theme";
 export default function Account() {
   const {
@@ -16,6 +18,8 @@ export default function Account() {
     changePassword,
   } = useApp();
   const params = useLocalSearchParams<{ mode?: string }>();
+  const { allowed: editorAllowed } = useEditorAccess();
+  const [newsletter, setNewsletter] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [create, setCreate] = useState(params.mode !== "login");
@@ -51,7 +55,20 @@ export default function Account() {
     try {
       const result = await signIn(email.trim(), password, create);
       setPassword("");
-      setMessage(result);
+      if (create && newsletter) {
+        try {
+          await requestNewsletterSubscription(email.trim());
+          setMessage(
+            result +
+              " Newsletter: se la richiesta è valida, riceverai una seconda email per confermare l’iscrizione.",
+          );
+        } catch {
+          setMessage(
+            result +
+              " La richiesta newsletter non è riuscita: puoi riprovare dalla pagina Newsletter, senza creare un altro account.",
+          );
+        }
+      } else setMessage(result);
       // The auth event reloads the account's own state. Keep this route open:
       // its signed-in panel offers personalization after hydration completes.
     } catch (error) {
@@ -184,6 +201,17 @@ export default function Account() {
               I dati dell’ospite non vengono importati automaticamente nel tuo
               account.
             </Notice>
+            {editorAllowed && (
+              <Button
+                variant="secondary"
+                onPress={() => router.push("/studio")}
+              >
+                Area professionista
+              </Button>
+            )}
+            <Button variant="quiet" onPress={() => router.push("/newsletter")}>
+              Newsletter metiMaia
+            </Button>
             <Button
               disabled={busy}
               variant="quiet"
@@ -286,8 +314,39 @@ export default function Account() {
                     Almeno 8 caratteri. Nessuna data personale obbligatoria.
                   </Text>
                 )}
+                {create && (
+                  <View style={{ gap: 8 }}>
+                    <Pressable
+                      accessibilityRole="checkbox"
+                      accessibilityLabel="Desidero ricevere la newsletter metiMaia"
+                      accessibilityState={{
+                        checked: newsletter,
+                        disabled: busy,
+                      }}
+                      disabled={busy}
+                      onPress={() => setNewsletter(!newsletter)}
+                      style={{ paddingVertical: 12 }}
+                    >
+                      <Text style={ui.body}>
+                        {newsletter ? "☑" : "☐"} Desidero ricevere via email la
+                        newsletter metiMaia con aggiornamenti, contenuti e
+                        novità sui servizi. Facoltativo; posso disiscrivermi in
+                        ogni momento.
+                      </Text>
+                    </Pressable>
+                    <Button
+                      variant="quiet"
+                      onPress={() => router.push("/newsletter")}
+                    >
+                      Informazioni sulla newsletter e privacy
+                    </Button>
+                  </View>
+                )}
                 {message !== "" && (
-                  <View accessibilityRole="alert" accessibilityLiveRegion="polite">
+                  <View
+                    accessibilityRole="alert"
+                    accessibilityLiveRegion="polite"
+                  >
                     <Notice>{message}</Notice>
                   </View>
                 )}
@@ -332,8 +391,8 @@ export default function Account() {
             </Button>
             <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 20 }}>
               L’email serve per accedere e confermare l’account. Leggere
-              l’informativa non equivale a un consenso generale. Non inviamo
-              comunicazioni promozionali.
+              l’informativa non equivale a un consenso generale. La newsletter è
+              facoltativa e richiede un consenso separato.
             </Text>
           </View>
         )}

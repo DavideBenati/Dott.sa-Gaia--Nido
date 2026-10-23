@@ -1,0 +1,318 @@
+// Browser verification against a production static build. All Supabase requests
+// are intercepted: this does not create real users, send emails or change data.
+import { createServer } from "node:http";
+import { readFile, stat } from "node:fs/promises";
+import { resolve, extname } from "node:path";
+import { chromium, expect } from "@playwright/test";
+const root = resolve(process.argv[2] ?? "apps/mobile/dist-web");
+const types = {
+  ".html": "text/html",
+  ".js": "application/javascript",
+  ".png": "image/png",
+  ".ttf": "font/ttf",
+  ".ico": "image/x-icon",
+};
+const server = createServer(async (request, response) => {
+  try {
+    let file = resolve(
+      root,
+      "." +
+        decodeURIComponent(new URL(request.url, "http://localhost").pathname),
+    );
+    if (file !== root && !file.startsWith(root + "/")) {
+      response.writeHead(403).end();
+      return;
+    }
+    if (file === root) file += "/index.html";
+    try {
+      if (!(await stat(file)).isFile()) throw new Error("Not a file");
+    } catch {
+      file += ".html";
+    }
+    response.setHeader(
+      "Content-Type",
+      types[extname(file)] ?? "application/octet-stream",
+    );
+    response.end(await readFile(file));
+  } catch {
+    response.writeHead(404).end();
+  }
+});
+await new Promise((r) => server.listen(8095, "127.0.0.1", r));
+const browser = await chromium.launch({
+  executablePath: "/usr/bin/chromium",
+  args: ["--no-sandbox"],
+});
+const user = {
+  id: "11111111-1111-4111-8111-111111111111",
+  aud: "authenticated",
+  role: "authenticated",
+  email: "maia-test@example.invalid",
+  email_confirmed_at: new Date().toISOString(),
+  app_metadata: {},
+  user_metadata: {},
+  identities: [],
+  created_at: new Date().toISOString(),
+};
+const calls = [];
+let savedArticles = [];
+let savedChecklists = [];
+async function context(editor = false) {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+  });
+  if (process.env.MAIA_TEST_FONT_FAILURE === "1")
+    await context.route("**/*.ttf", (route) => route.abort("failed"));
+  await context.route("https://*.supabase.co/**", async (route) => {
+    const request = route.request();
+    const url = new URL(request.url());
+    if (request.method() === "OPTIONS") {
+      await route.fulfill({
+        status: 204,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "*",
+          "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,OPTIONS",
+        },
+      });
+      return;
+    }
+    calls.push({
+      method: request.method(),
+      path: url.pathname,
+      redirect: url.searchParams.get("redirect_to"),
+      body: request.postDataJSON(),
+    });
+    let body = [];
+    if (url.pathname.endsWith("/signup")) body = { user, session: null };
+    else if (url.pathname.endsWith("/rpc/is_editor")) body = editor;
+    else if (url.pathname.endsWith("/rpc/save_article")) {
+      body = request.postDataJSON().document;
+      savedArticles = [body, ...savedArticles.filter((a) => a.id !== body.id)];
+    } else if (url.pathname.endsWith("/rpc/save_checklist")) {
+      body = request.postDataJSON().document;
+      savedChecklists = [
+        body,
+        ...savedChecklists.filter((a) => a.id !== body.id),
+      ];
+    } else if (url.pathname.endsWith("/articles"))
+      body = savedArticles
+        .filter(
+          (a) => !url.searchParams.has("status") || a.status === "published",
+        )
+        .map((payload) => ({ payload }));
+    else if (url.pathname.endsWith("/checklists"))
+      body = savedChecklists
+        .filter(
+          (a) => !url.searchParams.has("status") || a.status === "published",
+        )
+        .map((payload) => ({ payload }));
+    else if (url.pathname.endsWith("/functions/v1/newsletter"))
+      body = { message: "Iscrizione confermata. Grazie!" };
+    else if (url.pathname.includes("article_categories"))
+      body = [{ id: "gravidanza", name: "Gravidanza", icon: "leaf" }];
+    else if (url.pathname.endsWith("/recover")) body = {};
+    else if (url.pathname.endsWith("/user")) body = user;
+    else if (
+      url.pathname.includes("user_preferences") ||
+      url.pathname.includes("notification_preferences")
+    )
+      body = null;
+    else if (url.pathname.includes("care_chat_available")) body = false;
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "*",
+      },
+      body: JSON.stringify(body),
+    });
+  });
+  return context;
+}
+
+const now = Math.floor(Date.now() / 1000);
+const token =
+  Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString(
+    "base64url",
+  ) +
+  "." +
+  Buffer.from(
+    JSON.stringify({
+      sub: user.id,
+      aud: "authenticated",
+      role: "authenticated",
+      exp: now + 3600,
+      iat: now,
+    }),
+  ).toString("base64url") +
+  ".test-only";
+async function login(page) {
+  await page.goto(
+    `http://127.0.0.1:8095/account#access_token=${token}&refresh_token=test-refresh&expires_in=3600&token_type=bearer&type=signup`,
+  );
+  await expect(page.getByText(user.email, { exact: true })).toBeVisible();
+}
+try {
+  const guest = await context();
+  const guestPage = await guest.newPage();
+  await guestPage.goto("http://127.0.0.1:8095/studio");
+  await expect(
+    guestPage.getByText("Accedi con l’account professionale autorizzato."),
+  ).toBeVisible();
+  await guestPage.goto("http://127.0.0.1:8095/account");
+  await expect(guestPage.getByRole("checkbox")).not.toBeChecked();
+  await guestPage.getByLabel("Email account").fill(user.email);
+  await guestPage
+    .getByLabel("Password account")
+    .fill("Test-password-only-123!");
+  await guestPage.getByRole("checkbox").click();
+  await guestPage
+    .getByRole("button", { name: "Crea account", exact: true })
+    .click();
+  await expect(
+    guestPage.getByText(/Newsletter: se la richiesta è valida/),
+  ).toBeVisible();
+  expect(
+    calls.some(
+      (c) =>
+        c.path.endsWith("/functions/v1/newsletter") && c.body.consent === true,
+    ),
+  ).toBe(true);
+  await guest.close();
+  const normal = await context(false);
+  const normalPage = await normal.newPage();
+  await login(normalPage);
+  await expect(
+    normalPage.getByRole("button", {
+      name: "Area professionista",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await normalPage.goto("http://127.0.0.1:8095/studio");
+  await expect(
+    normalPage.getByText(/Questo account non ha i permessi editoriali/),
+  ).toBeVisible();
+  await expect(
+    normalPage.getByRole("button", { name: "Nuovo articolo", exact: true }),
+  ).toHaveCount(0);
+  await normal.close();
+  const editor = await context(true);
+  const page = await editor.newPage();
+  await login(page);
+  await page
+    .getByRole("button", { name: "Area professionista", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Nuovo articolo", exact: true })
+    .click();
+  await page
+    .getByLabel("Titolo", { exact: true })
+    .fill("Benvenuti in metiMaia");
+  await page
+    .getByLabel("Sottotitolo", { exact: true })
+    .fill("Il vostro percorso insieme");
+  await page
+    .getByLabel("Immagine di copertina (HTTPS)")
+    .fill("https://example.invalid/cover.png");
+  await page.getByLabel("Titolo sezione 1").fill("Un passo alla volta");
+  await page
+    .getByLabel("Testo sezione 1")
+    .fill("Testo professionale di prova.\n\nSecondo paragrafo.");
+  await page
+    .getByRole("button", { name: "Aggiungi fonte", exact: true })
+    .click();
+  await page.getByLabel("Nome fonte 1").fill("Fonte verificata di prova");
+  await page.getByLabel("Link fonte 1").fill("https://example.invalid/fonte");
+  await page.getByRole("button", { name: "Anteprima", exact: true }).click();
+  await expect(
+    page.getByText("Secondo paragrafo.", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Salva bozza", exact: true }).click();
+  await expect(
+    page.getByText("Articolo salvato: bozza.", { exact: true }),
+  ).toBeVisible();
+  expect(
+    calls.find((c) => c.path.endsWith("/rpc/save_article"))?.body.document
+      .status,
+  ).toBe("draft");
+  await page
+    .getByRole("button", { name: "Approva e pubblica", exact: true })
+    .click();
+  await expect(
+    page.getByText("Articolo salvato: pubblicato.", { exact: true }),
+  ).toBeVisible();
+  const saved = calls.filter((c) => c.path.endsWith("/rpc/save_article")).at(-1)
+    .body.document;
+  expect(saved.approved).toBe(true);
+  expect(saved.reviewerName).toBe("Gaia Brunetti");
+  expect(saved.sections[0].paragraphs).toHaveLength(2);
+  page.on("dialog", (d) => d.accept());
+  // Confirmation dialog is installed before the next navigation attempt.
+  await page
+    .getByRole("button", { name: "Torna all’elenco", exact: true })
+    .click();
+  await page.getByRole("button", { name: /^Checklist \(/ }).click();
+  await page
+    .getByRole("button", { name: "Nuova checklist", exact: true })
+    .click();
+  await page.getByLabel("Titolo", { exact: true }).fill("Preparare la visita");
+  await page
+    .getByLabel("Descrizione", { exact: true })
+    .fill("Cose da ricordare");
+  await page
+    .getByLabel("Attività 1", { exact: true })
+    .fill("Portare i documenti");
+  await page.getByRole("button", { name: "Salva bozza", exact: true }).click();
+  await expect(
+    page.getByText("Checklist salvata: bozza.", { exact: true }),
+  ).toBeVisible();
+  expect(
+    calls.some(
+      (c) =>
+        c.path.endsWith("/rpc/save_checklist") &&
+        c.body.document.items[0].label === "Portare i documenti",
+    ),
+  ).toBe(true);
+  const reader = await context(false);
+  const rp = await reader.newPage();
+  await rp.goto("http://127.0.0.1:8095/article?id=" + saved.id);
+  await expect(
+    rp.getByText("Benvenuti in metiMaia", { exact: true }),
+  ).toBeVisible();
+  await rp.reload();
+  await expect(
+    rp.getByText("Secondo paragrafo.", { exact: true }),
+  ).toBeVisible();
+  await reader.close();
+  await editor.close();
+  const nl = await context();
+  const np = await nl.newPage();
+  const before = calls.filter((c) =>
+    c.path.endsWith("/functions/v1/newsletter"),
+  ).length;
+  await np.goto(
+    "http://127.0.0.1:8095/newsletter?action=confirm&token=" + "a".repeat(64),
+  );
+  await expect(
+    np.getByRole("button", { name: "Confermo l’iscrizione", exact: true }),
+  ).toBeVisible();
+  expect(
+    calls.filter((c) => c.path.endsWith("/functions/v1/newsletter")),
+  ).toHaveLength(before);
+  await np
+    .getByRole("button", { name: "Confermo l’iscrizione", exact: true })
+    .click();
+  await expect(
+    np.getByText("Iscrizione confermata. Grazie!", { exact: true }),
+  ).toBeVisible();
+  await expect.poll(() => new URL(np.url()).search).toBe("");
+  await nl.close();
+  console.log(
+    "PASS: guest/normal-user access denied, editor draft/preview/publication/checklist, optional signup newsletter consent, explicit email confirmation. All backend requests mocked; no real data or email sent.",
+  );
+} finally {
+  await browser.close();
+  server.close();
+}

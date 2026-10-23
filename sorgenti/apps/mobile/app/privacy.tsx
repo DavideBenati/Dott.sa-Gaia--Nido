@@ -28,7 +28,7 @@ export default function Privacy() {
     ],
     [
       "5. Cosa è facoltativo",
-      "La consultazione come ospite non richiede email, password o una data. Per un account servono i dati di autenticazione; senza questi non è possibile accedere ai servizi personali. Puoi non fornire la data e usare un percorso generico. La rinuncia alla personalizzazione facoltativa non impedisce di leggere i contenuti. Il marketing e le notifiche push non sono attivi: non viene richiesto ora un consenso per future comunicazioni promozionali.",
+      "La consultazione come ospite non richiede email, password o una data. Per un account servono i dati di autenticazione; senza questi non è possibile accedere ai servizi personali. Puoi non fornire la data e usare un percorso generico. La rinuncia alla personalizzazione facoltativa non impedisce di leggere i contenuti. Le notifiche push non sono attive. La newsletter ha un consenso distinto, facoltativo e non preselezionato, seguito da conferma email.",
     ],
     [
       "6. Messaggi alla Dott.ssa Brunetti",
@@ -55,8 +55,12 @@ export default function Privacy() {
       "Nei casi e nei limiti previsti dagli artt. 15–22 GDPR puoi chiedere accesso, rettifica, cancellazione, limitazione, portabilità e opposizione. Puoi revocare un consenso in ogni momento, senza pregiudicare la liceità del trattamento precedente. Dal profilo puoi modificare le preferenze, ritirare il consenso alla data, esportare i dati disponibili e cancellare dati locali o account. Puoi inoltre contattare il titolare: queste funzioni non sostituiscono tutti i diritti. La risposta è normalmente dovuta entro un mese; eventuali proroghe motivate sono comunicate nei termini dell’art. 12 GDPR. Puoi proporre reclamo al Garante per la protezione dei dati personali e ricorrere all’autorità giudiziaria.",
     ],
     [
+      "Newsletter facoltativa",
+      "L’iscrizione alla newsletter è separata dall’account e richiede una scelta positiva e la conferma via email. Trattiamo email, stato dell’iscrizione, date di richiesta/conferma/revoca e versione del consenso per inviare contenuti, aggiornamenti e novità sui servizi di metiMaia. La base è il consenso (art. 6, par. 1, lett. a, GDPR e art. 130 del Codice privacy). Il rifiuto non limita l’account o i servizi. Non vengono usati dati sanitari o preferenze del percorso per segmentare la newsletter. Supabase conserva l’iscrizione e Resend gestisce l’invio: il titolare deve completare le informazioni sui fornitori, gli accordi e gli eventuali trasferimenti nella presente informativa prima dell’attivazione. Le richieste non confermate scadono dopo 24 ore e vengono eliminate dal database attivo durante le successive richieste. L’iscrizione resta attiva fino alla revoca; la revoca ferma gli invii, ma la cancellazione dell’account non cancella automaticamente un’iscrizione indipendente. Il collegamento di revoca è nell’email; è possibile anche scrivere a ostetricamaia@gmail.com. I termini per conservare le prove del consenso e i log dopo la revoca devono essere definiti dal titolare. L’informativa non certifica la conformità del servizio.",
+    ],
+    [
       "12. Personalizzazione, minori e aggiornamenti",
-      "I suggerimenti sono selezionati in base alle preferenze e non prendono decisioni con effetti giuridici o analogamente significativi ai sensi dell’art. 22 GDPR. MAIA non è progettata per raccogliere account di bambini o dati identificativi del neonato. Per utenti minorenni, eventuali servizi sanitari e relativi consensi occorre verificare le regole applicabili prima dell’attivazione; non si presume una soglia di età unica per tutti i trattamenti. Versione del testo: 22 ottobre 2026. Il testo deve essere aggiornato se cambiano servizi, fornitori o finalità.",
+      "I suggerimenti sono selezionati in base alle preferenze e non prendono decisioni con effetti giuridici o analogamente significativi ai sensi dell’art. 22 GDPR. MAIA non è progettata per raccogliere account di bambini o dati identificativi del neonato. Per utenti minorenni, eventuali servizi sanitari e relativi consensi occorre verificare le regole applicabili prima dell’attivazione; non si presume una soglia di età unica per tutti i trattamenti. Versione del testo: 23 ottobre 2026. Il testo deve essere aggiornato se cambiano servizi, fornitori o finalità.",
     ],
   ];
   return (

@@ -157,7 +157,7 @@ export default function Home() {
             style={[ui.card, { gap: 12 }]}
             onPress={() =>
               router.push({
-                pathname: "/checklist/[id]",
+                pathname: "/checklist",
                 params: { id: next.id },
               })
             }

@@ -23,6 +23,10 @@ await rm(resolve(output, ".nojekyll"), { force: true });
 // needs physical HTML entry points for known direct URLs under its default handling.
 for (const route of [
   "account",
+  "studio",
+  "article",
+  "checklist",
+  "newsletter",
   "welcome",
   "chat",
   "privacy",
@@ -35,6 +39,6 @@ for (const route of [
   await writeFile(resolve(output, `${route}.html`), html);
 await writeFile(
   resolve(output, "_headers"),
-  "/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n  X-Frame-Options: DENY\n  Permissions-Policy: camera=(), microphone=(), geolocation=()\n",
+  "/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n  X-Frame-Options: DENY\n  Permissions-Policy: camera=(), microphone=(), geolocation=()\n/newsletter*\n  Referrer-Policy: no-referrer\n",
 );
 console.log(`Cloudflare assets ready: ${output}`);

@@ -291,7 +291,7 @@ export function ArticleCard({
         accessibilityLabel={article.title}
         style={{ flex: 1 }}
         onPress={() =>
-          router.push({ pathname: "/article/[id]", params: { id: article.id } })
+          router.push({ pathname: "/article", params: { id: article.id } })
         }
       >
         <ArticleCover

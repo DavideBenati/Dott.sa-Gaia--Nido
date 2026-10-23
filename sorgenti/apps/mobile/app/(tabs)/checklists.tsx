@@ -34,7 +34,7 @@ export default function Checklists() {
             style={[ui.card, { gap: 12 }]}
             onPress={() =>
               router.push({
-                pathname: "/checklist/[id]",
+                pathname: "/checklist",
                 params: { id: checklist.id },
               })
             }

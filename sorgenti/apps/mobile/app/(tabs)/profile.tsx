@@ -152,6 +152,9 @@ export default function Profile() {
       <Button variant="quiet" onPress={() => router.push("/privacy")}>
         Privacy e dati personali
       </Button>
+      <Button variant="secondary" onPress={() => router.push("/newsletter")}>
+        Newsletter metiMaia
+      </Button>
       <SectionHeader title="Account e dati" />
       <Button variant="secondary" onPress={() => router.push("/account")}>
         {email ? "Il mio account" : "Accedi o crea un account"}
