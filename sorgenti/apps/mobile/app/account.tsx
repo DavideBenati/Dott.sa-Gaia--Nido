@@ -317,6 +317,12 @@ export default function Account() {
               I dati dell’ospite non vengono importati automaticamente nel tuo
               account.
             </Notice>
+            <Button
+              variant="secondary"
+              onPress={() => router.push("/miei-documenti")}
+            >
+              I miei documenti
+            </Button>
             {editorAllowed && (
               <Button
                 variant="secondary"

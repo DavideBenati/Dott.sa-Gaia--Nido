@@ -31,6 +31,10 @@ export default function Privacy() {
   const { demo } = useApp();
   const sections: [string, string][] = [
     [
+      "Documenti e allegati delle sessioni",
+      "La professionista può caricare materiali e assegnarne l’accesso ad account confermati. Titoli, descrizioni, nomi dei file, destinatari e registrazioni delle variazioni di accesso sono trattati per questa condivisione. I file sono conservati in un’area privata Supabase; il download verifica l’account e il permesso attuale. Non vengono inviati link pubblici o iscrizioni newsletter. Archiviare un file revoca i destinatari ma conserva il file privato; revocare non cancella copie già scaricate. La cancellazione dell’account rimuove le sue assegnazioni, senza eliminare il materiale caricato dalla professionista. I documenti si scaricano separatamente: l’esportazione JSON del profilo non include il contenuto dei file. Il titolare deve precisare nel testo definitivo finalità, basi giuridiche, eventuali condizioni per dati sanitari, tempi di conservazione, gestione dei file e copie di sicurezza. I contatti privacy indicati nella presente pagina restano disponibili per esercitare i diritti.",
+    ],
+    [
       "1. Chi gestisce i dati",
       `Titolare del trattamento: ${privacyDetails.controller || missing}\nSede e recapito postale: ${privacyDetails.address || missing}\nContatto privacy: ${privacyDetails.email || missing}\n${privacyDetails.dpo ? `Responsabile della protezione dei dati (DPO): ${privacyDetails.dpo}` : "Contatto DPO: da indicare se nominato; la nomina e la sua eventuale obbligatorietà devono essere verificate dal titolare."}`,
     ],

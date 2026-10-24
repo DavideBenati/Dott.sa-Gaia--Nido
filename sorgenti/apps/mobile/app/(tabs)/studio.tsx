@@ -386,6 +386,12 @@ function Workspace() {
           Modifiche non salvate. Salva la bozza prima di lasciare questa pagina.
         </Notice>
       )}
+      <Button
+        variant="secondary"
+        onPress={() => router.push("/documenti-studio")}
+      >
+        Documenti e allegati riservati
+      </Button>
       <Button variant="secondary" onPress={() => router.push("/verifiche")}>
         Verifiche prima di promuovere il sito
       </Button>

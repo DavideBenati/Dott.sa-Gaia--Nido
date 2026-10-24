@@ -119,5 +119,15 @@
     "title": "Gestione newsletter | metiMaia",
     "description": "Area riservata alla gestione newsletter.",
     "index": false
+  },
+  "/documenti-studio": {
+    "title": "Documenti riservati | metiMaia",
+    "description": "Area riservata alla condivisione dei materiali.",
+    "index": false
+  },
+  "/miei-documenti": {
+    "title": "I miei documenti | metiMaia",
+    "description": "Materiali condivisi con il tuo account.",
+    "index": false
   }
 }

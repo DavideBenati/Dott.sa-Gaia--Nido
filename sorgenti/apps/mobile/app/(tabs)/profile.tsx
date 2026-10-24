@@ -97,6 +97,12 @@ export default function Profile() {
         )}
       </View>
       <SectionHeader title="Da ritrovare" />
+      <Button
+        variant="secondary"
+        onPress={() => router.push("/miei-documenti")}
+      >
+        I miei documenti
+      </Button>
       <Button variant="secondary" onPress={() => router.push("/saved")}>
         Articoli salvati
       </Button>
