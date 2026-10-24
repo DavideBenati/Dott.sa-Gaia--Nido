@@ -9,8 +9,24 @@ import {
   publicProfile,
 } from "../src/professional";
 import logo from "../assets/brand/maia-logo.png";
+import { PhoneContacts } from "../src/phone-contacts";
+
+function Paragraphs({ text }: { text: string }) {
+  return (
+    <View style={{ gap: 16 }}>
+      {text
+        .split(/\n\s*\n/)
+        .filter(Boolean)
+        .map((paragraph, index) => (
+          <Text key={index} style={ui.body}>
+            {paragraph}
+          </Text>
+        ))}
+    </View>
+  );
+}
 export default function Gaia() {
-  const [profile, setProfile] = useState(defaultProfile);
+  const [profile, setProfile] = useState(() => publicProfile(defaultProfile));
   useEffect(() => {
     let active = true;
     void loadProfile().then((p) => {
@@ -25,7 +41,7 @@ export default function Gaia() {
       back
       eyebrow="CONOSCI LA TUA OSTETRICA"
       title="Dott.sa Gaia"
-      subtitle="Con te, dall’attesa alla nascita."
+      subtitle="La tua ostetrica di fiducia a Roma."
     >
       <View
         style={{ maxWidth: 820, width: "100%", alignSelf: "center", gap: 24 }}
@@ -37,24 +53,34 @@ export default function Gaia() {
               profile.portrait_url ? "Dott.sa Gaia" : "Il logo di metiMaia"
             }
             resizeMode="contain"
-            style={{ width: "100%", height: 240, borderRadius: 20 }}
+            style={{
+              width: "100%",
+              height: profile.portrait_url ? 240 : 150,
+              borderRadius: 20,
+            }}
           />
           <Text style={ui.heading}>Ostetrica | metiMaia</Text>
-          <Text style={ui.body}>{profile.bio}</Text>
-          {profile.qualifications !== "" && (
-            <>
-              <Text style={ui.label}>Formazione e qualifiche</Text>
-              <Text style={ui.body}>{profile.qualifications}</Text>
-            </>
-          )}
+          <Paragraphs text={profile.bio} />
         </View>
         <Button onPress={() => router.push("/contatti")}>
           Scegli come contattare Gaia
         </Button>
+        {profile.qualifications !== "" && (
+          <View style={[ui.card, { gap: 18 }]}>
+            <Text accessibilityRole="header" style={ui.heading}>
+              Il mio percorso e la formazione
+            </Text>
+            <Paragraphs text={profile.qualifications} />
+          </View>
+        )}
         <Text accessibilityRole="header" style={ui.heading}>
           Servizi e modalità d’incontro
         </Text>
         <Text style={ui.body}>{profile.service_area}</Text>
+        <Text style={ui.body}>
+          Le richieste da questo sito riguardano le consulenze private. Per gli
+          appuntamenti ospedalieri fai riferimento ai canali della struttura.
+        </Text>
         {profile.services.length ? (
           profile.services.map((service, index) => (
             <View key={index} style={[ui.card, { gap: 14 }]}>
@@ -95,6 +121,7 @@ export default function Gaia() {
             Richiedi disponibilità
           </Button>
         </View>
+        <PhoneContacts />
         <Button
           variant="secondary"
           onPress={() => {

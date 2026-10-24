@@ -5,6 +5,7 @@ import { Screen, Button, Notice, ui } from "../src/ui";
 import { Text } from "../src/typography";
 import { useApp } from "../src/state";
 import { defaultProfile, loadProfile } from "../src/professional";
+import { PhoneContacts } from "../src/phone-contacts";
 export default function Contacts() {
   const { email } = useApp();
   const [profile, setProfile] = useState(defaultProfile);
@@ -66,6 +67,7 @@ export default function Contacts() {
             Apri email per informazioni
           </Button>
         </View>
+        <PhoneContacts />
         <View style={[ui.card, { gap: 12 }]}>
           <Text accessibilityRole="header" style={ui.heading}>
             Vorrei usare la conversazione privata

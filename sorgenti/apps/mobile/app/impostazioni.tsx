@@ -12,6 +12,10 @@ import {
   saveProfile,
   type SiteProfile,
 } from "../src/professional";
+import {
+  isInitialGaiaPresentation,
+  withGaiaPresentation,
+} from "../src/gaia-presentation";
 export default function Settings() {
   const { email } = useApp();
   return (
@@ -41,7 +45,7 @@ function Editor() {
   const [loadError, setLoadError] = useState("");
   const [reload, setReload] = useState(0);
   const saving = useRef(false);
-  const { allowNavigation } = useUnsavedChanges(dirty);
+  const { allowNavigation, confirmDiscard } = useUnsavedChanges(dirty);
   useEffect(() => {
     let active = true;
     if (allowed) {
@@ -147,26 +151,62 @@ function Editor() {
             servizi effettivamente disponibili. Foto: indirizzo HTTPS di
             un’immagine che puoi utilizzare.
           </Notice>
-          <Text style={ui.heading}>Prima di pubblicare la presentazione</Text>
+          <Text style={ui.heading}>
+            {isInitialGaiaPresentation(profile)
+              ? "La presentazione è pronta"
+              : "Prima di pubblicare la presentazione"}
+          </Text>
           <Text style={ui.body}>
-            {[
-              !profile.portrait_url && "Foto professionale facoltativa",
-              !profile.qualifications && "Qualifiche/iscrizione da verificare",
-              !profile.services.length && "Servizi da definire",
-              !profile.privacy_retention &&
-                "Criteri di conservazione da definire",
-              !profile.privacy_transfers &&
-                "Trasferimenti e garanzie da verificare",
-            ]
-              .filter(Boolean)
-              .join(" · ") ||
-              "I campi principali sono compilati: verifica che siano corretti e aggiornati."}
+            {isInitialGaiaPresentation(profile)
+              ? "La pagina pubblica mostra già il testo fornito da Gaia. Per modificarlo da qui, premi Usa la presentazione dal documento e poi Salva modifiche."
+              : [
+                  !profile.portrait_url && "Foto professionale facoltativa",
+                  !profile.qualifications &&
+                    "Qualifiche/iscrizione da verificare",
+                  !profile.services.length && "Servizi da definire",
+                  !profile.privacy_retention &&
+                    "Criteri di conservazione da definire",
+                  !profile.privacy_transfers &&
+                    "Trasferimenti e garanzie da verificare",
+                ]
+                  .filter(Boolean)
+                  .join(" · ") ||
+                "I campi principali sono compilati: verifica che siano corretti e aggiornati."}
           </Text>
           <Notice>
             I campi non compilati non vengono sostituiti con informazioni
             inventate. Non pubblicare prezzi o disponibilità provvisori come
             confermati.
           </Notice>
+          <View style={[ui.card, { gap: 12 }]}>
+            <Text accessibilityRole="header" style={ui.heading}>
+              La presentazione fornita da Gaia
+            </Text>
+            <Text style={ui.body}>
+              Inserisce nei campi presentazione, formazione, zona, quattro
+              servizi ed email dal documento. Puoi rivedere il testo prima di
+              premere Salva modifiche. Foto e informazioni privacy vengono
+              conservate.
+            </Text>
+            <Button
+              variant="secondary"
+              disabled={busy}
+              onPress={() => {
+                if (
+                  !confirmDiscard(
+                    "Vuoi sostituire presentazione, formazione, zona, servizi ed email con il testo del documento? Le modifiche non salvate in questi campi saranno sostituite.",
+                  )
+                )
+                  return;
+                update(withGaiaPresentation(profile));
+                setMessage(
+                  "Presentazione inserita. Controlla i campi e premi Salva modifiche per pubblicarla.",
+                );
+              }}
+            >
+              Usa la presentazione dal documento
+            </Button>
+          </View>
           {field("Presentazione", "bio")}
           {field("Foto: URL HTTPS (facoltativo)", "portrait_url")}
           {field(

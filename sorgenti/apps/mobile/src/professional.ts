@@ -1,5 +1,9 @@
 import { client } from "./state";
 import { publicProfessionalText } from "@nido/core";
+import {
+  isInitialGaiaPresentation,
+  withGaiaPresentation,
+} from "./gaia-presentation";
 export type Service = { title: string; description: string; details: string };
 export interface SiteProfile {
   id: number;
@@ -29,7 +33,10 @@ export const defaultProfile: SiteProfile = {
   privacy_reviewed: false,
 };
 // Public pages use a presentation copy; Studio keeps the original saved values.
-export function publicProfile(profile: SiteProfile): SiteProfile {
+export function publicProfile(stored: SiteProfile): SiteProfile {
+  const profile = isInitialGaiaPresentation(stored)
+    ? withGaiaPresentation(stored)
+    : stored;
   return {
     ...profile,
     bio: publicProfessionalText(profile.bio),

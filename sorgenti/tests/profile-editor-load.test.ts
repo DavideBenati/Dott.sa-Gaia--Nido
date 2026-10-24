@@ -19,7 +19,12 @@ vi.mock("../apps/mobile/src/state", () => ({
     }),
   },
 }));
-import { defaultProfile, loadProfile } from "../apps/mobile/src/professional";
+import {
+  defaultProfile,
+  loadProfile,
+  publicProfile,
+} from "../apps/mobile/src/professional";
+import { withGaiaPresentation } from "../apps/mobile/src/gaia-presentation";
 
 beforeEach(() => {
   source.data = {
@@ -60,4 +65,64 @@ test("malformed persisted service or profile fields are never merged into an edi
   await expect(loadProfile({ strict: true })).rejects.toThrow();
   source.data = { ...defaultProfile, privacy_reviewed: undefined };
   await expect(loadProfile({ strict: true })).rejects.toThrow();
+});
+
+test("the former complete starter gets the supplied public presentation without changing the stored editor record", async () => {
+  source.data = structuredClone(defaultProfile);
+  const stored = await loadProfile({ strict: true });
+  const presented = publicProfile(stored);
+  expect(presented.bio).toContain("Ciao, sono Gaia");
+  expect(presented.services).toHaveLength(4);
+  expect(stored).toEqual(defaultProfile);
+  expect(source.data).toEqual(defaultProfile);
+});
+
+test("intentional edited or removed presentation fields are not filled back from the supplied document", () => {
+  const edited = {
+    ...defaultProfile,
+    bio: "Una presentazione aggiornata",
+    services: [],
+  };
+  expect(publicProfile(edited)).toEqual(edited);
+  const cleared = {
+    ...defaultProfile,
+    bio: "",
+    qualifications: "",
+    services: [],
+  };
+  expect(publicProfile(cleared)).toEqual(cleared);
+  const changedContact = {
+    ...defaultProfile,
+    contact_email: "changed@example.invalid",
+  };
+  expect(publicProfile(changedContact)).toEqual(changedContact);
+});
+
+test("explicit document import preserves photo and privacy fields and cannot mutate either the original profile or later imports", () => {
+  const original = {
+    ...defaultProfile,
+    bio: "Testo salvato",
+    portrait_url: "https://example.invalid/ritratto.jpg",
+    privacy_providers: "Fornitori già definiti",
+    privacy_retention: "Criteri già definiti",
+    privacy_transfers: "Garanzie già definite",
+    privacy_reviewed: true,
+  };
+  const imported = withGaiaPresentation(original);
+  for (const key of [
+    "id",
+    "portrait_url",
+    "privacy_providers",
+    "privacy_retention",
+    "privacy_transfers",
+    "privacy_reviewed",
+  ] as const)
+    expect(imported[key]).toEqual(original[key]);
+  expect(imported.services).toHaveLength(4);
+  imported.services[0].title = "Modifica della bozza";
+  expect(withGaiaPresentation(original).services[0].title).not.toBe(
+    "Modifica della bozza",
+  );
+  expect(original.bio).toBe("Testo salvato");
+  expect(original.services).toEqual([]);
 });
