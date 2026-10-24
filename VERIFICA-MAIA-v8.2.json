@@ -1,0 +1,23 @@
+{
+  "zip": "MAIA-Sito-v8.2-Presentazione-Gaia.zip",
+  "bytes": 2928225,
+  "sha256": "d7f4fa5e2e673f644bc0145e59b1c150f306ae6ea8b60cde3787dc466bca751a",
+  "files": 92,
+  "root_index": true,
+  "integrity_ok": true,
+  "google_html_original": true,
+  "google_meta_absent": true,
+  "html_surname_absent": true,
+  "no_env_sql_docx_or_maps": true,
+  "unit_tests_passed": 97,
+  "browser_checks_passed": 26,
+  "browser_viewports": [
+    390,
+    1440
+  ],
+  "typecheck": "passed",
+  "lint": "passed",
+  "production_build": "passed",
+  "live_production_mutations": false,
+  "source_commit": "8ee565ceabc372a8dcfa3fce560e3ffbed782ed2"
+}
