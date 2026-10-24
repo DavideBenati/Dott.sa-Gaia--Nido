@@ -301,7 +301,7 @@ export default function Account() {
               Personalizza il tuo percorso
             </Button>
             <Button variant="secondary" onPress={() => router.push("/chat")}>
-              Scrivi alla Dott.ssa Brunetti
+              Scrivi alla Dott.sa Gaia
             </Button>
             <Button
               variant="quiet"

@@ -1,13 +1,13 @@
 {
   "/": {
-    "title": "metiMaia | Ostetrica Gaia Brunetti",
-    "description": "Informazioni e strumenti per gravidanza, nascita e dopo il parto, con la Dott.ssa Gaia Brunetti. Scopri letture, checklist e come richiedere un incontro.",
+    "title": "metiMaia | Dott.sa Gaia, ostetrica",
+    "description": "Informazioni e strumenti per gravidanza, nascita e dopo il parto, con la Dott.sa Gaia. Scopri letture, checklist e come richiedere un incontro.",
     "canonical": "/welcome",
     "index": true
   },
   "/welcome": {
-    "title": "metiMaia | Ostetrica Gaia Brunetti",
-    "description": "Uno spazio per gravidanza, nascita e primi giorni insieme. Letture, checklist e richieste di incontro con la Dott.ssa Gaia Brunetti.",
+    "title": "metiMaia | Dott.sa Gaia, ostetrica",
+    "description": "Uno spazio per gravidanza, nascita e primi giorni insieme. Letture, checklist e richieste di incontro con la Dott.sa Gaia.",
     "index": true
   },
   "/discover": {
@@ -21,8 +21,8 @@
     "index": true
   },
   "/prenota": {
-    "title": "Richiedi un incontro con Gaia Brunetti | metiMaia",
-    "description": "Chiedi disponibilità per un incontro con la Dott.ssa Gaia Brunetti. Data, modalità ed eventuali costi vengono concordati direttamente.",
+    "title": "Richiedi un incontro con la Dott.sa Gaia | metiMaia",
+    "description": "Chiedi disponibilità per un incontro con la Dott.sa Gaia. Data, modalità ed eventuali costi vengono concordati direttamente.",
     "index": true
   },
   "/article": {
@@ -42,7 +42,7 @@
   },
   "/shop": {
     "title": "Shop: selezione Amazon e prodotti della dottoressa | metiMaia",
-    "description": "Scopri la selezione Amazon e lo spazio dedicato ai prodotti della Dott.ssa Gaia Brunetti. Consulta disponibilità e condizioni dei singoli prodotti.",
+    "description": "Scopri la selezione Amazon e lo spazio dedicato ai prodotti della Dott.sa Gaia. Consulta disponibilità e condizioni dei singoli prodotti.",
     "index": false
   },
   "/privacy": {
@@ -57,7 +57,7 @@
   },
   "/chat": {
     "title": "Conversazione privata | metiMaia",
-    "description": "Accedi alla tua conversazione privata con la Dott.ssa Gaia Brunetti.",
+    "description": "Accedi alla tua conversazione privata con la Dott.sa Gaia.",
     "index": false
   },
   "/studio": {
@@ -81,7 +81,7 @@
     "index": false
   },
   "/gaia": {
-    "title": "Gaia Brunetti e servizi | metiMaia",
+    "title": "Dott.sa Gaia e servizi | metiMaia",
     "description": "Conosci Gaia e scopri come richiedere informazioni sui servizi.",
     "index": true
   },
@@ -107,7 +107,7 @@
   },
   "/contatti": {
     "title": "Contatti e richieste di incontro | metiMaia",
-    "description": "Scegli come contattare Gaia Brunetti: informazioni sui servizi, richiesta di disponibilità o chat privata.",
+    "description": "Scegli come contattare la Dott.sa Gaia: informazioni sui servizi, richiesta di disponibilità o chat privata.",
     "index": true
   },
   "/verifiche": {

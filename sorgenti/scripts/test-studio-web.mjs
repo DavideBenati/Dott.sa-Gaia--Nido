@@ -396,7 +396,7 @@ try {
   const saved = calls.filter((c) => c.path.endsWith("/rpc/save_article")).at(-1)
     .body.document;
   expect(saved.approved).toBe(true);
-  expect(saved.reviewerName).toBe("Gaia Brunetti");
+  expect(saved.reviewerName).toBe("Dott.sa Gaia");
   expect(saved.sections[0].paragraphs).toHaveLength(2);
   page.on("dialog", (d) => d.accept());
   // Confirmation dialog is installed before the next navigation attempt.

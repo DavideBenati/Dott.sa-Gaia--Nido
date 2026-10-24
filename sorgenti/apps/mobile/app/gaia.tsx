@@ -3,14 +3,18 @@ import { View, Image, Linking } from "react-native";
 import { router } from "expo-router";
 import { Text } from "../src/typography";
 import { Screen, Button, Notice, ui } from "../src/ui";
-import { defaultProfile, loadProfile } from "../src/professional";
+import {
+  defaultProfile,
+  loadProfile,
+  publicProfile,
+} from "../src/professional";
 import logo from "../assets/brand/maia-logo.png";
 export default function Gaia() {
   const [profile, setProfile] = useState(defaultProfile);
   useEffect(() => {
     let active = true;
     void loadProfile().then((p) => {
-      if (active) setProfile(p);
+      if (active) setProfile(publicProfile(p));
     });
     return () => {
       active = false;
@@ -20,7 +24,7 @@ export default function Gaia() {
     <Screen
       back
       eyebrow="CONOSCI LA TUA OSTETRICA"
-      title="Gaia Brunetti"
+      title="Dott.sa Gaia"
       subtitle="Con te, dall’attesa alla nascita."
     >
       <View
@@ -30,7 +34,7 @@ export default function Gaia() {
           <Image
             source={profile.portrait_url ? { uri: profile.portrait_url } : logo}
             accessibilityLabel={
-              profile.portrait_url ? "Gaia Brunetti" : "Il logo di metiMaia"
+              profile.portrait_url ? "Dott.sa Gaia" : "Il logo di metiMaia"
             }
             resizeMode="contain"
             style={{ width: "100%", height: 240, borderRadius: 20 }}

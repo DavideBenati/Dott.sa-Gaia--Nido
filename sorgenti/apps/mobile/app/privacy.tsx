@@ -1,6 +1,10 @@
 import { Text } from "../src/typography";
 import React, { useEffect, useState } from "react";
-import { loadProfile, defaultProfile } from "../src/professional";
+import {
+  loadProfile,
+  defaultProfile,
+  publicProfile,
+} from "../src/professional";
 import { Linking, View } from "react-native";
 import { router } from "expo-router";
 import { useApp } from "../src/state";
@@ -16,7 +20,7 @@ export default function Privacy() {
   useEffect(() => {
     let active = true;
     void loadProfile().then((p) => {
-      if (active) setProfile(p);
+      if (active) setProfile(publicProfile(p));
     });
     return () => {
       active = false;
@@ -55,8 +59,8 @@ export default function Privacy() {
       "La consultazione come ospite non richiede email, password o una data. Per un account servono i dati di autenticazione; senza questi non è possibile accedere ai servizi personali. Puoi non fornire la data e usare un percorso generico. La rinuncia alla personalizzazione facoltativa non impedisce di leggere i contenuti. Le notifiche push non sono attive. La newsletter ha un consenso distinto, facoltativo e non preselezionato, seguito da conferma email.",
     ],
     [
-      "6. Messaggi alla Dott.ssa Brunetti",
-      "La chat reale richiederà l’accesso e l’abilitazione della professionista. La gestione delle conversazioni è affidata esclusivamente alla Dott.ssa Gaia Brunetti. L’utente vede la propria conversazione; la redazione non accede alle chat per il solo ruolo editoriale. Anche il gestore del servizio e i fornitori possono avere accessi tecnici nei limiti delle proprie funzioni: non è una chat con cifratura end-to-end. Evita referti, foto, dettagli sanitari o dati di terzi non necessari. La base giuridica e l’eventuale gestione di dati sanitari devono essere definite prima di ricevere messaggi reali. Le risposte non sono immediate: per urgenze contatta i servizi di emergenza.",
+      "6. Messaggi alla Dott.sa Gaia",
+      "La chat reale richiederà l’accesso e l’abilitazione della professionista. La gestione delle conversazioni è affidata esclusivamente alla Dott.sa Gaia. L’utente vede la propria conversazione; la redazione non accede alle chat per il solo ruolo editoriale. Anche il gestore del servizio e i fornitori possono avere accessi tecnici nei limiti delle proprie funzioni: non è una chat con cifratura end-to-end. Evita referti, foto, dettagli sanitari o dati di terzi non necessari. La base giuridica e l’eventuale gestione di dati sanitari devono essere definite prima di ricevere messaggi reali. Le risposte non sono immediate: per urgenze contatta i servizi di emergenza.",
     ],
     [
       "7. Fornitori e destinatari",

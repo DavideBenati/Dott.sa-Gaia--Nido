@@ -27,7 +27,7 @@ export function usePageMetadata(article?: {
   const description =
     activeArticle?.subtitle ||
     entry?.description ||
-    "Uno spazio per il tuo percorso, con la Dott.ssa Gaia Brunetti.";
+    "Uno spazio per il tuo percorso, con la Dott.sa Gaia.";
   const index = activeArticle
     ? activeArticle.published
     : (entry?.index ?? false);

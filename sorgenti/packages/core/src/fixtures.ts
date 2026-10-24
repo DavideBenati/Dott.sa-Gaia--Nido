@@ -186,7 +186,7 @@ export const articles: Article[] = [
   article({
     id: "borsa-parto",
     title: "La borsa del parto, senza il superfluo",
-    authorName: "Dott.ssa Gaia Brunetti",
+    authorName: "Dott.sa Gaia",
     authorRole: "Autrice del documento originale · adattamento Nido",
     subtitle:
       "Cosa preparare per te e il neonato, con i documenti da verificare insieme al punto nascita.",
@@ -340,7 +340,7 @@ export const articles: Article[] = [
   article({
     id: "messaggio-nascita",
     title: "Messaggio di nascita per amici e parenti",
-    authorName: "Dott.ssa Gaia Brunetti",
+    authorName: "Dott.sa Gaia",
     authorRole: "Autrice del documento originale",
     subtitle:
       "Un testo da personalizzare per condividere la gioia e organizzare le prime visite a casa.",
@@ -386,7 +386,7 @@ Un abbraccio grande a tutti e a prestissimo!`,
   article({
     id: "sonno-sicuro",
     title: "Sonno sicuro del neonato",
-    authorName: "Dott.ssa Gaia Brunetti",
+    authorName: "Dott.sa Gaia",
     authorRole: "Autrice del documento originale · adattamento Nido",
     subtitle:
       "Dieci indicazioni per preparare un ambiente di riposo sicuro, di giorno e di notte.",
@@ -650,7 +650,7 @@ export const checklists: Checklist[] = [
   checklist(
     "borsa",
     "Preparare la borsa per il parto",
-    "Per te, documenti e neonato: dal documento “Borsa parto.docx” della Dott.ssa Gaia Brunetti, da confrontare con la lista del punto nascita.",
+    "Per te, documenti e neonato: dal documento “Borsa parto.docx” della Dott.sa Gaia, da confrontare con la lista del punto nascita.",
     "pregnancy",
     [
       {

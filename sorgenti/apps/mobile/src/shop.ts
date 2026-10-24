@@ -4,6 +4,7 @@ import {
   settingsIssues,
   validCheckout,
   validAmazonLink,
+  publicProfessionalText,
   type ShopProduct,
   type ShopSettings,
 } from "@nido/core";
@@ -37,9 +38,25 @@ export async function loadShop(editor = false) {
     throw new Error(
       "Shop non ancora configurato o temporaneamente non disponibile.",
     );
-  return {
+  const loaded = {
     products: products.data as ShopProduct[],
     settings: (settings.data as ShopSettings | null) ?? emptyShopSettings,
+  };
+  if (editor) return loaded;
+  return {
+    products: loaded.products.map((product) => ({
+      ...product,
+      title: publicProfessionalText(product.title),
+      description: publicProfessionalText(product.description),
+    })),
+    settings: {
+      ...loaded.settings,
+      seller_name: publicProfessionalText(loaded.settings.seller_name),
+      seller_address: publicProfessionalText(loaded.settings.seller_address),
+      tax_details: publicProfessionalText(loaded.settings.tax_details),
+      shipping_terms: publicProfessionalText(loaded.settings.shipping_terms),
+      returns_terms: publicProfessionalText(loaded.settings.returns_terms),
+    },
   };
 }
 export async function saveShopProduct(product: ShopProduct) {

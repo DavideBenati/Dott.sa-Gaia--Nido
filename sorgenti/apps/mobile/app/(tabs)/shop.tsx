@@ -177,7 +177,7 @@ export default function Shop() {
       subtitle={
         manage
           ? "Prodotti, selezione Amazon e impostazioni di vendita."
-          : "La selezione Amazon e i prodotti della Dott.ssa Gaia Brunetti."
+          : "La selezione Amazon e i prodotti della Dott.sa Gaia."
       }
     >
       <ShopContent
@@ -856,7 +856,7 @@ function ShopContent({
             <Notice>
               {settings.amazon_affiliate
                 ? "In qualità di Affiliato Amazon ricevo un guadagno dagli acquisti idonei. Gli acquisti si effettuano su Amazon, dove sono indicati prezzo aggiornato, venditore, disponibilità, spedizione e resi."
-                : "Una selezione della Dott.ssa Gaia Brunetti. I collegamenti aprono Amazon: controlla lì prezzo aggiornato, venditore, disponibilità, spedizione e resi."}
+                : "Una selezione della Dott.sa Gaia. I collegamenti aprono Amazon: controlla lì prezzo aggiornato, venditore, disponibilità, spedizione e resi."}
             </Notice>
           ) : (
             <Notice>
@@ -986,7 +986,7 @@ function ShopContent({
                 <CollectionIdea
                   kind="cup"
                   title="I prodotti della dottoressa"
-                  text="Uno spazio per oli e prodotti della Dott.ssa Gaia Brunetti."
+                  text="Uno spazio per oli e prodotti della Dott.sa Gaia."
                 />
                 <CollectionIdea
                   kind="bag"

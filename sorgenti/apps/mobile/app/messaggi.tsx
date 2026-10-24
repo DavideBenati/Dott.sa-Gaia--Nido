@@ -462,7 +462,7 @@ function InboxContent({
                   ]}
                 >
                   <Text style={ui.label}>
-                    {m.sender_id === selected ? "Utente" : "Gaia Brunetti"}
+                    {m.sender_id === selected ? "Utente" : "Dott.sa Gaia"}
                   </Text>
                   <Text selectable style={ui.body}>
                     {m.body}

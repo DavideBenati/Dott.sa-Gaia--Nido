@@ -1,7 +1,10 @@
 // Public legal details only. Complete and independently review before enabling
 // personal-data services. These are not secrets and must match actual operations.
+import { publicProfessionalText } from "@nido/core";
 export const privacyDetails = {
-  controller: process.env.EXPO_PUBLIC_PRIVACY_CONTROLLER ?? "Gaia Brunetti",
+  controller: publicProfessionalText(
+    process.env.EXPO_PUBLIC_PRIVACY_CONTROLLER ?? "Dott.sa Gaia",
+  ),
   address:
     process.env.EXPO_PUBLIC_PRIVACY_ADDRESS ??
     "Via San Godenzo 33, Roma, Italia",

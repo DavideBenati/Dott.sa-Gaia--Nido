@@ -496,7 +496,7 @@ function Workspace({
         weekTo: null,
         imageUrl: "",
         readingMinutes: 3,
-        authorName: "Gaia Brunetti",
+        authorName: "Dott.sa Gaia",
         authorRole: "Ostetrica",
         publishedAt: null,
         reviewedAt: null,

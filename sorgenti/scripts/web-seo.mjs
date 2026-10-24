@@ -33,7 +33,7 @@ export function pageHTML(html, path) {
       {
         "@type": "Person",
         "@id": site + "/#gaia",
-        name: "Gaia Brunetti",
+        name: "Dott.sa Gaia",
         jobTitle: "Ostetrica",
         email: "ostetricamaia@gmail.com",
         url: site + "/welcome",

@@ -155,7 +155,7 @@ function Conversation({
       {!demo && email && !loading && !available && !error && (
         <Notice>
           La messaggistica non è ancora attiva. Potrai scrivere quando la
-          Dott.ssa Brunetti sarà abilitata.
+          Dott.sa Gaia sarà abilitata.
         </Notice>
       )}
       {messages.length === 0 && email && !loading && !error && (
@@ -191,7 +191,7 @@ function Conversation({
                   fontWeight: "600",
                 }}
               >
-                {own ? "Tu" : "Dott.ssa Brunetti"}
+                {own ? "Tu" : "Dott.sa Gaia"}
                 {demo ? " · esempio" : ""}
               </Text>
               <Text selectable style={[ui.body, { color: colors.ink }]}>
@@ -269,7 +269,7 @@ export default function Chat() {
     <Screen
       back
       eyebrow="UNO SPAZIO PER LE TUE DOMANDE"
-      title="Dott.ssa Gaia Brunetti"
+      title="Dott.sa Gaia"
       subtitle="La tua conversazione privata."
     >
       <Conversation key={email ?? "guest"} demo={demo} email={email} />

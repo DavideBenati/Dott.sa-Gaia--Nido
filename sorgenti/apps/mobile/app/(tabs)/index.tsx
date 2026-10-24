@@ -133,7 +133,7 @@ export default function Home() {
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
           <Icon name="mail" size={28} />
           <Text style={[ui.heading, { flex: 1, fontSize: 25 }]}>
-            Dott.ssa Gaia Brunetti
+            Dott.sa Gaia
           </Text>
         </View>
         <Text style={ui.body}>

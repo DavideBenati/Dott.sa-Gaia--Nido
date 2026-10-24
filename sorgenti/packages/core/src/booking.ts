@@ -51,5 +51,5 @@ export function bookingIssues(
   return issues;
 }
 export function bookingText(request: BookingRequest): string {
-  return `Buongiorno Dott.ssa Brunetti,\nvorrei chiedere disponibilità per: ${request.topic}.\n\nNome: ${request.name.trim()}\nEmail di ricontatto: ${request.email.trim()}\nData preferita: ${request.date || "Da concordare"}\nFascia oraria: ${request.time}\nModalità: ${request.mode}\n\nComprendo che questa è una richiesta di disponibilità e che l’appuntamento sarà confermato solo dopo una risposta della dottoressa.\nGrazie.`;
+  return `Buongiorno Dott.sa Gaia,\nvorrei chiedere disponibilità per: ${request.topic}.\n\nNome: ${request.name.trim()}\nEmail di ricontatto: ${request.email.trim()}\nData preferita: ${request.date || "Da concordare"}\nFascia oraria: ${request.time}\nModalità: ${request.mode}\n\nComprendo che questa è una richiesta di disponibilità e che l’appuntamento sarà confermato solo dopo una risposta della dottoressa.\nGrazie.`;
 }

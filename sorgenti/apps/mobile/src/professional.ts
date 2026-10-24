@@ -1,4 +1,5 @@
 import { client } from "./state";
+import { publicProfessionalText } from "@nido/core";
 export type Service = { title: string; description: string; details: string };
 export interface SiteProfile {
   id: number;
@@ -27,6 +28,24 @@ export const defaultProfile: SiteProfile = {
   privacy_transfers: "",
   privacy_reviewed: false,
 };
+// Public pages use a presentation copy; Studio keeps the original saved values.
+export function publicProfile(profile: SiteProfile): SiteProfile {
+  return {
+    ...profile,
+    bio: publicProfessionalText(profile.bio),
+    qualifications: publicProfessionalText(profile.qualifications),
+    service_area: publicProfessionalText(profile.service_area),
+    services: profile.services.map((service) => ({
+      ...service,
+      title: publicProfessionalText(service.title),
+      description: publicProfessionalText(service.description),
+      details: publicProfessionalText(service.details),
+    })),
+    privacy_providers: publicProfessionalText(profile.privacy_providers),
+    privacy_retention: publicProfessionalText(profile.privacy_retention),
+    privacy_transfers: publicProfessionalText(profile.privacy_transfers),
+  };
+}
 export async function loadProfile({
   strict = false,
 }: { strict?: boolean } = {}): Promise<SiteProfile> {

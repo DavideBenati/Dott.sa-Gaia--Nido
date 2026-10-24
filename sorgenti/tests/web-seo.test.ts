@@ -6,7 +6,7 @@ const html =
 test("public entry points expose unique Italian metadata and real share image URLs before JavaScript runs", () => {
   const page = pageHTML(html, "/prenota");
   expect(page).toContain('<html lang="it">');
-  expect(page).toContain("Richiedi un incontro con Gaia Brunetti");
+  expect(page).toContain("Richiedi un incontro con la Dott.sa Gaia");
   expect(page.match(/<title>/g)).toHaveLength(1);
   expect(page.match(/name="description"/g)).toHaveLength(1);
   expect(page).toContain('href="https://metimaia.com/prenota"');

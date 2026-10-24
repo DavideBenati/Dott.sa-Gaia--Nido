@@ -433,7 +433,7 @@ test("quick registration preview and private chat clearly distinguish demo from 
   ).toBeDisabled();
   await page.goto(appPath("/chat"));
   await expect(
-    page.getByRole("heading", { name: "Dott.ssa Gaia Brunetti", exact: true }),
+    page.getByRole("heading", { name: "Dott.sa Gaia", exact: true }),
   ).toBeVisible();
   await expect(page.getByText(/ESEMPIO VISIVO/)).toBeVisible();
   await expect(
@@ -457,7 +457,7 @@ test("privacy explains the real demo, controller and rights without a marketing 
     }),
   ).toBeVisible();
   await expect(
-    page.getByText(/Titolare del trattamento: Gaia Brunetti/),
+    page.getByText(/Titolare del trattamento: Dott.sa Gaia/),
   ).toBeVisible();
   await expect(
     page.getByText(/Via San Godenzo 33, Roma, Italia/),

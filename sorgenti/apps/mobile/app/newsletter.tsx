@@ -95,9 +95,9 @@ export default function Newsletter() {
       >
         {completed && <Notice>{message}</Notice>}
         <Text style={ui.body}>
-          Contenuti, aggiornamenti e novità sui servizi della Dott.ssa Gaia
-          Brunetti. L’iscrizione è gratuita e indipendente dall’account: puoi
-          usare il sito e l’app anche senza newsletter.
+          Contenuti, aggiornamenti e novità sui servizi della Dott.sa Gaia.
+          L’iscrizione è gratuita e indipendente dall’account: puoi usare il
+          sito e l’app anche senza newsletter.
         </Text>
         <TextInput
           accessibilityLabel="Email newsletter"
@@ -134,7 +134,7 @@ export default function Newsletter() {
           </View>
         )}
         <Text style={ui.body}>
-          Titolare: Gaia Brunetti, Via San Godenzo 33, Roma. Contatto:
+          Titolare: Dott.sa Gaia, Via San Godenzo 33, Roma. Contatto:
           ostetricamaia@gmail.com. Utilizziamo email e prova del consenso per
           gestire l’iscrizione tramite Supabase e Resend. La base giuridica è il
           consenso, distinto dai servizi dell’account. Non usiamo le tue

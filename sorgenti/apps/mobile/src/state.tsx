@@ -14,6 +14,9 @@ import {
   checklists as fixtureChecklists,
   categories as fixtureCategories,
   defaultUserState,
+  publicArticle,
+  publicChecklist,
+  publicProfessionalText,
   type Article,
   type Checklist,
   type Category,
@@ -136,10 +139,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const hydratedRef = useRef(false);
   const authTransitionRef = useRef(false);
   const [articles, setArticles] = useState<Article[]>(
-    configured ? [] : fixtures,
+    configured ? [] : fixtures.map(publicArticle),
   );
   const [checklists, setChecklists] = useState<Checklist[]>(
-    configured ? [] : fixtureChecklists,
+    configured ? [] : fixtureChecklists.map(publicChecklist),
   );
   const [categories, setCategories] = useState<Category[]>(
     configured ? [] : fixtureCategories,
@@ -166,9 +169,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setContentError(null);
     try {
       const data = await loadPublicContent(client);
-      setArticles(data.articles);
-      setChecklists(data.checklists);
-      setCategories(data.categories);
+      setArticles(data.articles.map(publicArticle));
+      setChecklists(data.checklists.map(publicChecklist));
+      setCategories(
+        data.categories.map((category) => ({
+          ...category,
+          name: publicProfessionalText(category.name),
+        })),
+      );
     } catch {
       setContentError(
         "Non riusciamo a caricare i contenuti. Controlla la connessione e riprova. Nessun contenuto demo sostituisce i dati del servizio.",
