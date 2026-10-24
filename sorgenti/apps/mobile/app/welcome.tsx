@@ -4,7 +4,15 @@ import { Pressable, View, Switch } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { type JourneyType } from "@nido/core";
 import { useApp } from "../src/state";
-import { Brand, Button, Notice, Screen, Tag, ui } from "../src/ui";
+import {
+  Brand,
+  Button,
+  Notice,
+  Screen,
+  StageHeading,
+  Tag,
+  ui,
+} from "../src/ui";
 import { NestArt } from "../src/art";
 import { colors, serif } from "../src/theme";
 const choices: { id: JourneyType; title: string; subtitle: string }[] = [
@@ -77,14 +85,14 @@ export default function Welcome() {
     setStep(step + 1);
   }
   return (
-    <Screen>
+    <Screen stageKey={step} focusTargetId={`welcome-step-${step}`}>
       {step === 0 ? (
         <View style={{ gap: 22 }}>
           <NestArt variant={2} style={{ height: 230, borderRadius: 25 }} />
           <Brand />
           <Tag>IL TUO SPAZIO, FIN DALL’INIZIO</Tag>
-          <Text
-            accessibilityRole="header"
+          <StageHeading
+            id="welcome-step-0"
             style={{
               fontFamily: serif,
               fontSize: 43,
@@ -93,7 +101,7 @@ export default function Welcome() {
             }}
           >
             Uno spazio per ogni nuovo inizio.
-          </Text>
+          </StageHeading>
           <Text style={ui.body}>
             Gravidanza, nascita e primi giorni insieme. MAIA ti accompagna con
             contenuti educativi e piccoli strumenti, da vivere con i tuoi tempi.
@@ -152,9 +160,7 @@ export default function Welcome() {
           <Tag>{`IL TUO PERCORSO · ${step} DI 3`}</Tag>
           {step === 1 && (
             <>
-              <Text accessibilityRole="header" style={ui.heading}>
-                Da dove iniziamo?
-              </Text>
+              <StageHeading id="welcome-step-1">Da dove iniziamo?</StageHeading>
               <Text style={ui.body}>
                 Ogni storia è diversa. Potrai cambiare percorso quando vuoi.
               </Text>
@@ -195,9 +201,9 @@ export default function Welcome() {
           )}
           {step === 2 && (
             <>
-              <Text accessibilityRole="header" style={ui.heading}>
+              <StageHeading id="welcome-step-2">
                 Un percorso che ti somiglia.
-              </Text>
+              </StageHeading>
               <Text style={ui.body}>
                 La data è facoltativa. Il tuo percorso funziona anche senza.
               </Text>
@@ -296,9 +302,9 @@ export default function Welcome() {
           )}
           {step === 3 && (
             <>
-              <Text accessibilityRole="header" style={ui.heading}>
+              <StageHeading id="welcome-step-3">
                 Solo ciò che ti fa stare bene.
-              </Text>
+              </StageHeading>
               <Text style={ui.body}>
                 Scegli i temi che desideri esplorare. Ogni famiglia può seguire
                 un percorso diverso.

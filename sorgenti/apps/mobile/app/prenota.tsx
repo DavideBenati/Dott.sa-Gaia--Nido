@@ -7,7 +7,7 @@ import {
   type BookingRequest,
 } from "@nido/core";
 import { Text, TextInput } from "../src/typography";
-import { Button, Notice, Screen, ui } from "../src/ui";
+import { Button, Notice, Screen, StageHeading, ui } from "../src/ui";
 import { useApp } from "../src/state";
 import { invokeSiteAction } from "../src/professional";
 const contact = "ostetricamaia@gmail.com";
@@ -95,6 +95,9 @@ export default function Booking() {
   return (
     <Screen
       back
+      stageKey={review ? "review" : "form"}
+      stageScroll="heading"
+      focusTargetId={review ? "booking-review-heading" : "booking-form-heading"}
       eyebrow="UN INCONTRO, CON I TUOI TEMPI"
       title="Chiedi disponibilità a Gaia."
       subtitle="Una richiesta semplice, senza scegliere orari che non sono stati confermati."
@@ -114,7 +117,9 @@ export default function Booking() {
         </Notice>
         {review ? (
           <>
-            <Text style={ui.heading}>Controlla la tua richiesta</Text>
+            <StageHeading id="booking-review-heading">
+              Controlla la tua richiesta
+            </StageHeading>
             <Text selectable style={[ui.body, ui.card]}>
               {bookingText(request)}
             </Text>
@@ -169,6 +174,9 @@ export default function Booking() {
           </>
         ) : (
           <>
+            <StageHeading id="booking-form-heading">
+              Completa la tua richiesta
+            </StageHeading>
             <Text style={ui.label}>Di cosa vorresti parlare?</Text>
             {bookingTopics.map((topic) => (
               <Button

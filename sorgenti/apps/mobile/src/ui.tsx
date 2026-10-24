@@ -1,9 +1,11 @@
 import maiaLogo from "../assets/brand/maia-logo.png";
 import { Text } from "./typography";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   ActivityIndicator,
   Image,
+  Keyboard,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,6 +13,7 @@ import {
   useWindowDimensions,
   type StyleProp,
   type ViewStyle,
+  type TextStyle,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, router } from "expo-router";
@@ -43,6 +46,9 @@ export function Screen({
   subtitle,
   back,
   style,
+  stageKey,
+  focusTargetId,
+  stageScroll = "start",
 }: {
   children: React.ReactNode;
   title?: string;
@@ -50,11 +56,48 @@ export function Screen({
   subtitle?: string;
   back?: boolean;
   style?: StyleProp<ViewStyle>;
+  stageKey?: string | number;
+  focusTargetId?: string;
+  stageScroll?: "start" | "heading";
 }) {
   usePageMetadata();
   const { demo, email, mutationError, clearError } = useApp();
   const { width } = useWindowDimensions();
   const desktop = width >= 900;
+  const scroll = useRef<React.ComponentRef<typeof ScrollView>>(null);
+  const previousStage = useRef(stageKey);
+  useEffect(() => {
+    // Only a deliberate phase transition resets the viewport. Typing, changing
+    // a preference and ordinary renders must preserve both focus and scroll.
+    if (previousStage.current === stageKey) return;
+    previousStage.current = stageKey;
+    if (stageKey === undefined) return;
+    Keyboard.dismiss();
+    const frame = requestAnimationFrame(() => {
+      scroll.current?.scrollTo({ y: 0, animated: false });
+      if (Platform.OS !== "web" || !focusTargetId) return;
+      const container: unknown = scroll.current?.getScrollableNode();
+      if (!(container instanceof HTMLElement)) return;
+      // Scope lookup to this screen: other stack entries may remain mounted.
+      const target = Array.from(
+        container.querySelectorAll<HTMLElement>("[id]"),
+      ).find((element) => element.id === focusTargetId);
+      if (!target) return;
+      const bounds = container.getBoundingClientRect();
+      const heading = target.getBoundingClientRect();
+      // Preserve the phase's back control when its heading already fits. Long
+      // introductions may require moving directly to the new phase heading.
+      const top =
+        stageScroll === "heading" ||
+        heading.top < bounds.top ||
+        heading.bottom > bounds.bottom
+          ? Math.max(0, container.scrollTop + heading.top - bounds.top - 16)
+          : 0;
+      target.focus({ preventScroll: true });
+      container.scrollTop = top;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [stageKey, focusTargetId, stageScroll]);
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <View style={styles.topBar}>
@@ -153,6 +196,7 @@ export function Screen({
         </View>
       </View>
       <ScrollView
+        ref={scroll}
         contentContainerStyle={[
           styles.scroll,
           !desktop && { paddingHorizontal: 20, paddingTop: 24 },
@@ -232,6 +276,27 @@ export function Screen({
     </SafeAreaView>
   );
 }
+export function StageHeading({
+  id,
+  children,
+  style,
+}: {
+  id: string;
+  children: React.ReactNode;
+  style?: StyleProp<TextStyle>;
+}) {
+  return (
+    <Text
+      nativeID={id}
+      tabIndex={-1}
+      accessibilityRole="header"
+      style={[ui.heading, style]}
+    >
+      {children}
+    </Text>
+  );
+}
+
 export function Button({
   children,
   onPress,
