@@ -100,6 +100,8 @@ const results = [];
 const contexts = [];
 let currentPage;
 let serial = 0;
+let revision = 0;
+const nextUpdatedAt = () => new Date(Date.parse(at) + ++revision).toISOString();
 const at = new Date().toISOString();
 const other = {
   id: "77777777-7777-4777-8777-777777777777",
@@ -250,6 +252,30 @@ async function newPage(viewer = null, width = 390) {
               doc.active &&
               grants.get(doc.id)?.has(viewer.id)),
         )
+        .filter((doc) => {
+          const id = url.searchParams.get("id");
+          const state = url.searchParams.get("state");
+          const active = url.searchParams.get("active");
+          if (id && id !== `eq.${doc.id}`) return false;
+          if (state === "eq.ready" && doc.state !== "ready") return false;
+          if (state === "neq.ready" && doc.state === "ready") return false;
+          if (active && active !== `eq.${doc.active}`) return false;
+          const search = url.searchParams
+            .get("or")
+            ?.match(/title\.ilike\."%(.+)%"/);
+          if (search) {
+            const literal = search[1]
+              .split('%",file_name')[0]
+              .replace(/\\([%_\\"])/g, "$1")
+              .toLowerCase();
+            if (
+              !doc.title.toLowerCase().includes(literal) &&
+              !doc.file_name.toLowerCase().includes(literal)
+            )
+              return false;
+          }
+          return true;
+        })
         .slice(offset, offset + limit);
       await json(copy(list));
       return;
@@ -375,20 +401,50 @@ async function newPage(viewer = null, width = 390) {
         await json({ error: "Forbidden" }, 403);
         return;
       }
+      const current = [...(grants.get(doc.id) ?? [])].sort();
+      if (
+        JSON.stringify(current) !==
+        JSON.stringify([...body.expected_user_ids].sort())
+      ) {
+        await json({ code: "40001", message: "Recipients changed" }, 409);
+        return;
+      }
       grants.set(doc.id, new Set(body.user_ids));
+      doc.updated_at = nextUpdatedAt();
       await json(null);
       return;
     }
-    if (url.pathname.endsWith("/rpc/update_document")) {
+    if (url.pathname.endsWith("/rpc/update_document_details")) {
+      const doc = documents.get(body.document_id);
+      if (!canManage || doc?.state !== "ready") {
+        await json({ error: "Forbidden" }, 403);
+        return;
+      }
+      if (body.expected_updated_at !== doc.updated_at) {
+        await json({ code: "40001", message: "Document changed" }, 409);
+        return;
+      }
+      Object.assign(doc, {
+        title: body.document_title.trim(),
+        description: body.document_description.trim(),
+        updated_at: nextUpdatedAt(),
+      });
+      await json(copy(doc));
+      return;
+    }
+    if (url.pathname.endsWith("/rpc/update_document_state")) {
       const doc = documents.get(body.document_id);
       if (!canManage || !doc) {
         await json({ error: "Forbidden" }, 403);
         return;
       }
+      if (body.expected_updated_at !== doc.updated_at) {
+        await json({ code: "40001", message: "Document changed" }, 409);
+        return;
+      }
       Object.assign(doc, {
-        title: body.document_title,
-        description: body.document_description,
         active: body.document_active,
+        updated_at: nextUpdatedAt(),
       });
       if (!doc.active) grants.set(doc.id, new Set());
       await json(doc.active ? copy(doc) : [copy(doc)]);
@@ -518,7 +574,125 @@ try {
   ).toHaveCount(0);
   results.push("Document member at AAL1 receives MFA CTA; upload unavailable.");
   const manage = await newPage(manager);
+  const seeded = [];
+  for (let n = 1; n <= 19; n++) {
+    const id = `99999999-9999-4999-8999-${String(n).padStart(12, "0")}`;
+    seeded.push(id);
+    documents.set(id, {
+      ...other,
+      id,
+      title: `Materiale archivio ${String(n).padStart(2, "0")}`,
+      storage_path: `${id}/archivio.pdf`,
+    });
+    grants.set(id, new Set());
+  }
   await manage.goto(origin + "/documenti-studio");
+  await expect(
+    manage.getByRole("button", { name: /^Gestisci accessi:/ }),
+  ).toHaveCount(20);
+  for (const width of [320, 390, 1440]) {
+    await manage.setViewportSize({ width, height: 844 });
+    await manage
+      .getByRole("button", {
+        name: `Gestisci accessi: ${other.title}`,
+        exact: true,
+      })
+      .click();
+    await expect(
+      manage.getByRole("heading", {
+        name: `Accessi a: ${other.title}`,
+        exact: true,
+      }),
+    ).toBeInViewport();
+    await expect(
+      manage.getByRole("button", { name: /^Gestisci accessi:/ }),
+    ).toHaveCount(0);
+    await screenshot(manage, `detail-focused-${width}`);
+    await manage
+      .getByRole("button", { name: "Torna all’elenco documenti", exact: true })
+      .click();
+  }
+  await manage
+    .getByRole("button", {
+      name: `Gestisci accessi: ${other.title}`,
+      exact: true,
+    })
+    .click();
+  const originalGrants = [...grants.get(other.id)].sort();
+  await manage
+    .getByLabel("Modifica titolo del documento", { exact: true })
+    .fill("Titolo corretto di prova");
+  await manage
+    .getByRole("button", { name: "Salva titolo e descrizione", exact: true })
+    .click();
+  await expect(
+    manage.getByText(
+      "Titolo e descrizione salvati. Il file e i destinatari non sono stati modificati.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  expect(documents.get(other.id).title).toBe("Titolo corretto di prova");
+  expect([...grants.get(other.id)].sort()).toEqual(originalGrants);
+  expect(documents.get(other.id).active).toBe(true);
+  await manage
+    .getByLabel("Modifica titolo del documento", { exact: true })
+    .fill("Modifica da proteggere");
+  manage.once("dialog", (d) => d.dismiss());
+  await manage
+    .getByRole("button", { name: "Torna all’elenco documenti", exact: true })
+    .click();
+  await expect(
+    manage.getByLabel("Modifica titolo del documento", { exact: true }),
+  ).toHaveValue("Modifica da proteggere");
+  manage.once("dialog", (d) => d.accept());
+  await manage
+    .getByRole("button", { name: "Torna all’elenco documenti", exact: true })
+    .click();
+  await manage
+    .getByLabel("Cerca documenti per titolo o nome file", { exact: true })
+    .fill("archivio 05");
+  await manage
+    .getByRole("button", { name: "Cerca documenti", exact: true })
+    .click();
+  await expect(
+    manage.getByRole("button", { name: /^Gestisci accessi:/ }),
+  ).toHaveCount(1);
+  expect(
+    calls.filter((c) => c.path.endsWith("/session_documents")).at(-1).query,
+  ).toContain("or=");
+  await manage
+    .getByLabel("Cerca documenti per titolo o nome file", { exact: true })
+    .fill("");
+  await manage
+    .getByRole("button", { name: "Cerca documenti", exact: true })
+    .click();
+  await manage.getByRole("button", { name: "Archiviati", exact: true }).click();
+  await expect(
+    manage.getByText("Nessun documento in questa pagina.", { exact: true }),
+  ).toBeVisible();
+  expect(
+    calls.filter((c) => c.path.endsWith("/session_documents")).at(-1).query,
+  ).toContain("active=eq.false");
+  await manage.getByRole("button", { name: "Tutti", exact: true }).click();
+  await expect(
+    manage.getByRole("button", { name: /^Gestisci accessi:/ }),
+  ).toHaveCount(20);
+  for (const id of seeded) {
+    documents.delete(id);
+    grants.delete(id);
+  }
+  await manage
+    .getByRole("button", { name: "Aggiorna elenco documenti", exact: true })
+    .click();
+  await expect(
+    manage.getByRole("button", { name: /^Gestisci accessi:/ }),
+  ).toHaveCount(1);
+  results.push(
+    "Twenty-document archive opens a dedicated focused detail at 320/390/1440; metadata rename preserves active and grants, cancel protects unsaved edits, search/status filters reach server.",
+  );
+  await manage
+    .getByRole("button", { name: "Carica un nuovo materiale", exact: true })
+    .click();
   await manage
     .getByLabel("Titolo del documento", { exact: true })
     .fill("Materiale riservato beta");
@@ -538,11 +712,11 @@ try {
     .getByRole("button", { name: "Carica in area privata", exact: true })
     .click();
   await expect(
-    manage.getByText(
-      "File caricato in area privata. Seleziona i destinatari e salva per condividerlo.",
-      { exact: true },
-    ),
-  ).toBeVisible();
+    manage.getByRole("heading", {
+      name: "Accessi a: Materiale riservato beta",
+      exact: true,
+    }),
+  ).toBeInViewport();
   await expect(
     manage.getByText("Nessun destinatario selezionato.", { exact: true }),
   ).toBeVisible();
@@ -590,6 +764,19 @@ try {
     .getByRole("button", { name: `Rimuovi ${bob.email}`, exact: true })
     .click();
   await save(manage, 1);
+  expect([...grants.get(uploadedDoc.id)]).toEqual([alice.id]);
+  await manage
+    .getByLabel("Modifica descrizione del documento", { exact: true })
+    .fill("Descrizione aggiornata dopo gli accessi");
+  await manage
+    .getByRole("button", { name: "Salva titolo e descrizione", exact: true })
+    .click();
+  await expect(
+    manage.getByText(
+      "Titolo e descrizione salvati. Il file e i destinatari non sono stati modificati.",
+      { exact: true },
+    ),
+  ).toBeVisible();
   expect([...grants.get(uploadedDoc.id)]).toEqual([alice.id]);
   results.push(
     "Minimum search length, explicit selection/save for two accounts and persistence of a subsequent single-recipient change.",
@@ -754,7 +941,7 @@ try {
       JSON.stringify({ results, calls }, null, 2),
     );
   console.log(
-    "PASS: guest/normal/editor/MFA document access, private PDF upload without automatic grants, explicit recipient selection, patient isolation, authenticated blob download, next-download revocation, archive/reactivation and 320/390/1440 layouts. All services mocked; no real users, files or emails sent.",
+    "PASS: dedicated focused detail with twenty files, metadata/ACL preservation, server filters, unsaved guard, guest/normal/editor/MFA document access, private PDF upload without automatic grants, explicit recipient selection, patient isolation, authenticated blob download, next-download revocation, archive/reactivation and 320/390/1440 layouts. All services mocked; no real users, files or emails sent.",
   );
 } catch (error) {
   if (artifacts && currentPage) {

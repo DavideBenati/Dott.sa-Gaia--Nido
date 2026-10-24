@@ -27,26 +27,49 @@ export const defaultProfile: SiteProfile = {
   privacy_transfers: "",
   privacy_reviewed: false,
 };
-export async function loadProfile(): Promise<SiteProfile> {
-  if (!client) return defaultProfile;
-  const { data, error } = await client
-    .from("site_profile")
-    .select("*")
-    .eq("id", 1)
-    .maybeSingle();
-  if (error || !data) return defaultProfile;
-  if (
-    !Array.isArray(data.services) ||
-    data.services.some(
-      (s: Service) =>
-        !s ||
-        typeof s.title !== "string" ||
-        typeof s.description !== "string" ||
-        typeof s.details !== "string",
+export async function loadProfile({
+  strict = false,
+}: { strict?: boolean } = {}): Promise<SiteProfile> {
+  const unavailable =
+    "Impossibile caricare le informazioni attuali. Riprova prima di modificarle: nessun dato è stato sostituito.";
+  try {
+    if (!client) throw new Error(unavailable);
+    const { data, error } = await client
+      .from("site_profile")
+      .select("*")
+      .eq("id", 1)
+      .maybeSingle();
+    if (error || !data) throw new Error(unavailable);
+    const textFields = [
+      "bio",
+      "portrait_url",
+      "qualifications",
+      "service_area",
+      "contact_email",
+      "privacy_providers",
+      "privacy_retention",
+      "privacy_transfers",
+    ] as const;
+    if (
+      data.id !== 1 ||
+      !Array.isArray(data.services) ||
+      data.services.some(
+        (service: Service) =>
+          !service ||
+          typeof service.title !== "string" ||
+          typeof service.description !== "string" ||
+          typeof service.details !== "string",
+      ) ||
+      (strict &&
+        (textFields.some((key) => typeof data[key] !== "string") ||
+          typeof data.privacy_reviewed !== "boolean"))
     )
-  )
+      throw new Error(unavailable);
+    return { ...defaultProfile, ...data } as SiteProfile;
+  } catch {
+    if (strict) throw new Error(unavailable);
     return defaultProfile;
-  return { ...defaultProfile, ...data } as SiteProfile;
+  }
 }
 export async function saveProfile(profile: SiteProfile) {
   if (!client) throw new Error("Servizio non disponibile.");

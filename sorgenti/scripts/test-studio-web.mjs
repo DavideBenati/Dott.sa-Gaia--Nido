@@ -123,6 +123,15 @@ async function context(editor = false, mfaPending = false) {
       };
     else if (url.pathname.endsWith("/functions/v1/newsletter-sync"))
       body = { pending: 0, errors: 0, processed: 2 };
+    else if (url.pathname.endsWith("/rpc/professional_conversation_contacts"))
+      body = [
+        {
+          user_id: conversation,
+          email: "utente@example.invalid",
+          last_message_at: new Date().toISOString(),
+          last_message_preview: "Messaggio fittizio di test",
+        },
+      ];
     else if (url.pathname.endsWith("/rpc/is_chat_staff")) body = editor;
     else if (url.pathname.endsWith("/care_conversations"))
       body = [{ user_id: conversation, created_at: new Date().toISOString() }];
@@ -325,7 +334,7 @@ try {
       .toBeGreaterThanOrEqual(0);
     if (width === 320) {
       await expect(
-        page.getByRole("button", { name: "Vai al mio percorso", exact: true }),
+        page.getByRole("button", { name: "Torna a Studio", exact: true }),
       ).toBeInViewport();
       await expect(
         page.getByRole("tab", { name: "Studio", exact: true }),
@@ -445,7 +454,7 @@ try {
     page.getByText("Presentazione aggiornata dal pannello", { exact: true }),
   ).toBeVisible();
   await page.goto("http://127.0.0.1:8095/messaggi");
-  await page.getByRole("button", { name: /Conversazione 22222222/ }).click();
+  await page.getByRole("button", { name: /utente@example.invalid/ }).click();
   await expect(
     page.getByText("Messaggio fittizio di test", { exact: true }),
   ).toBeVisible();
@@ -476,7 +485,7 @@ try {
   await expect(page.getByText("Confermati: 2", { exact: false })).toBeVisible();
   await page
     .getByRole("button", {
-      name: "Controlla iscritti e revoche su Resend",
+      name: "Sincronizza iscritti e revoche",
       exact: true,
     })
     .click();

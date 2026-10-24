@@ -1,22 +1,38 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View } from "react-native";
 import { router } from "expo-router";
 import { sendCareMessage, type CareMessage } from "@nido/data";
 import { client, useApp } from "../src/state";
 import { Text, TextInput } from "../src/typography";
-import { Screen, Button, Notice, ui } from "../src/ui";
+import { Screen, StageHeading, Button, Notice, ui } from "../src/ui";
+import { useUnsavedChanges } from "../src/unsaved-changes";
 import { colors } from "../src/theme";
-type Conversation = { user_id: string; created_at: string };
+type Conversation = {
+  user_id: string;
+  email: string | null;
+  last_message_at: string | null;
+  last_message_preview: string;
+};
+const conversationLabel = (item: Conversation) =>
+  item.email || `Conversazione ${item.user_id.slice(0, 8)}`;
 export default function Inbox() {
   const { email } = useApp();
+  const [phase, setPhase] = useState("list");
+  useEffect(() => setPhase("list"), [email]);
   return (
     <Screen
       back
+      professional
+      stageKey={`${email ?? "guest"}:${phase}`}
+      focusTargetId={
+        phase === "list" ? "conversation-list-heading" : "conversation-heading"
+      }
+      stageScroll="heading"
       title="Le conversazioni di Gaia"
       subtitle="Casella riservata alla professionista autorizzata."
     >
       {email ? (
-        <InboxContent key={email} />
+        <InboxContent key={email} onSelectionChange={setPhase} />
       ) : (
         <>
           <Notice>Accedi con l’account professionale di Gaia.</Notice>
@@ -28,7 +44,11 @@ export default function Inbox() {
     </Screen>
   );
 }
-function InboxContent() {
+function InboxContent({
+  onSelectionChange,
+}: {
+  onSelectionChange: (phase: string) => void;
+}) {
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [list, setList] = useState<Conversation[]>([]);
   const [page, setPage] = useState(0);
@@ -41,48 +61,107 @@ function InboxContent() {
   const [older, setOlder] = useState(false);
   const [offset, setOffset] = useState(0);
   const [refresh, setRefresh] = useState(0);
+  const [query, setQuery] = useState("");
+  const [search, setSearch] = useState("");
+  const [legacy, setLegacy] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const composer = useRef<React.ComponentRef<typeof TextInput>>(null);
+  const { allowNavigation } = useUnsavedChanges(Boolean(body.trim()));
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(query.trim());
+      setPage(0);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query]);
   useEffect(() => {
     let active = true;
     if (!client) return;
+    setLoading(true);
     void (async () => {
       try {
         const { data: user, error: userError } = await client.auth.getUser();
         if (userError || !user.user) throw new Error();
         const { data, error } = await client.rpc("is_chat_staff");
         if (error || data !== true) {
-          if (active) setAllowed(false);
+          if (active) {
+            setAllowed(false);
+            setList([]);
+          }
           return;
         }
-        const result = await client
-          .from("care_conversations")
-          .select("user_id,created_at")
-          .order("created_at", { ascending: false })
-          .order("user_id")
-          .range(page * 50, page * 50 + 49);
-        if (result.error) throw result.error;
+        const contacts = await client.rpc(
+          "professional_conversation_contacts",
+          {
+            search_term: search,
+            page_offset: page * 50,
+            page_limit: 50,
+          },
+        );
+        let conversations: Conversation[];
+        let legacyMode = false;
+        if (contacts.error) {
+          // Older projects retain the protected ID list until migration 008 is
+          // installed. Network/permission failures must never masquerade as an
+          // empty inbox or authorize an otherwise denied lookup.
+          if (!["PGRST202", "42883"].includes(contacts.error.code))
+            throw contacts.error;
+          const result = await client
+            .from("care_conversations")
+            .select("user_id,created_at")
+            .order("created_at", { ascending: false })
+            .order("user_id")
+            .range(page * 50, page * 50 + 49);
+          if (result.error) throw result.error;
+          conversations = (result.data ?? []).map((item) => ({
+            user_id: item.user_id,
+            email: null,
+            last_message_at: item.created_at,
+            last_message_preview: "",
+          }));
+          legacyMode = true;
+        } else {
+          if (
+            !Array.isArray(contacts.data) ||
+            contacts.data.some(
+              (item: Conversation) =>
+                typeof item.user_id !== "string" ||
+                (item.email !== null && typeof item.email !== "string") ||
+                (item.last_message_at !== null &&
+                  typeof item.last_message_at !== "string") ||
+                typeof item.last_message_preview !== "string",
+            )
+          )
+            throw new Error("Elenco contatti non valido.");
+          conversations = contacts.data as Conversation[];
+        }
         if (active) {
           setAllowed(true);
-          setList(result.data ?? []);
+          setLegacy(legacyMode);
+          setList(conversations);
           setError("");
         }
       } catch {
-        if (active)
+        if (active) {
+          setList([]);
           setError(
             "Impossibile caricare le conversazioni. Verifica l’accesso e riprova.",
           );
+        }
+      } finally {
+        if (active) setLoading(false);
       }
     })();
     return () => {
       active = false;
     };
-  }, [page, refresh]);
+  }, [page, refresh, search]);
   useEffect(() => {
     let active = true;
     let inflight = false;
     if (!client || !selected || allowed !== true) return;
     setMessages([]);
     setOffset(0);
-    setBody("");
     setNotice("");
     async function load() {
       if (inflight) return;
@@ -197,6 +276,31 @@ function InboxContent() {
       setBusy(false);
     }
   }
+  const visibleList =
+    legacy && search
+      ? list.filter((item) =>
+          item.user_id.toLowerCase().includes(search.toLowerCase()),
+        )
+      : list;
+  const selectedConversation = list.find((item) => item.user_id === selected);
+  function chooseConversation(item: Conversation) {
+    allowNavigation(() => {
+      setBody("");
+      setSelected(item.user_id);
+      setNotice("");
+      setError("");
+      onSelectionChange(item.user_id);
+    }, "Cambiare conversazione? La risposta non inviata sarà scartata.");
+  }
+  function backToList() {
+    allowNavigation(() => {
+      setSelected("");
+      setBody("");
+      setNotice("");
+      setError("");
+      onSelectionChange("list");
+    }, "Tornare alle conversazioni? La risposta non inviata sarà scartata.");
+  }
   return (
     <View
       style={{ gap: 20, maxWidth: 900, width: "100%", alignSelf: "center" }}
@@ -216,7 +320,10 @@ function InboxContent() {
             se hai attivato la protezione a due fattori, verifica prima il
             codice.
           </Notice>
-          <Button variant="secondary" onPress={() => router.push("/sicurezza")}>
+          <Button
+            variant="secondary"
+            onPress={() => allowNavigation(() => router.push("/sicurezza"))}
+          >
             Verifica accesso a due fattori
           </Button>
         </>
@@ -233,29 +340,83 @@ function InboxContent() {
         <>
           {!selected ? (
             <>
-              <Text style={ui.heading}>Conversazioni</Text>
-              {list.length === 0 && (
-                <Text style={ui.body}>
-                  Nessuna conversazione in questa pagina.
-                </Text>
+              <StageHeading id="conversation-list-heading">
+                Conversazioni
+              </StageHeading>
+              <TextInput
+                accessibilityLabel={
+                  legacy
+                    ? "Cerca identificativo in questa pagina"
+                    : "Cerca conversazioni per email"
+                }
+                placeholder={
+                  legacy ? "Identificativo in questa pagina" : "Cerca per email"
+                }
+                value={query}
+                onChangeText={setQuery}
+                maxLength={254}
+                style={ui.input}
+              />
+              <Button
+                variant="secondary"
+                disabled={loading}
+                onPress={() => setRefresh((value) => value + 1)}
+              >
+                Aggiorna conversazioni
+              </Button>
+              {legacy && (
+                <Notice>
+                  Le conversazioni sono disponibili per identificativo. Per
+                  mostrare email e ultima attività applica l’aggiornamento
+                  Supabase 008. La ricerca per identificativo riguarda solo
+                  questa pagina.
+                </Notice>
               )}
-              {list.map((item) => (
-                <Button
-                  key={item.user_id}
-                  variant="secondary"
-                  onPress={() => setSelected(item.user_id)}
-                >{`Conversazione ${item.user_id.slice(0, 8)} · ${new Date(item.created_at).toLocaleDateString("it-IT")}`}</Button>
-              ))}
+              {loading ? (
+                <Text style={ui.body}>Caricamento conversazioni…</Text>
+              ) : error && list.length === 0 ? null : visibleList.length ===
+                0 ? (
+                <Text style={ui.body}>
+                  {search
+                    ? "Nessuna conversazione corrisponde alla ricerca."
+                    : "Nessuna conversazione in questa pagina."}
+                </Text>
+              ) : (
+                visibleList.map((item) => (
+                  <View key={item.user_id} style={[ui.card, { gap: 10 }]}>
+                    <Text style={ui.heading}>{conversationLabel(item)}</Text>
+                    <Text style={ui.body}>
+                      {item.last_message_at
+                        ? `${legacy ? "Creata il " : "Ultima attività: "}${new Date(item.last_message_at).toLocaleString("it-IT")}`
+                        : "Nessun messaggio"}
+                    </Text>
+                    {item.last_message_preview !== "" && (
+                      <Text numberOfLines={2} style={ui.body}>
+                        {item.last_message_preview}
+                      </Text>
+                    )}
+                    <Button
+                      variant="secondary"
+                      onPress={() => chooseConversation(item)}
+                    >
+                      {legacy
+                        ? `Conversazione ${item.user_id.slice(0, 8)} · ${item.last_message_at ? new Date(item.last_message_at).toLocaleDateString("it-IT") : "Nessun messaggio"}`
+                        : `Apri conversazione: ${conversationLabel(item)}`}
+                    </Button>
+                  </View>
+                ))
+              )}
+              <Text style={ui.body}>{`Pagina ${page + 1}`}</Text>
               <Button
                 variant="quiet"
-                disabled={page === 0}
+                disabled={loading || page === 0}
                 onPress={() => setPage((v) => v - 1)}
               >
                 Pagina precedente
               </Button>
               <Button
                 variant="quiet"
-                disabled={list.length < 50}
+                disabled={loading || list.length < 50}
                 onPress={() => setPage((v) => v + 1)}
               >
                 Altre conversazioni
@@ -263,20 +424,20 @@ function InboxContent() {
             </>
           ) : (
             <>
-              <Button
-                variant="quiet"
-                disabled={busy}
-                onPress={() => {
-                  setSelected("");
-                  setNotice("");
-                  setError("");
-                }}
-              >
+              <Button variant="quiet" disabled={busy} onPress={backToList}>
                 Torna alle conversazioni
               </Button>
-              <Text
-                style={ui.label}
-              >{`Conversazione ${selected.slice(0, 8)}`}</Text>
+              <StageHeading id="conversation-heading">
+                {selectedConversation
+                  ? conversationLabel(selectedConversation)
+                  : `Conversazione ${selected.slice(0, 8)}`}
+              </StageHeading>
+              <Button
+                variant="secondary"
+                onPress={() => composer.current?.focus()}
+              >
+                Vai alla risposta
+              </Button>
               {older && (
                 <Button
                   variant="secondary"
@@ -312,6 +473,7 @@ function InboxContent() {
                 </View>
               ))}
               <TextInput
+                ref={composer}
                 accessibilityLabel="Risposta di Gaia"
                 placeholder="Scrivi una risposta…"
                 value={body}
@@ -322,6 +484,11 @@ function InboxContent() {
                 style={[ui.input, { minHeight: 100, textAlignVertical: "top" }]}
               />
               <Text style={ui.body}>{body.length}/4000 caratteri</Text>
+              {body.trim() !== "" && (
+                <Text style={ui.body}>
+                  Risposta non inviata. Conferma prima di uscire per scartarla.
+                </Text>
+              )}
               {notice !== "" && (
                 <View accessibilityRole="status">
                   <Notice>{notice}</Notice>

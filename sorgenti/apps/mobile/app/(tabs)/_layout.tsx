@@ -6,6 +6,7 @@ import { Tabs } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useProfessionalNavigation } from "../../src/professional-navigation";
 import { Icon, type IconName } from "../../src/icons";
+import { confirmPendingNavigation } from "../../src/unsaved-changes";
 export default function Layout() {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -21,6 +22,13 @@ export default function Layout() {
   ];
   return (
     <Tabs
+      screenListeners={({ navigation }) => ({
+        tabPress: (event) => {
+          const state = navigation.getState();
+          if (state.routes[state.index]?.key === event.target) return;
+          if (!confirmPendingNavigation()) event.preventDefault();
+        },
+      })}
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: "#42624B",

@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
-import { View, Platform } from "react-native";
+import React, { useEffect, useRef, useState } from "react";
+import { View } from "react-native";
 import { router } from "expo-router";
 import { Screen, Button, Notice, ui } from "../src/ui";
 import { Text, TextInput } from "../src/typography";
 import { useApp } from "../src/state";
+import { useUnsavedChanges } from "../src/unsaved-changes";
 import { useEditorAccess } from "../src/editor-access";
 import {
   defaultProfile,
@@ -16,6 +17,7 @@ export default function Settings() {
   return (
     <Screen
       back
+      professional
       title="Gaia, servizi e privacy"
       subtitle="Le modifiche salvate alla presentazione diventano pubbliche."
     >
@@ -36,35 +38,48 @@ function Editor() {
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [reload, setReload] = useState(0);
+  const saving = useRef(false);
+  const { allowNavigation } = useUnsavedChanges(dirty);
   useEffect(() => {
     let active = true;
-    if (allowed)
-      void loadProfile().then((p) => {
-        if (active) {
-          setProfile(p);
-          setReady(true);
-        }
-      });
+    if (allowed) {
+      setReady(false);
+      setLoadError("");
+      setMessage("");
+      void loadProfile({ strict: true })
+        .then((p) => {
+          if (active) {
+            setProfile(p);
+            setReady(true);
+            setDirty(false);
+          }
+        })
+        .catch((error) => {
+          if (active)
+            setLoadError(
+              error instanceof Error
+                ? error.message
+                : "Caricamento non riuscito. Riprova prima di modificare i dati.",
+            );
+        });
+    }
     return () => {
       active = false;
     };
-  }, [allowed]);
-  useEffect(() => {
-    if (Platform.OS !== "web" || !dirty) return;
-    const guard = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = "";
-    };
-    window.addEventListener("beforeunload", guard);
-    return () => window.removeEventListener("beforeunload", guard);
-  }, [dirty]);
+  }, [allowed, reload]);
   function update(p: Partial<SiteProfile>) {
+    if (saving.current) return;
     setProfile((v) => ({ ...v, ...p }));
     setDirty(true);
     setMessage("");
   }
   async function save() {
+    if (!ready || !dirty || saving.current || !allowed) return;
+    saving.current = true;
     setBusy(true);
+    setMessage("");
     try {
       await saveProfile(profile);
       setDirty(false);
@@ -72,6 +87,7 @@ function Editor() {
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Salvataggio non riuscito.");
     } finally {
+      saving.current = false;
       setBusy(false);
     }
   }
@@ -92,6 +108,7 @@ function Editor() {
         <Text style={ui.label}>{label}</Text>
         <TextInput
           accessibilityLabel={label}
+          editable={!busy}
           value={profile[key]}
           onChangeText={(v) => update({ [key]: v })}
           multiline={key !== "contact_email" && key !== "portrait_url"}
@@ -113,7 +130,16 @@ function Editor() {
           verifica il codice nella pagina Sicurezza.
         </Notice>
       ) : !ready ? (
-        <Notice>Caricamento…</Notice>
+        loadError ? (
+          <View accessibilityRole="alert" style={{ gap: 12 }}>
+            <Notice warm>{loadError}</Notice>
+            <Button onPress={() => setReload((value) => value + 1)}>
+              Riprova caricamento informazioni
+            </Button>
+          </View>
+        ) : (
+          <Notice>Caricamento delle informazioni attuali…</Notice>
+        )
       ) : (
         <>
           <Notice>
@@ -163,6 +189,7 @@ function Editor() {
                         ? "Descrizione"
                         : "Modalità e altre informazioni confermate"
                   }
+                  editable={!busy}
                   value={service[key]}
                   multiline
                   style={ui.input}
@@ -178,6 +205,7 @@ function Editor() {
               ))}
               <Button
                 variant="quiet"
+                disabled={busy}
                 onPress={() =>
                   update({
                     services: profile.services.filter((_, n) => n !== i),
@@ -190,7 +218,7 @@ function Editor() {
           ))}
           <Button
             variant="secondary"
-            disabled={profile.services.length >= 20}
+            disabled={busy || profile.services.length >= 20}
             onPress={() =>
               update({
                 services: [
@@ -219,7 +247,11 @@ function Editor() {
           <Button disabled={busy || !dirty} onPress={() => void save()}>
             {busy ? "Salvataggio…" : "Salva modifiche"}
           </Button>
-          <Button variant="secondary" onPress={() => router.push("/gaia")}>
+          <Button
+            variant="secondary"
+            disabled={busy}
+            onPress={() => allowNavigation(() => router.push("/gaia"))}
+          >
             Apri pagina pubblica
           </Button>
         </>

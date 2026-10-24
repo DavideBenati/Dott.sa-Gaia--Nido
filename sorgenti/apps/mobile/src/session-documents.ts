@@ -49,7 +49,15 @@ export async function loadDocumentAccess(): Promise<DocumentAccess> {
     throw new Error(unavailable);
   return data as DocumentAccess;
 }
-export async function listDocuments(page: number, manage = false) {
+export type DocumentFilter = {
+  term?: string;
+  state?: "all" | "active" | "archived" | "incomplete";
+};
+export async function listDocuments(
+  page: number,
+  manage = false,
+  filter: DocumentFilter = {},
+) {
   const user = await identity();
   let query = client!
     .from("session_documents")
@@ -62,6 +70,22 @@ export async function listDocuments(page: number, manage = false) {
       .eq("session_document_access.user_id", user)
       .eq("state", "ready")
       .eq("active", true);
+  if (manage) {
+    if (filter.state === "active")
+      query = query.eq("state", "ready").eq("active", true);
+    else if (filter.state === "archived")
+      query = query.eq("state", "ready").eq("active", false);
+    else if (filter.state === "incomplete") query = query.neq("state", "ready");
+    const term = filter.term?.trim().slice(0, 180);
+    if (term) {
+      // PostgREST quoted filter values preserve commas and parentheses; escape
+      // SQL wildcard characters as literals, keeping the search predictable.
+      const pattern = term.replace(/[\\%_]/g, "\\$&").replace(/"/g, '\\"');
+      query = query.or(
+        `title.ilike."%${pattern}%",file_name.ilike."%${pattern}%"`,
+      );
+    }
+  }
   const { data, error } = await query
     .order("created_at", { ascending: false })
     .order("id")
@@ -198,21 +222,63 @@ export async function saveDocumentRecipients(
     throw new Error(
       "Destinatari non salvati. Verifica che gli account siano confermati e il documento attivo.",
     );
+  // Recipient saves advance updated_at. Read the protected snapshot so a later
+  // metadata edit from this session does not conflict with its own ACL change.
+  // A read failure must not report that the already committed grants failed.
+  try {
+    const latest = await client!
+      .from("session_documents")
+      .select("*")
+      .eq("id", id)
+      .maybeSingle();
+    return latest.error ? null : (latest.data as SessionDocument | null);
+  } catch {
+    return null;
+  }
 }
 export async function setDocumentActive(
   document: SessionDocument,
   active: boolean,
 ): Promise<SessionDocument> {
   await identity();
-  const { data, error } = await client!.rpc("update_document", {
+  const { data, error } = await client!.rpc("update_document_state", {
     document_id: document.id,
-    document_title: document.title,
-    document_description: document.description,
     document_active: active,
+    expected_updated_at: document.updated_at,
   });
+  if (error?.code === "40001")
+    throw new Error(
+      "Il documento è cambiato da un’altra sessione. Torna all’elenco, aggiornalo e riapri il materiale prima di modificarne lo stato.",
+    );
   if (error || !data)
     throw new Error(
-      "Aggiornamento non riuscito. Riprova dopo aver verificato il secondo fattore.",
+      "Aggiornamento non riuscito. Verifica connessione, secondo fattore e aggiornamento Supabase v8.",
+    );
+  return oneDocument(data);
+}
+export async function saveDocumentDetails(
+  document: SessionDocument,
+  title: string,
+  description: string,
+): Promise<SessionDocument> {
+  await identity();
+  if (!title.trim() || title.trim().length > 180)
+    throw new Error("Inserisci un titolo (massimo 180 caratteri).");
+  if (description.length > 2000)
+    throw new Error("La descrizione può contenere al massimo 2000 caratteri.");
+  const { data, error } = await client!.rpc("update_document_details", {
+    document_id: document.id,
+    document_title: title.trim(),
+    document_description: description.trim(),
+    expected_updated_at: document.updated_at,
+  });
+  if (error?.code === "40001")
+    throw new Error(
+      "Il documento è cambiato da un’altra sessione. Torna all’elenco, aggiornalo e riapri il materiale prima di salvare.",
+    );
+  if (error || !data)
+    throw new Error(
+      "Dettagli non salvati. Verifica connessione, secondo fattore e aggiornamento Supabase v8.",
     );
   return oneDocument(data);
 }

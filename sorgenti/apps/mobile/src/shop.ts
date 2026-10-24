@@ -29,7 +29,8 @@ export async function loadShop(editor = false) {
       .select(
         "id,kind,title,description,price_cents,image_url,checkout_url,status",
       )
-      .order("created_at"),
+      .order("created_at", { ascending: false })
+      .order("id"),
     client.from("shop_settings").select("*").eq("id", 1).maybeSingle(),
   ]);
   if (products.error || settings.error)

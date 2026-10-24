@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   Image,
@@ -9,14 +9,15 @@ import {
   useWindowDimensions,
 } from "react-native";
 import Svg, { Path, Rect } from "react-native-svg";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import logo from "../../assets/brand/maia-logo.png";
 import { Text, TextInput } from "../../src/typography";
-import { Screen, Notice, Button, ui } from "../../src/ui";
+import { Screen, Notice, Button, StageHeading, ui } from "../../src/ui";
 import { colors } from "../../src/theme";
 import { useDialogFocus } from "../../src/dialog-focus";
 import { useApp } from "../../src/state";
 import { useEditorAccess } from "../../src/editor-access";
+import { useUnsavedChanges } from "../../src/unsaved-changes";
 import {
   emptyShopSettings,
   formatPrice,
@@ -34,11 +35,13 @@ function Field({
   value,
   onChange,
   multiline = false,
+  disabled = false,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   multiline?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <View style={{ gap: 8 }}>
@@ -46,6 +49,7 @@ function Field({
       <TextInput
         accessibilityLabel={label}
         value={value}
+        editable={!disabled}
         onChangeText={onChange}
         multiline={multiline}
         style={[
@@ -159,29 +163,120 @@ function CollectionIdea({
 export default function Shop() {
   const { email } = useApp();
   const { allowed } = useEditorAccess();
+  const params = useLocalSearchParams<{ manage?: string }>();
+  const manage = allowed && params.manage === "1";
+  const [phase, setPhase] = useState("public");
   return (
     <Screen
-      eyebrow="IL MONDO METIMAIA"
-      title="Lo Shop di metiMaia"
-      subtitle="La selezione Amazon e i prodotti della Dott.ssa Gaia Brunetti."
+      professional={manage}
+      stageKey={phase}
+      focusTargetId="shop-workspace-heading"
+      stageScroll="heading"
+      eyebrow={manage ? "STUDIO · SHOP" : "IL MONDO METIMAIA"}
+      title={manage ? "Gestione Shop" : "Lo Shop di metiMaia"}
+      subtitle={
+        manage
+          ? "Prodotti, selezione Amazon e impostazioni di vendita."
+          : "La selezione Amazon e i prodotti della Dott.ssa Gaia Brunetti."
+      }
     >
-      <ShopContent key={email ?? "guest"} editor={allowed} />
+      <ShopContent
+        key={email ?? "guest"}
+        editor={allowed}
+        manage={manage}
+        onManage={(value) => router.setParams({ manage: value ? "1" : "0" })}
+        onPhase={setPhase}
+      />
     </Screen>
   );
 }
-function ShopContent({ editor }: { editor: boolean }) {
+function ShopContent({
+  editor,
+  manage,
+  onManage,
+  onPhase,
+}: {
+  editor: boolean;
+  manage: boolean;
+  onManage: (value: boolean) => void;
+  onPhase: (value: string) => void;
+}) {
   const { width } = useWindowDimensions();
   const [settings, setSettings] = useState<ShopSettings>(emptyShopSettings);
   const [products, setProducts] = useState<ShopProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const [section, setSection] = useState<"amazon" | "doctor">("amazon");
-  const [manage, setManage] = useState(false);
+  const [management, setManagement] = useState<"products" | "settings">(
+    "products",
+  );
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "draft" | "published"
+  >("all");
+  const [kindFilter, setKindFilter] = useState<"all" | "amazon" | "doctor">(
+    "all",
+  );
+  const [page, setPage] = useState(0);
+  const [pageNavigation, setPageNavigation] = useState(0);
+  const [version, setVersion] = useState(0);
+  const [settingsBaseline, setSettingsBaseline] = useState(
+    JSON.stringify(emptyShopSettings),
+  );
+  const [productBaseline, setProductBaseline] = useState("");
+  const busyLock = useRef(false);
   const [product, setProduct] = useState<ShopProduct | null>(null);
   const [price, setPrice] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [checkout, setCheckout] = useState<ShopProduct | null>(null);
+  const settingsDirty = JSON.stringify(settings) !== settingsBaseline;
+  const productDirty = Boolean(
+    product && JSON.stringify({ product, price }) !== productBaseline,
+  );
+  const { confirmDiscard, allowNavigation } = useUnsavedChanges(
+    manage && (settingsDirty || productDirty),
+  );
+  useEffect(() => {
+    onPhase(
+      manage
+        ? `${management}-${product?.id ?? "list"}-${pageNavigation}`
+        : "public",
+    );
+  }, [manage, management, product?.id, pageNavigation, onPhase]);
+  function discard() {
+    if (!confirmDiscard("Uscire senza salvare le modifiche dello Shop?"))
+      return false;
+    setSettings(JSON.parse(settingsBaseline) as ShopSettings);
+    setProduct(null);
+    setProductBaseline("");
+    setMessage("");
+    return true;
+  }
+  function editProduct(value: ShopProduct) {
+    const nextPrice = value.price_cents
+      ? (value.price_cents / 100).toFixed(2)
+      : "";
+    setProduct(value);
+    setPrice(nextPrice);
+    setProductBaseline(JSON.stringify({ product: value, price: nextPrice }));
+    setMessage("");
+  }
+  const filtered = products.filter(
+    (item) =>
+      (statusFilter === "all" || item.status === statusFilter) &&
+      (kindFilter === "all" || item.kind === kindFilter) &&
+      `${item.title} ${item.description}`
+        .toLocaleLowerCase("it-IT")
+        .includes(query.trim().toLocaleLowerCase("it-IT")),
+  );
+  const pages = Math.max(1, Math.ceil(filtered.length / 12));
+  const currentPage = Math.min(page, pages - 1);
+  const visibleProducts = filtered.slice(
+    currentPage * 12,
+    currentPage * 12 + 12,
+  );
+
   useDialogFocus(Boolean(checkout), "metimaia-checkout", () =>
     setCheckout(null),
   );
@@ -192,6 +287,7 @@ function ShopContent({ editor }: { editor: boolean }) {
       .then((data) => {
         if (active) {
           setSettings(data.settings);
+          setSettingsBaseline(JSON.stringify(data.settings));
           setProducts(data.products);
           setLoadError(false);
         }
@@ -205,14 +301,16 @@ function ShopContent({ editor }: { editor: boolean }) {
     return () => {
       active = false;
     };
-  }, [editor]);
+  }, [editor, version]);
   async function reload() {
     const data = await loadShop(editor);
     setProducts(data.products);
     setSettings(data.settings);
+    setSettingsBaseline(JSON.stringify(data.settings));
+    setLoadError(false);
   }
   async function saveProduct(status: ShopProduct["status"]) {
-    if (!product || busy) return;
+    if (!product || busyLock.current || loading || loadError) return;
     const cents = product.kind === "doctor" ? parsePrice(price) : 0;
     if (product.kind === "doctor" && price.trim() && cents === null) {
       setMessage(
@@ -220,13 +318,24 @@ function ShopContent({ editor }: { editor: boolean }) {
       );
       return;
     }
+    busyLock.current = true;
     setBusy(true);
     setMessage("");
     try {
       const updated = { ...product, price_cents: cents ?? 0, status };
       await saveShopProduct(updated);
-      await reload();
+      setProducts((items) => [
+        updated,
+        ...items.filter((item) => item.id !== updated.id),
+      ]);
       setProduct(null);
+      setProductBaseline("");
+      setPage(0);
+      try {
+        await reload();
+      } catch {
+        setLoadError(true);
+      }
       setMessage(
         status === "draft"
           ? "Prodotto salvato in bozza. Non è visibile ai clienti."
@@ -239,15 +348,18 @@ function ShopContent({ editor }: { editor: boolean }) {
         error instanceof Error ? error.message : "Salvataggio non riuscito.",
       );
     } finally {
+      busyLock.current = false;
       setBusy(false);
     }
   }
   async function saveSettings() {
+    if (busyLock.current || loading || loadError || !settingsDirty) return;
+    busyLock.current = true;
     setBusy(true);
     setMessage("");
     try {
       await saveShopSettings(settings);
-      await reload();
+      setSettingsBaseline(JSON.stringify(settings));
       setMessage(
         settings.enabled
           ? "Negozio attivato. Verifica ogni acquisto con la modalità di test del fornitore prima del lancio."
@@ -260,6 +372,7 @@ function ShopContent({ editor }: { editor: boolean }) {
         error instanceof Error ? error.message : "Salvataggio non riuscito.",
       );
     } finally {
+      busyLock.current = false;
       setBusy(false);
     }
   }
@@ -285,16 +398,27 @@ function ShopContent({ editor }: { editor: boolean }) {
       style={{ gap: 24, width: "100%", maxWidth: 1100, alignSelf: "center" }}
     >
       {editor && (
-        <Button
-          variant="secondary"
-          onPress={() => {
-            setManage(!manage);
-            setProduct(null);
-            setMessage("");
-          }}
-        >
-          {manage ? "Vedi lo shop" : "Gestisci prodotti e vendite"}
-        </Button>
+        <View style={{ gap: 10 }}>
+          <Button
+            variant="secondary"
+            disabled={busy}
+            onPress={() => {
+              if (!discard()) return;
+              onManage(!manage);
+            }}
+          >
+            {manage ? "Vedi lo shop" : "Gestisci prodotti e vendite"}
+          </Button>
+          {manage && (
+            <Button
+              variant="quiet"
+              disabled={busy}
+              onPress={() => allowNavigation(() => router.push("/studio"))}
+            >
+              Torna a Studio
+            </Button>
+          )}
+        </View>
       )}
       {message !== "" && !manage && (
         <View accessibilityRole="alert" accessibilityLiveRegion="polite">
@@ -305,13 +429,57 @@ function ShopContent({ editor }: { editor: boolean }) {
         <Notice>Caricamento dello shop…</Notice>
       ) : manage && editor ? (
         <>
-          {loadError && (
-            <Notice>
-              Prima di salvare, applica la configurazione shop su Supabase
-              inclusa nel pacchetto. Non modificare le altre tabelle.
-            </Notice>
+          <View
+            style={{ gap: 10, flexDirection: width >= 650 ? "row" : "column" }}
+          >
+            <View style={{ flex: 1 }}>
+              <Button
+                variant={management === "products" ? "secondary" : "quiet"}
+                disabled={busy}
+                onPress={() => {
+                  if ((management !== "products" || product) && !discard())
+                    return;
+                  setManagement("products");
+                }}
+              >
+                Prodotti
+              </Button>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Button
+                variant={management === "settings" ? "secondary" : "quiet"}
+                disabled={busy}
+                onPress={() => {
+                  if (management !== "settings" && !discard()) return;
+                  setManagement("settings");
+                }}
+              >
+                Impostazioni vendita
+              </Button>
+            </View>
+          </View>
+          <StageHeading id="shop-workspace-heading">
+            {product
+              ? "Modifica prodotto"
+              : management === "settings"
+                ? "Impostazioni di vendita"
+                : "Catalogo prodotti"}
+          </StageHeading>
+          {(settingsDirty || productDirty) && (
+            <Notice>Modifiche allo Shop non salvate.</Notice>
           )}
-          {product ? (
+          {loadError ? (
+            <View accessibilityRole="alert" style={{ gap: 12 }}>
+              {message !== "" && <Notice>{message}</Notice>}
+              <Notice>
+                Non è stato possibile leggere i dati attuali dello Shop. Riprova
+                prima di modificarli o salvare.
+              </Notice>
+              <Button onPress={() => setVersion((value) => value + 1)}>
+                Riprova caricamento shop
+              </Button>
+            </View>
+          ) : product ? (
             <View
               style={[ui.card, { gap: 18 }]}
               pointerEvents={busy ? "none" : "auto"}
@@ -319,6 +487,7 @@ function ShopContent({ editor }: { editor: boolean }) {
               <Text style={ui.heading}>Scheda prodotto</Text>
               <Text style={ui.label}>Tipo di scheda</Text>
               <Button
+                disabled={busy}
                 variant={product.kind === "amazon" ? "secondary" : "quiet"}
                 onPress={() =>
                   setProduct({
@@ -332,6 +501,7 @@ function ShopContent({ editor }: { editor: boolean }) {
                 Selezionato su Amazon
               </Button>
               <Button
+                disabled={busy}
                 variant={product.kind === "doctor" ? "secondary" : "quiet"}
                 onPress={() =>
                   setProduct({ ...product, kind: "doctor", checkout_url: "" })
@@ -340,11 +510,13 @@ function ShopContent({ editor }: { editor: boolean }) {
                 Prodotto della dottoressa
               </Button>
               <Field
+                disabled={busy}
                 label="Nome prodotto"
                 value={product.title}
                 onChange={(title) => setProduct({ ...product, title })}
               />
               <Field
+                disabled={busy}
                 label="Descrizione prodotto"
                 value={product.description}
                 onChange={(description) =>
@@ -354,17 +526,20 @@ function ShopContent({ editor }: { editor: boolean }) {
               />
               {product.kind === "doctor" && (
                 <Field
+                  disabled={busy}
                   label="Prezzo in euro"
                   value={price}
                   onChange={setPrice}
                 />
               )}
               <Field
+                disabled={busy}
                 label="Immagine prodotto (HTTPS)"
                 value={product.image_url}
                 onChange={(image_url) => setProduct({ ...product, image_url })}
               />
               <Field
+                disabled={busy}
                 label={
                   product.kind === "amazon"
                     ? "Link Amazon"
@@ -394,11 +569,14 @@ function ShopContent({ editor }: { editor: boolean }) {
                   <Notice>{message}</Notice>
                 </View>
               )}
-              <Button disabled={busy} onPress={() => void saveProduct("draft")}>
+              <Button
+                disabled={busy || loadError}
+                onPress={() => void saveProduct("draft")}
+              >
                 Salva prodotto in bozza
               </Button>
               <Button
-                disabled={busy}
+                disabled={busy || loadError}
                 variant="secondary"
                 onPress={() => void saveProduct("published")}
               >
@@ -408,21 +586,127 @@ function ShopContent({ editor }: { editor: boolean }) {
                 disabled={busy}
                 variant="quiet"
                 onPress={() => {
-                  setProduct(null);
-                  setMessage("");
+                  if (!discard()) return;
                 }}
               >
                 Annulla modifica prodotto
               </Button>
             </View>
+          ) : management === "settings" ? (
+            <View
+              style={[ui.card, { gap: 18 }]}
+              pointerEvents={busy ? "none" : "auto"}
+            >
+              <Text style={ui.heading}>Selezione Amazon</Text>
+              <Pressable
+                disabled={busy}
+                accessibilityRole="checkbox"
+                accessibilityLabel="Mostra selezione Amazon"
+                accessibilityState={{
+                  checked: settings.recommendations_enabled,
+                }}
+                onPress={() =>
+                  setSettings({
+                    ...settings,
+                    recommendations_enabled: !settings.recommendations_enabled,
+                  })
+                }
+              >
+                <Text style={ui.body}>
+                  {settings.recommendations_enabled ? "☑" : "☐"} Mostra i
+                  prodotti Amazon pubblicati.
+                </Text>
+              </Pressable>
+              <Pressable
+                disabled={busy}
+                accessibilityRole="checkbox"
+                accessibilityLabel="Link affiliati Amazon"
+                accessibilityState={{ checked: settings.amazon_affiliate }}
+                onPress={() =>
+                  setSettings({
+                    ...settings,
+                    amazon_affiliate: !settings.amazon_affiliate,
+                  })
+                }
+              >
+                <Text style={ui.body}>
+                  {settings.amazon_affiliate ? "☑" : "☐"} Uso link affiliati e
+                  ho un account Amazon Affiliati abilitato. Mostra la
+                  dichiarazione delle commissioni.
+                </Text>
+              </Pressable>
+              <Text style={ui.heading}>
+                Vendita diretta: venditore, spedizioni e resi
+              </Text>
+              <Notice>
+                Per avviare la vendita servono dati reali, condizioni di vendita
+                e un account di pagamento attivo. L’inserimento dei campi non
+                sostituisce la verifica degli obblighi fiscali e di vendita.
+              </Notice>
+              {(
+                [
+                  ["seller_name", "Nome o ragione sociale del venditore"],
+                  ["seller_address", "Indirizzo del venditore"],
+                  ["seller_contact", "Email assistenza acquisti"],
+                  ["tax_details", "Dati fiscali del venditore"],
+                  ["shipping_terms", "Spedizioni: paesi, costi e tempi"],
+                  ["returns_terms", "Resi e diritto di recesso"],
+                  ["terms_url", "Link HTTPS alle condizioni di vendita"],
+                ] as const
+              ).map(([key, label]) => (
+                <Field
+                  disabled={busy}
+                  key={key}
+                  label={label}
+                  value={settings[key]}
+                  onChange={(value) =>
+                    setSettings({ ...settings, [key]: value })
+                  }
+                  multiline={
+                    key === "shipping_terms" || key === "returns_terms"
+                  }
+                />
+              ))}
+              <Pressable
+                disabled={busy}
+                accessibilityRole="checkbox"
+                accessibilityLabel="Attiva vendite shop"
+                accessibilityState={{ checked: settings.enabled }}
+                onPress={() =>
+                  setSettings({ ...settings, enabled: !settings.enabled })
+                }
+              >
+                <Text style={ui.body}>
+                  {settings.enabled ? "☑" : "☐"} Attiva gli acquisti dopo aver
+                  verificato prodotti, prezzi, condizioni e configurazione
+                  Stripe.
+                </Text>
+              </Pressable>
+              {message !== "" && (
+                <View accessibilityRole="alert">
+                  <Notice>{message}</Notice>
+                </View>
+              )}
+              <Button
+                disabled={busy || !settingsDirty || loadError}
+                onPress={() => void saveSettings()}
+              >
+                Salva impostazioni shop
+              </Button>
+            </View>
           ) : (
             <>
-              {message !== "" && <Notice>{message}</Notice>}
+              {message !== "" && (
+                <View
+                  accessibilityRole="alert"
+                  accessibilityLiveRegion="polite"
+                >
+                  <Notice>{message}</Notice>
+                </View>
+              )}
               <Button
-                onPress={() => {
-                  setPrice("");
-                  setMessage("");
-                  setProduct({
+                onPress={() =>
+                  editProduct({
                     id: crypto.randomUUID(),
                     kind: "doctor",
                     title: "",
@@ -431,16 +715,86 @@ function ShopContent({ editor }: { editor: boolean }) {
                     image_url: "",
                     checkout_url: "",
                     status: "draft",
-                  });
-                }}
+                  })
+                }
               >
                 Nuovo prodotto
               </Button>
-              {products.map((item) => (
+              <Field
+                label="Cerca prodotti per nome o descrizione"
+                value={query}
+                onChange={(value) => {
+                  setQuery(value);
+                  setPage(0);
+                }}
+              />
+              <View style={{ gap: 8 }}>
+                <Text style={ui.label}>Stato</Text>
+                <View
+                  style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}
+                >
+                  {(
+                    [
+                      ["all", "Tutti"],
+                      ["draft", "Bozze"],
+                      ["published", "Pubblicati"],
+                    ] as const
+                  ).map(([value, label]) => (
+                    <View key={value} style={{ flexGrow: 1, minWidth: 90 }}>
+                      <Button
+                        variant={statusFilter === value ? "secondary" : "quiet"}
+                        accessibilityLabel={`Filtra prodotti: ${label}`}
+                        onPress={() => {
+                          setStatusFilter(value);
+                          setPage(0);
+                        }}
+                      >{`${statusFilter === value ? "✓ " : ""}${label}`}</Button>
+                    </View>
+                  ))}
+                </View>
+                <Text style={ui.label}>Tipo di prodotto</Text>
+                <View
+                  style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}
+                >
+                  {(
+                    [
+                      ["all", "Tutti"],
+                      ["amazon", "Amazon"],
+                      ["doctor", "Dottoressa"],
+                    ] as const
+                  ).map(([value, label]) => (
+                    <View key={value} style={{ flexGrow: 1, minWidth: 90 }}>
+                      <Button
+                        variant={kindFilter === value ? "secondary" : "quiet"}
+                        accessibilityLabel={`Tipo prodotto: ${label}`}
+                        onPress={() => {
+                          setKindFilter(value);
+                          setPage(0);
+                        }}
+                      >{`${kindFilter === value ? "✓ " : ""}${label}`}</Button>
+                    </View>
+                  ))}
+                </View>
+              </View>
+              <Text style={ui.body}>
+                {filtered.length} prodotti trovati · Pagina {currentPage + 1} di{" "}
+                {pages}
+              </Text>
+              {visibleProducts.length === 0 && (
+                <Notice>
+                  Nessun prodotto corrisponde ai filtri. Puoi creare una nuova
+                  scheda o cambiare la ricerca.
+                </Notice>
+              )}
+              {visibleProducts.map((item) => (
                 <View key={item.id} style={[ui.card, { gap: 10 }]}>
                   <Text style={ui.heading}>{item.title}</Text>
                   <Text style={ui.body}>
                     {item.status === "draft" ? "Bozza" : "Pubblicato"} ·{" "}
+                    {item.kind === "amazon"
+                      ? "Amazon"
+                      : "Prodotto della dottoressa"}{" "}
+                    ·{" "}
                     {item.price_cents > 0
                       ? formatPrice(item.price_cents)
                       : item.kind === "amazon"
@@ -449,113 +803,30 @@ function ShopContent({ editor }: { editor: boolean }) {
                   </Text>
                   <Button
                     variant="secondary"
-                    onPress={() => {
-                      setProduct({ ...item });
-                      setPrice(
-                        item.price_cents
-                          ? (item.price_cents / 100).toFixed(2)
-                          : "",
-                      );
-                    }}
+                    onPress={() => editProduct({ ...item })}
                   >{`Modifica ${item.title}`}</Button>
                 </View>
               ))}
-              <View
-                style={[ui.card, { gap: 18 }]}
-                pointerEvents={busy ? "none" : "auto"}
+              <Button
+                variant="quiet"
+                disabled={currentPage === 0}
+                onPress={() => {
+                  setPage(currentPage - 1);
+                  setPageNavigation((value) => value + 1);
+                }}
               >
-                <Text style={ui.heading}>Selezione Amazon</Text>
-                <Pressable
-                  accessibilityRole="checkbox"
-                  accessibilityLabel="Mostra selezione Amazon"
-                  accessibilityState={{
-                    checked: settings.recommendations_enabled,
-                  }}
-                  onPress={() =>
-                    setSettings({
-                      ...settings,
-                      recommendations_enabled:
-                        !settings.recommendations_enabled,
-                    })
-                  }
-                >
-                  <Text style={ui.body}>
-                    {settings.recommendations_enabled ? "☑" : "☐"} Mostra i
-                    prodotti Amazon pubblicati.
-                  </Text>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="checkbox"
-                  accessibilityLabel="Link affiliati Amazon"
-                  accessibilityState={{ checked: settings.amazon_affiliate }}
-                  onPress={() =>
-                    setSettings({
-                      ...settings,
-                      amazon_affiliate: !settings.amazon_affiliate,
-                    })
-                  }
-                >
-                  <Text style={ui.body}>
-                    {settings.amazon_affiliate ? "☑" : "☐"} Uso link affiliati e
-                    ho un account Amazon Affiliati abilitato. Mostra la
-                    dichiarazione delle commissioni.
-                  </Text>
-                </Pressable>
-                <Text style={ui.heading}>
-                  Vendita diretta: venditore, spedizioni e resi
-                </Text>
-                <Notice>
-                  Per avviare la vendita servono dati reali, condizioni di
-                  vendita e un account di pagamento attivo. L’inserimento dei
-                  campi non sostituisce la verifica degli obblighi fiscali e di
-                  vendita.
-                </Notice>
-                {(
-                  [
-                    ["seller_name", "Nome o ragione sociale del venditore"],
-                    ["seller_address", "Indirizzo del venditore"],
-                    ["seller_contact", "Email assistenza acquisti"],
-                    ["tax_details", "Dati fiscali del venditore"],
-                    ["shipping_terms", "Spedizioni: paesi, costi e tempi"],
-                    ["returns_terms", "Resi e diritto di recesso"],
-                    ["terms_url", "Link HTTPS alle condizioni di vendita"],
-                  ] as const
-                ).map(([key, label]) => (
-                  <Field
-                    key={key}
-                    label={label}
-                    value={settings[key]}
-                    onChange={(value) =>
-                      setSettings({ ...settings, [key]: value })
-                    }
-                    multiline={
-                      key === "shipping_terms" || key === "returns_terms"
-                    }
-                  />
-                ))}
-                <Pressable
-                  accessibilityRole="checkbox"
-                  accessibilityLabel="Attiva vendite shop"
-                  accessibilityState={{ checked: settings.enabled }}
-                  onPress={() =>
-                    setSettings({ ...settings, enabled: !settings.enabled })
-                  }
-                >
-                  <Text style={ui.body}>
-                    {settings.enabled ? "☑" : "☐"} Attiva gli acquisti dopo aver
-                    verificato prodotti, prezzi, condizioni e configurazione
-                    Stripe.
-                  </Text>
-                </Pressable>
-                {message !== "" && (
-                  <View accessibilityRole="alert">
-                    <Notice>{message}</Notice>
-                  </View>
-                )}
-                <Button disabled={busy} onPress={() => void saveSettings()}>
-                  Salva impostazioni shop
-                </Button>
-              </View>
+                Pagina prodotti precedente
+              </Button>
+              <Button
+                variant="quiet"
+                disabled={currentPage + 1 >= pages}
+                onPress={() => {
+                  setPage(currentPage + 1);
+                  setPageNavigation((value) => value + 1);
+                }}
+              >
+                Altri prodotti
+              </Button>
             </>
           )}
         </>

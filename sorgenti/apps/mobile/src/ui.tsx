@@ -16,13 +16,14 @@ import {
   type TextStyle,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Link, router } from "expo-router";
+import { Link, router, usePathname } from "expo-router";
 import { type Article } from "@nido/core";
 import { Icon, type IconName } from "./icons";
 import { colors, serif, shadow } from "./theme";
 import { useApp } from "./state";
 import { usePageMetadata } from "./seo";
 import { ArticleCover } from "./art";
+import { guardedNavigation } from "./unsaved-changes";
 
 export function Brand({ compact = false }: { compact?: boolean }) {
   return (
@@ -49,6 +50,7 @@ export function Screen({
   stageKey,
   focusTargetId,
   stageScroll = "start",
+  professional = false,
 }: {
   children: React.ReactNode;
   title?: string;
@@ -59,8 +61,10 @@ export function Screen({
   stageKey?: string | number;
   focusTargetId?: string;
   stageScroll?: "start" | "heading";
+  professional?: boolean;
 }) {
   usePageMetadata();
+  const pathname = usePathname();
   const { demo, email, mutationError, clearError } = useApp();
   const { width } = useWindowDimensions();
   const desktop = width >= 900;
@@ -104,8 +108,17 @@ export function Screen({
         <View style={styles.topInner}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Vai al mio percorso"
-            onPress={() => router.navigate("/(tabs)")}
+            accessibilityLabel={
+              professional ? "Torna a Studio" : "Vai al mio percorso"
+            }
+            onPress={() => {
+              if (professional && pathname === "/studio") return;
+              guardedNavigation(() =>
+                professional
+                  ? router.navigate("/studio")
+                  : router.navigate("/(tabs)"),
+              );
+            }}
           >
             <Brand compact />
           </Pressable>
@@ -119,7 +132,7 @@ export function Screen({
                     ? "Gestisci account"
                     : "Accedi al tuo account"
               }
-              onPress={() => router.push("/account")}
+              onPress={() => guardedNavigation(() => router.push("/account"))}
               style={styles.mode}
             >
               <View style={styles.modeDot} />
@@ -131,7 +144,7 @@ export function Screen({
               accessibilityRole="button"
               accessibilityLabel="Quando chiedere aiuto"
               style={styles.roundButton}
-              onPress={() => router.push("/help")}
+              onPress={() => guardedNavigation(() => router.push("/help"))}
             >
               <Icon name="help" size={22} />
             </Pressable>
@@ -157,42 +170,83 @@ export function Screen({
             gap: 8,
           }}
         >
-          <Link
-            href="/gaia"
-            accessibilityLabel="Conosci Gaia e i servizi"
-            style={{
-              padding: 12,
-              minHeight: 44,
-              color: colors.sageDark,
-              fontSize: 14,
-            }}
-          >
-            Gaia e servizi
-          </Link>
-          <Link
-            href="/contatti"
-            style={{
-              padding: 12,
-              minHeight: 44,
-              color: colors.sageDark,
-              fontSize: 14,
-            }}
-          >
-            Contatti
-          </Link>
-          <Link
-            href="/shop"
-            accessibilityLabel="Apri lo Shop metiMaia"
-            style={{
-              padding: 12,
-              minHeight: 44,
-              color: colors.sageDark,
-              fontSize: 14,
-              fontWeight: "700",
-            }}
-          >
-            Shop
-          </Link>
+          {professional ? (
+            <>
+              <Link
+                href="/studio"
+                style={{
+                  padding: 12,
+                  minHeight: 44,
+                  color: colors.sageDark,
+                  fontSize: 14,
+                  fontWeight: "700",
+                }}
+              >
+                Studio
+              </Link>
+              <Link
+                href="/discover"
+                style={{
+                  padding: 12,
+                  minHeight: 44,
+                  color: colors.sageDark,
+                  fontSize: 14,
+                }}
+              >
+                Anteprima sito
+              </Link>
+              <Link
+                href="/sicurezza"
+                style={{
+                  padding: 12,
+                  minHeight: 44,
+                  color: colors.sageDark,
+                  fontSize: 14,
+                }}
+              >
+                Sicurezza
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/gaia"
+                accessibilityLabel="Conosci Gaia e i servizi"
+                style={{
+                  padding: 12,
+                  minHeight: 44,
+                  color: colors.sageDark,
+                  fontSize: 14,
+                }}
+              >
+                Gaia e servizi
+              </Link>
+              <Link
+                href="/contatti"
+                style={{
+                  padding: 12,
+                  minHeight: 44,
+                  color: colors.sageDark,
+                  fontSize: 14,
+                }}
+              >
+                Contatti
+              </Link>
+              <Link
+                href="/shop"
+                accessibilityLabel="Apri lo Shop metiMaia"
+                style={{
+                  padding: 12,
+                  minHeight: 44,
+                  color: colors.sageDark,
+                  fontSize: 14,
+                  fontWeight: "700",
+                }}
+              >
+                Shop
+              </Link>
+            </>
+          )}
         </View>
       </View>
       <ScrollView
@@ -208,7 +262,13 @@ export function Screen({
           <Pressable
             accessibilityRole="button"
             onPress={() =>
-              router.canGoBack() ? router.back() : router.replace("/(tabs)")
+              guardedNavigation(() =>
+                router.canGoBack()
+                  ? router.back()
+                  : professional
+                    ? router.replace("/studio")
+                    : router.replace("/(tabs)"),
+              )
             }
             style={styles.back}
           >
@@ -239,39 +299,47 @@ export function Screen({
         )}
         {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
         {children}
-        <View style={styles.footer}>
-          <View style={styles.footerLine} />
-          <Text style={styles.footerText}>Insieme, passo dopo passo.</Text>
-          <Text style={styles.footerSmall}>
-            Uno spazio educativo, da vivere con i tuoi tempi.
-          </Text>
-          <Button variant="secondary" onPress={() => router.push("/prenota")}>
-            Richiedi un incontro
-          </Button>
-          <Button variant="quiet" onPress={() => router.push("/contatti")}>
-            Come contattare Gaia
-          </Button>
-          <Button variant="quiet" onPress={() => router.push("/shop")}>
-            Shop metiMaia
-          </Button>
-          <View style={ui.row}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => router.push("/privacy")}
-              style={styles.sectionAction}
-            >
-              <Text style={styles.actionText}>Privacy e dati</Text>
-            </Pressable>
-            <Text style={styles.footerSmall}>·</Text>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => router.push("/help")}
-              style={styles.sectionAction}
-            >
-              <Text style={styles.actionText}>Quando chiedere aiuto</Text>
-            </Pressable>
+        {professional ? (
+          <View style={styles.footer}>
+            <Text style={styles.footerSmall}>
+              metiMaia · Area professionale
+            </Text>
           </View>
-        </View>
+        ) : (
+          <View style={styles.footer}>
+            <View style={styles.footerLine} />
+            <Text style={styles.footerText}>Insieme, passo dopo passo.</Text>
+            <Text style={styles.footerSmall}>
+              Uno spazio educativo, da vivere con i tuoi tempi.
+            </Text>
+            <Button variant="secondary" onPress={() => router.push("/prenota")}>
+              Richiedi un incontro
+            </Button>
+            <Button variant="quiet" onPress={() => router.push("/contatti")}>
+              Come contattare Gaia
+            </Button>
+            <Button variant="quiet" onPress={() => router.push("/shop")}>
+              Shop metiMaia
+            </Button>
+            <View style={ui.row}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push("/privacy")}
+                style={styles.sectionAction}
+              >
+                <Text style={styles.actionText}>Privacy e dati</Text>
+              </Pressable>
+              <Text style={styles.footerSmall}>·</Text>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push("/help")}
+                style={styles.sectionAction}
+              >
+                <Text style={styles.actionText}>Quando chiedere aiuto</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
       </ScrollView>
     </SafeAreaView>
   );

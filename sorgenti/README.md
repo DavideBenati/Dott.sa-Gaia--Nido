@@ -1,5 +1,9 @@
 # Nido — Insieme, passo dopo passo.
 
+## Sito metiMaia su Cloudflare — Studio v8
+
+Per aggiornare il sito corrente, usare [la guida Studio v8](../release-v8/LEGGIMI.md): applicare soltanto la migrazione Supabase 008 dopo la 007 già installata, poi caricare lo ZIP completo del sito su Cloudflare. Istruzioni e prove della release distinguono la verifica dell’interfaccia con servizi simulati dal collaudo del progetto produttivo. I comandi e le indicazioni della demo originale riportati sotto descrivono anche gli ambienti separati di sviluppo.
+
 MVP in italiano: app Expo/React Native, dashboard Next.js e integrazione Supabase. In assenza di URL e chiave pubblica parte in **DEMO MODE**. Gli articoli sono esempi non revisionati clinicamente; le checklist sono suggerimenti adattabili, non requisiti medici.
 
 ## Avvio locale
