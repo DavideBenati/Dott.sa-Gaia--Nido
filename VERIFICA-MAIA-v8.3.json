@@ -1,0 +1,32 @@
+{
+  "zip": "MAIA-Sito-v8.3-Solo-Email.zip",
+  "bytes": 2927216,
+  "sha256": "2b75ffeada7025bda8496f60fa04cf4c615f14d26b903d4ad5f31dcc657e6aed",
+  "files": 92,
+  "root_index": true,
+  "integrity_ok": true,
+  "personal_phone_and_whatsapp_absent_from_all_files": true,
+  "google_html_original": true,
+  "google_meta_absent": true,
+  "html_surname_absent": true,
+  "no_env_sql_docx_or_maps": true,
+  "unit_tests_passed": 97,
+  "browser_checks_passed": 42,
+  "browser_viewports": [
+    390,
+    1440
+  ],
+  "stage_navigation_viewports": [
+    320,
+    390,
+    1024,
+    1440
+  ],
+  "stage_navigation": "passed",
+  "studio_regression": "passed",
+  "typecheck": "passed",
+  "lint": "passed",
+  "production_build": "passed",
+  "live_production_mutations": false,
+  "source_commit": "ff5e3769c578dd6a84e7a58eb8d24c1e9591f73c"
+}
