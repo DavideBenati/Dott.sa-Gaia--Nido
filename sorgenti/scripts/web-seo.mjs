@@ -54,7 +54,7 @@ export function pageHTML(html, path) {
   if (page.index && !["/article", "/checklist"].includes(path))
     output = output.replace(
       /<\/body>/i,
-      `<noscript><main><h1>${escape(page.title)}</h1><p>${escape(page.description)}</p><p>Attiva JavaScript per utilizzare ricerca e funzioni interattive.</p><nav><a href="/welcome">metiMaia</a> · <a href="/discover">Letture</a> · <a href="/checklists">Checklist</a> · <a href="/prenota">Richiedi un incontro</a> · <a href="/privacy">Privacy</a></nav></main></noscript></body>`,
+      `<noscript><main><h1>${escape(page.title)}</h1><p>${escape(page.description)}</p><p>Attiva JavaScript per utilizzare ricerca e funzioni interattive.</p><nav><a href="/welcome">metiMaia</a> · <a href="/discover">Letture</a> · <a href="/checklists">Checklist</a> · <a href="/prenota">Richiedi un incontro via email</a> · <a href="/privacy">Privacy</a></nav></main></noscript></body>`,
     );
   return output;
 }

@@ -313,10 +313,10 @@ export function Screen({
               Uno spazio educativo, da vivere con i tuoi tempi.
             </Text>
             <Button variant="secondary" onPress={() => router.push("/prenota")}>
-              Richiedi un incontro
+              Richiedi un incontro via email
             </Button>
             <Button variant="quiet" onPress={() => router.push("/contatti")}>
-              Come contattare Gaia
+              Contatta Gaia via email
             </Button>
             <Button variant="quiet" onPress={() => router.push("/shop")}>
               Shop metiMaia

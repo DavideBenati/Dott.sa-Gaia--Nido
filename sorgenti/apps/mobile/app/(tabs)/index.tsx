@@ -137,11 +137,11 @@ export default function Home() {
           </Text>
         </View>
         <Text style={ui.body}>
-          Scegli il canale giusto: richiesta di disponibilità, informazioni sui
-          servizi o conversazione privata.
+          Per informazioni sui servizi e richieste di disponibilità, scrivi a
+          Gaia via email.
         </Text>
         <Button onPress={() => router.push("/contatti")} icon="arrow">
-          Come contattare Gaia
+          Contatta Gaia via email
         </Button>
         <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 20 }}>
           Le risposte non sono immediate. Per urgenze contatta i servizi di
@@ -165,7 +165,7 @@ export default function Home() {
         onPress={() => router.navigate("/(tabs)/discover")}
       />
       <Button variant="secondary" onPress={() => router.push("/prenota")}>
-        Richiedi un incontro con Gaia
+        Prepara una richiesta via email
       </Button>
       <ContentStatus />
       <ArticleGrid

@@ -2,12 +2,6 @@ import type { SiteProfile } from "./professional";
 
 // Editorial source: the presentation supplied by Gaia on 24 October 2026.
 // No professional-register number, prices or response times were supplied.
-export const gaiaPhone = {
-  label: "392 793 9566",
-  call: "tel:+393927939566",
-  whatsapp: "https://wa.me/393927939566",
-};
-
 export const gaiaPresentation = {
   bio: [
     "Ciao, sono Gaia. Benvenuta in questo spazio dedicato a te, alla nuova vita che cresce e alla tua famiglia.",

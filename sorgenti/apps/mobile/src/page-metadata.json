@@ -22,7 +22,7 @@
   },
   "/prenota": {
     "title": "Richiedi un incontro con la Dott.sa Gaia | metiMaia",
-    "description": "Chiedi disponibilità per un incontro con la Dott.sa Gaia. Data, modalità ed eventuali costi vengono concordati direttamente.",
+    "description": "Prepara la richiesta di incontro con la Dott.sa Gaia e inviala via email. Data, modalità ed eventuali costi vengono concordati direttamente.",
     "index": true
   },
   "/article": {
@@ -107,7 +107,7 @@
   },
   "/contatti": {
     "title": "Contatti e richieste di incontro | metiMaia",
-    "description": "Scegli come contattare la Dott.sa Gaia: informazioni sui servizi, richiesta di disponibilità o chat privata.",
+    "description": "Scrivi alla Dott.sa Gaia via email per informazioni sui servizi e richieste di disponibilità.",
     "index": true
   },
   "/verifiche": {

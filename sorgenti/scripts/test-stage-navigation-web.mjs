@@ -278,7 +278,7 @@ try {
     );
     const reviewGeometry = await geometry(reviewHeading);
     const send = page.getByRole("button", {
-      name: "Invia richiesta a Gaia",
+      name: "Apri l’email per inviare",
       exact: true,
     });
     const initialSend = await geometry(send);
@@ -306,7 +306,7 @@ try {
     await expect(send).toBeEnabled();
     results.push({
       viewport,
-      action: "booking-send",
+      action: "booking-email",
       initiallyVisible:
         initialSend.target.y + initialSend.target.height <=
         initialSend.zone.bottom + 2,
@@ -317,7 +317,7 @@ try {
       page,
       `booking-review-send-${viewport.width}x${viewport.height}`,
     );
-    // Deliberately never click the final send action or mailto fallback.
+    // The email action opens a draft in the user’s mail app; this focus test never invokes it.
     await page
       .getByRole("button", { name: "Modifica richiesta", exact: true })
       .click();
@@ -426,7 +426,7 @@ try {
       JSON.stringify(results, null, 2),
     );
   console.log(
-    "PASS: booking and welcome stage scroll/focus, review heading first and send reachable by forward scroll, retained values, same-stage typing/preferences at 320x568, 390x844, 1024x768 and 1440x900. All services intercepted; no submissions or real data.",
+    "PASS: booking and welcome stage scroll/focus, review heading first and email action reachable by forward scroll, retained values, same-stage typing/preferences at 320x568, 390x844, 1024x768 and 1440x900. All services intercepted; no submissions or real data.",
   );
 } catch (error) {
   if (artifacts && currentPage) {

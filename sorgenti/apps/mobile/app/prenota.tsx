@@ -9,7 +9,6 @@ import {
 import { Text, TextInput } from "../src/typography";
 import { Button, Notice, Screen, StageHeading, ui } from "../src/ui";
 import { useApp } from "../src/state";
-import { invokeSiteAction } from "../src/professional";
 const contact = "ostetricamaia@gmail.com";
 export default function Booking() {
   const { email } = useApp();
@@ -24,30 +23,6 @@ export default function Booking() {
   const [review, setReview] = useState(false);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const [requestId] = useState(() => globalThis.crypto?.randomUUID?.() ?? "");
-  const [sent, setSent] = useState(false);
-  async function sendRequest() {
-    if (busy || sent) return;
-    setBusy(true);
-    setMessage("");
-    try {
-      const result = await invokeSiteAction({
-        action: "booking",
-        id: requestId,
-        request,
-      });
-      setSent(true);
-      setMessage(result.message);
-    } catch (e) {
-      setMessage(
-        e instanceof Error
-          ? e.message
-          : "Invio non confermato. Riprova dalla stessa pagina, oppure usa l’email.",
-      );
-    } finally {
-      setBusy(false);
-    }
-  }
   function update(patch: Partial<BookingRequest>) {
     setRequest((r) => ({ ...r, ...patch }));
     setMessage("");
@@ -99,8 +74,8 @@ export default function Booking() {
       stageScroll="heading"
       focusTargetId={review ? "booking-review-heading" : "booking-form-heading"}
       eyebrow="UN INCONTRO, CON I TUOI TEMPI"
-      title="Chiedi disponibilità a Gaia."
-      subtitle="Una richiesta semplice, senza scegliere orari che non sono stati confermati."
+      title="Chiedi disponibilità via email."
+      subtitle="Prepara la tua richiesta e inviala dalla tua app email."
     >
       <View
         style={{ width: "100%", maxWidth: 640, alignSelf: "center", gap: 20 }}
@@ -128,27 +103,12 @@ export default function Booking() {
                 <Notice>{message}</Notice>
               </View>
             )}
-            <Button
-              disabled={busy || sent || !requestId}
-              onPress={() => void sendRequest()}
-            >
-              {sent
-                ? "Richiesta acquisita"
-                : busy
-                  ? "Invio…"
-                  : "Invia richiesta a Gaia"}
-            </Button>
-            {!sent && (
-              <Notice>
-                Se l’invio non è disponibile, puoi usare l’alternativa email qui
-                sotto. Evita di inviare due volte la stessa richiesta.
-              </Notice>
-            )}
-            <Button
-              variant="secondary"
-              disabled={busy || sent}
-              onPress={() => void openEmail()}
-            >
+            <Notice>
+              L’invio avviene dalla tua app email: controlla il testo e premi
+              Invia lì. Se l’app non si apre, copia la richiesta e inviala dalla
+              tua casella.
+            </Notice>
+            <Button disabled={busy} onPress={() => void openEmail()}>
               Apri l’email per inviare
             </Button>
             <Button
@@ -163,7 +123,7 @@ export default function Booking() {
             </Text>
             <Button
               variant="quiet"
-              disabled={busy || sent}
+              disabled={busy}
               onPress={() => {
                 setReview(false);
                 setMessage("");
@@ -235,11 +195,9 @@ export default function Booking() {
               >{`${request.mode === mode ? "✓ " : ""}${mode}`}</Button>
             ))}
             <Text style={ui.body}>
-              Prima dell’invio i campi restano nella memoria della pagina. Con
-              “Invia richiesta a Gaia” nome, email e preferenze vengono salvati
-              in Supabase e resi disponibili nel pannello riservato. Con
-              l’alternativa email il testo passa alla tua app email. Nessuna
-              iscrizione newsletter è collegata alla richiesta.
+              I campi restano nella memoria della pagina. Quando apri l’email,
+              il riepilogo passa alla tua app email: sei tu a confermare l’invio
+              da lì. Nessuna iscrizione newsletter è collegata alla richiesta.
             </Text>
             {message !== "" && (
               <View accessibilityRole="alert">

@@ -536,16 +536,16 @@ try {
   ).toBeVisible();
   await expect(
     bookingPage.getByRole("button", {
-      name: "Apri email per informazioni",
+      name: "Scrivi a Gaia via email",
       exact: true,
     }),
   ).toBeVisible();
-  await bookingPage
-    .getByRole("button", {
-      name: "Richiedi disponibilità per un incontro",
-      exact: true,
-    })
-    .click();
+  await expect(
+    bookingPage.getByRole("button", {
+      name: /Scopri la chat|Chiama Gaia|WhatsApp/,
+    }),
+  ).toHaveCount(0);
+  await bookingPage.goto("http://127.0.0.1:8095/prenota");
   await bookingPage
     .getByLabel("Nome per la richiesta")
     .fill("Persona di prova");
@@ -555,24 +555,34 @@ try {
   await bookingPage
     .getByRole("button", { name: "Rivedi la richiesta", exact: true })
     .click();
-  await bookingPage
-    .getByRole("button", { name: "Invia richiesta a Gaia", exact: true })
-    .click();
-  await expect(
-    bookingPage.getByText(
-      "Richiesta acquisita. Attendi il ricontatto di Gaia.",
-      { exact: true },
-    ),
-  ).toBeVisible();
   await expect(
     bookingPage.getByRole("button", {
-      name: "Richiesta acquisita",
+      name: "Invia richiesta a Gaia",
       exact: true,
     }),
-  ).toBeDisabled();
+  ).toHaveCount(0);
+  await bookingPage.evaluate(() => {
+    window.__bookingEmails = [];
+    window.open = (url) => {
+      window.__bookingEmails.push(String(url));
+      return null;
+    };
+  });
+  await bookingPage
+    .getByRole("button", { name: "Apri l’email per inviare", exact: true })
+    .click();
+  const emailDraft = await bookingPage.evaluate(
+    () => window.__bookingEmails[0],
+  );
+  expect(emailDraft).toMatch(/^mailto:ostetricamaia@gmail\.com\?/);
+  const draftURL = new URL(emailDraft);
+  expect(draftURL.searchParams.get("body")).toContain("Persona di prova");
+  expect(draftURL.searchParams.get("body")).toContain(
+    "booking@example.invalid",
+  );
   expect(
     calls.filter((c) => c.path.endsWith("/functions/v1/site-actions")),
-  ).toHaveLength(1);
+  ).toHaveLength(0);
   await bookingPage.goto("http://127.0.0.1:8095/welcome");
   await bookingPage
     .getByRole("button", { name: "Esplora come ospite", exact: true })
@@ -595,7 +605,7 @@ try {
   ).toBe(true);
   await bookingContext.close();
   console.log(
-    "PASS: guest/normal-user access denied, editor draft/preview/publication/checklist, optional signup newsletter consent, explicit email confirmation, public profile editing, contact choices, personal journey before shop, editorial checks, newsletter reconciliation, staff-only inbox/reply, requests page, booking submission, responsive Shop tab and membership-controlled Studio tab including MFA enforcement. All backend requests mocked; no real data or email sent.",
+    "PASS: guest/normal-user access denied, editor draft/preview/publication/checklist, optional signup newsletter consent, explicit email confirmation, public profile editing, email-only public contacts, personal journey before shop, editorial checks, newsletter reconciliation, staff-only inbox/reply, requests page, booking email draft without backend submission, responsive Shop tab and membership-controlled Studio tab including MFA enforcement. All backend requests mocked; no real data or email sent.",
   );
 } finally {
   await browser.close();

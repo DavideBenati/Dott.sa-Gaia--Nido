@@ -130,8 +130,8 @@ export default function Profile() {
       <Button variant="secondary" onPress={() => router.push("/gaia")}>
         Gaia e servizi
       </Button>
-      <Button variant="quiet" onPress={() => router.push("/prenota")}>
-        Contatta Gaia e richiedi un incontro
+      <Button variant="quiet" onPress={() => router.push("/contatti")}>
+        Contatta Gaia via email
       </Button>
       <Button variant="quiet" onPress={() => router.push("/sicurezza")}>
         Sicurezza del mio account

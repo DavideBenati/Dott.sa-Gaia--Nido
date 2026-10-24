@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Image, Linking } from "react-native";
+import { View, Image } from "react-native";
 import { router } from "expo-router";
 import { Text } from "../src/typography";
 import { Screen, Button, Notice, ui } from "../src/ui";
@@ -9,7 +9,7 @@ import {
   publicProfile,
 } from "../src/professional";
 import logo from "../assets/brand/maia-logo.png";
-import { PhoneContacts } from "../src/phone-contacts";
+import { EmailContactButton } from "../src/email-contact";
 
 function Paragraphs({ text }: { text: string }) {
   return (
@@ -63,7 +63,7 @@ export default function Gaia() {
           <Paragraphs text={profile.bio} />
         </View>
         <Button onPress={() => router.push("/contatti")}>
-          Scegli come contattare Gaia
+          Contatta Gaia via email
         </Button>
         {profile.qualifications !== "" && (
           <View style={[ui.card, { gap: 18 }]}>
@@ -89,9 +89,12 @@ export default function Gaia() {
               {service.details !== "" && (
                 <Text style={ui.body}>{service.details}</Text>
               )}
-              <Button onPress={() => router.push("/prenota")}>
-                Chiedi informazioni e disponibilità
-              </Button>
+              <EmailContactButton
+                email={profile.contact_email}
+                subject={`metiMaia — ${service.title}`}
+              >
+                Chiedi informazioni via email
+              </EmailContactButton>
             </View>
           ))
         ) : (
@@ -106,32 +109,19 @@ export default function Gaia() {
             Cosa succede dopo la richiesta?
           </Text>
           <Text style={ui.body}>
-            1. Indichi come ricontattarti e le tue preferenze, senza referti o
+            1. Scrivi un’email con le tue domande e preferenze, senza referti o
             dati sanitari.
           </Text>
           <Text style={ui.body}>
-            2. Gaia valuta la disponibilità e ti ricontatta per concordare
+            2. Gaia valuta la disponibilità e risponde via email per concordare
             modalità, luogo ed eventuali costi.
           </Text>
           <Text style={ui.body}>
             3. L’incontro è confermato soltanto dopo un accordo diretto. I tempi
             di risposta non sono ancora definiti.
           </Text>
-          <Button onPress={() => router.push("/prenota")}>
-            Richiedi disponibilità
-          </Button>
         </View>
-        <PhoneContacts />
-        <Button
-          variant="secondary"
-          onPress={() => {
-            void Linking.openURL(`mailto:${profile.contact_email}`).catch(
-              () => {},
-            );
-          }}
-        >
-          Scrivi a Gaia via email
-        </Button>
+        <EmailContactButton email={profile.contact_email} />
         <Text selectable style={ui.body}>
           {profile.contact_email}
         </Text>

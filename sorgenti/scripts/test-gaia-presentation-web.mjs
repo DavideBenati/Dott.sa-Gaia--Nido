@@ -1,5 +1,5 @@
-// Presentation regression against a production static build. Every external
-// service is intercepted: no real account, phone call, message or write.
+// Presentation and email-only public contact regression against a production
+// static build. External services are intercepted: no real messages or writes.
 import { createServer } from "node:http";
 import { mkdir, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { extname, resolve } from "node:path";
@@ -10,7 +10,7 @@ const port = Number(process.env.MAIA_GAIA_PRESENTATION_PORT ?? 8117);
 const origin = `http://127.0.0.1:${port}`;
 const artifacts = resolve(
   process.env.MAIA_GAIA_PRESENTATION_ARTIFACTS ??
-    "/workspace/shared/downloads/presentazione-gaia-v8-2/browser",
+    "/workspace/shared/downloads/contatti-email-gaia-v8-3/browser",
 );
 await mkdir(artifacts, { recursive: true });
 const mime = {
@@ -275,38 +275,136 @@ async function suppliedCopy(page, label) {
     ).toBeVisible();
   await expect(
     page.getByRole("button", {
-      name: "Chiedi informazioni e disponibilità",
+      name: "Chiedi informazioni via email",
       exact: true,
     }),
   ).toHaveCount(4);
   await expect(page.locator("body")).not.toContainText(/brunetti/i);
-  await expect(
-    page.getByText(
-      /Le richieste da questo sito riguardano le consulenze private/,
-    ),
-  ).toBeVisible();
+  await expect(page.getByText(/appuntamenti ospedalieri/)).toBeVisible();
   passed(
     `${label}: supplied biography, training status and four services displayed`,
   );
 }
-async function phoneActions(context, page, label) {
-  await expect(page.getByText("392 793 9566", { exact: true })).toBeVisible();
-  await page
-    .getByRole("button", { name: "Apri WhatsApp", exact: true })
-    .click();
-  expect(await page.evaluate(() => window.__maiaOpenedURLs)).toContain(
-    "https://wa.me/393927939566",
-  );
-  // React Native Web uses location for tel:, rather than window.open. Observe
-  // the requested protocol URL in headless Chromium; no phone handler exists.
+async function mailAction(context, page, button, expectedEmail, label) {
+  // React Native Web may use location for mailto: instead of window.open.
+  // Observe both mechanisms without invoking a real external mail handler.
   const cdp = await context.newCDPSession(page);
   await cdp.send("Page.enable");
   const requested = [];
   cdp.on("Page.frameRequestedNavigation", (event) => requested.push(event.url));
-  await page.getByRole("button", { name: "Chiama Gaia", exact: true }).click();
-  await expect.poll(() => requested.includes("tel:+393927939566")).toBe(true);
-  await cdp.detach();
-  passed(`${label}: WhatsApp and phone request the supplied contact URLs`);
+  const previous = await page.evaluate(() => window.__maiaOpenedURLs.length);
+  try {
+    await button.click();
+    let requestedEmail;
+    await expect
+      .poll(async () => {
+        const opened = await page.evaluate(
+          (start) => window.__maiaOpenedURLs.slice(start),
+          previous,
+        );
+        requestedEmail = [...requested, ...opened].find((url) =>
+          /^mailto:/i.test(url),
+        );
+        return Boolean(requestedEmail);
+      })
+      .toBe(true);
+    const emailURL = new URL(requestedEmail);
+    expect(decodeURIComponent(emailURL.pathname).toLowerCase()).toBe(
+      expectedEmail.toLowerCase(),
+    );
+    passed(`${label}: email button requests the configured mail address`);
+    return emailURL;
+  } finally {
+    await cdp.detach();
+  }
+}
+async function emailActions(
+  context,
+  page,
+  label,
+  expectedEmail = legacyProfile.contact_email,
+) {
+  await expect(page.locator("body")).not.toContainText(
+    /392[\s.-]*793[\s.-]*9566|393927939566|whats\s*app/i,
+  );
+  await expect(
+    page.locator('a[href^="tel:"],a[href*="wa.me"],a[href*="whatsapp"]'),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: /Chiama Gaia|Apri WhatsApp/i }),
+  ).toHaveCount(0);
+  await expect(
+    page
+      .getByText(expectedEmail, { exact: true })
+      .filter({ visible: true })
+      .first(),
+  ).toBeVisible();
+  passed(`${label}: personal phone and WhatsApp are absent`);
+  return mailAction(
+    context,
+    page,
+    page
+      .getByRole("button", { name: "Scrivi a Gaia via email", exact: true })
+      .first(),
+    expectedEmail,
+    label,
+  );
+}
+async function emailBooking(context, page, state, label) {
+  await page.goto(`${origin}/prenota`);
+  await page
+    .getByLabel("Nome per la richiesta", { exact: true })
+    .fill("Beta Email");
+  await page
+    .getByLabel("Email di ricontatto", { exact: true })
+    .fill("email-beta@example.invalid");
+  await page
+    .getByRole("button", { name: "Rivedi la richiesta", exact: true })
+    .click();
+  await expect(page.locator("#booking-review-heading")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Invia richiesta a Gaia", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Copia richiesta", exact: true }),
+  ).toBeVisible();
+  const emailURL = await mailAction(
+    context,
+    page,
+    page.getByRole("button", { name: "Apri l’email per inviare", exact: true }),
+    legacyProfile.contact_email,
+    `${label} email preparation`,
+  );
+  expect(emailURL.searchParams.get("subject")).toContain(
+    "richiesta di disponibilità",
+  );
+  expect(emailURL.searchParams.get("body")).toContain("Nome: Beta Email");
+  expect(emailURL.searchParams.get("body")).toContain(
+    "email-beta@example.invalid",
+  );
+  expect(
+    state.calls.filter(
+      (call) =>
+        call.path.includes("/functions/v1/site-actions") ||
+        call.body?.action === "booking",
+    ),
+  ).toEqual([]);
+  await expect(
+    page.getByText("Richiesta acquisita", { exact: true }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Modifica richiesta", exact: true })
+    .click();
+  await expect(
+    page.getByLabel("Nome per la richiesta", { exact: true }),
+  ).toHaveValue("Beta Email");
+  await expect(
+    page.getByLabel("Email di ricontatto", { exact: true }),
+  ).toHaveValue("email-beta@example.invalid");
+  await noOverflow(page, `${label} email preparation`);
+  passed(
+    `${label}: preparation preserves fields and opens only an email draft without backend submission`,
+  );
 }
 
 let currentPage;
@@ -322,7 +420,7 @@ try {
       path: `${artifacts}/gaia-${width}.png`,
       fullPage: true,
     });
-    await phoneActions(context, page, `${width}px biography`);
+    await emailActions(context, page, `${width}px biography`);
     expect(state.profile).toEqual(original);
     expect(
       state.calls.filter(
@@ -333,8 +431,24 @@ try {
       `${width}px public fallback does not write or mutate the stored profile`,
     );
     await page.goto(`${origin}/contatti`);
-    await phoneActions(context, page, `${width}px contacts`);
+    await emailActions(context, page, `${width}px contacts`);
+    await expect(
+      page.getByRole("button", {
+        name: /Scopri la chat e accedi|Apri la mia conversazione|Richiedi disponibilità per un incontro/i,
+      }),
+    ).toHaveCount(0);
+    await expect(page.locator("body")).not.toContainText(
+      /Scegli il canale|Vorrei usare la conversazione privata/,
+    );
+    passed(
+      `${width}px contacts presents email as the sole public contact channel`,
+    );
     await noOverflow(page, `${width}px contacts`);
+    await page.screenshot({
+      path: `${artifacts}/contatti-${width}.png`,
+      fullPage: true,
+    });
+    await emailBooking(context, page, state, `${width}px`);
 
     const custom = await fixture({
       width,
@@ -353,11 +467,17 @@ try {
     ).toBeVisible();
     await expect(
       custom.page.getByRole("button", {
-        name: "Chiedi informazioni e disponibilità",
+        name: "Chiedi informazioni via email",
         exact: true,
       }),
     ).toHaveCount(0);
     await expect(custom.page.getByText(/^Ciao, sono Gaia\./)).toHaveCount(0);
+    await emailActions(
+      custom.context,
+      custom.page,
+      `${width}px custom biography`,
+      customProfile.contact_email,
+    );
     await noOverflow(custom.page, `${width}px customized profile`);
     passed(
       `${width}px customized presentation and intentionally empty services preserved`,

@@ -84,7 +84,7 @@ export default function Privacy() {
     ],
     [
       "Richieste di incontro",
-      "Prima dell’invio il modulo mantiene i campi nella memoria della pagina. Premendo Invia richiesta a Gaia, nome, email e preferenze vengono salvati nel database Supabase e consultati dagli editor autorizzati per rispondere alla richiesta. Resend invia alla professionista una notifica priva dei dati del modulo. L’alternativa email passa invece il riepilogo alla tua app email, dove confermi l’invio. Il testo contiene nome, email di ricontatto e preferenze di data/modalità. Non inserire dati sanitari o referti. I messaggi email effettivamente inviati saranno trattati dal titolare e dai fornitori email per rispondere alla richiesta precontrattuale; conservazione e fornitori devono essere definiti nella presente informativa. Non è una prenotazione confermata e non iscrive alla newsletter.",
+      "Il modulo serve a preparare una richiesta da inviare via email. I campi restano nella memoria della pagina; aprendo l’email il riepilogo passa alla tua app email, dove controlli il contenuto e confermi l’invio. Il modulo attuale non salva la richiesta nel database del sito. Il testo contiene nome, email di ricontatto e preferenze di data/modalità. Non inserire dati sanitari o referti. I messaggi email effettivamente inviati saranno trattati dal titolare e dai fornitori email per rispondere alla richiesta precontrattuale; conservazione e fornitori devono essere definiti nella presente informativa. Non è una prenotazione confermata e non iscrive alla newsletter.",
     ],
     [
       "Shop e pagamenti",
@@ -96,7 +96,7 @@ export default function Privacy() {
     ],
     [
       "12. Personalizzazione, minori e aggiornamenti",
-      "I suggerimenti sono selezionati in base alle preferenze e non prendono decisioni con effetti giuridici o analogamente significativi ai sensi dell’art. 22 GDPR. MAIA non è progettata per raccogliere account di bambini o dati identificativi del neonato. Per utenti minorenni, eventuali servizi sanitari e relativi consensi occorre verificare le regole applicabili prima dell’attivazione; non si presume una soglia di età unica per tutti i trattamenti. Versione del testo: 23 ottobre 2026. Il testo deve essere aggiornato se cambiano servizi, fornitori o finalità.",
+      "I suggerimenti sono selezionati in base alle preferenze e non prendono decisioni con effetti giuridici o analogamente significativi ai sensi dell’art. 22 GDPR. MAIA non è progettata per raccogliere account di bambini o dati identificativi del neonato. Per utenti minorenni, eventuali servizi sanitari e relativi consensi occorre verificare le regole applicabili prima dell’attivazione; non si presume una soglia di età unica per tutti i trattamenti. Versione del testo: 24 ottobre 2026. Il testo deve essere aggiornato se cambiano servizi, fornitori o finalità.",
     ],
   ];
   return (
