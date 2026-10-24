@@ -1,0 +1,24 @@
+{
+  "zip": "/workspace/shared/downloads/MAIA-Sito-v8.1-Dott-sa-Gaia.zip",
+  "bytes": 2925409,
+  "sha256": "668b0ac9ab2e5183e39a30e9177a2f09812b9bd07355106e2911cd80fce21a86",
+  "files": 92,
+  "root_index": true,
+  "integrity_ok": true,
+  "google_html_original": true,
+  "google_meta_absent": true,
+  "html_surname_absent": true,
+  "no_env_sql_or_maps": true,
+  "unit_tests_passed": 94,
+  "browser_checks_passed": 31,
+  "browser_viewports": [
+    390,
+    1440
+  ],
+  "typecheck": "passed",
+  "lint": "passed",
+  "production_build": "passed",
+  "admin_sql_checks_passed": 6,
+  "live_production_tests": false,
+  "source_commit": "eef69e98df46a1bbc71952ac0ac905c8b18fcac8"
+}
