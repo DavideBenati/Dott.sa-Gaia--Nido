@@ -1,14 +1,17 @@
 import { Text } from "../../src/typography";
-import React from "react";
+import React, { useState } from "react";
 import { View, Pressable } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useApp } from "../../src/state";
-import { Screen, Notice, EmptyState, ui } from "../../src/ui";
+import { Button, Screen, Notice, EmptyState, Progress, ui } from "../../src/ui";
 import { Icon } from "../../src/icons";
 import { colors } from "../../src/theme";
+import { checklistShare, checklistSummary } from "../../src/share-content";
+import { ShareContentButton } from "../../src/share-content-button";
 export default function Checklist() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { checklists, state, toggleProgress } = useApp();
+  const [saving, setSaving] = useState<string[]>([]);
   const checklist = checklists.find((c) => c.id === id);
   if (!checklist)
     return (
@@ -19,24 +22,56 @@ export default function Checklist() {
         />
       </Screen>
     );
-  const count = checklist.items.filter((i) => state.progress[i.id]).length;
+  const summary = checklistSummary(checklist, state.progress);
   return (
     <Screen
       back
-      eyebrow="PICCOLI PASSI"
+      eyebrow="CHECKLIST · PICCOLI PASSI"
       title={checklist.title}
       subtitle={checklist.description}
     >
       <Notice>
-        Suggerimenti adattabili, non requisiti medici. Consulta la lista della
-        tua struttura e scegli ciò che è utile alla tua famiglia.
+        Usa questa lista per decidere cosa preparare e trasformare i pensieri in
+        piccoli gesti concreti. Spunta ogni attività quando l’hai completata o
+        hai deciso che non ti serve. Sono suggerimenti adattabili, non requisiti
+        medici: consulta la lista della tua struttura e la tua ostetrica.
         {checklist.isDemo
           ? " Esempio dimostrativo, non ancora revisionato."
           : ""}
       </Notice>
-      <Text style={[ui.heading, { marginVertical: 25 }]}>
-        {count} di {checklist.items.length} completati
-      </Text>
+      <View style={{ gap: 12, marginVertical: 25 }}>
+        <Progress completed={summary.completed} total={summary.total} />
+        {summary.complete && saving.length === 0 && (
+          <View style={[ui.card, { backgroundColor: colors.sagePale, gap: 8 }]}>
+            <Text accessibilityRole="header" style={ui.heading}>
+              🌷 Un piccolo traguardo raggiunto
+            </Text>
+            <Text accessibilityLiveRegion="polite" style={ui.body}>
+              Hai completato tutte le attività di questa checklist, con i tuoi
+              tempi. Puoi condividere questo momento con chi ti accompagna.
+            </Text>
+          </View>
+        )}
+        {saving.length === 0 && (
+          <ShareContentButton
+            content={checklistShare(checklist, state.progress)}
+            label={
+              summary.complete
+                ? "Condividi il traguardo"
+                : "Condividi lo stato della checklist"
+            }
+          />
+        )}
+        <Text style={ui.body}>
+          La condivisione invia una fotografia dei progressi e delle attività
+          ancora da fare. Non si aggiorna automaticamente. Per seguire insieme
+          gli aggiornamenti, puoi autorizzare una persona nelle Condivisioni
+          familiari.
+        </Text>
+        <Button variant="quiet" onPress={() => router.push("/condivisioni")}>
+          Condivisioni familiari
+        </Button>
+      </View>
       <View style={[ui.card, { padding: 0, overflow: "hidden" }]}>
         {checklist.items.map((item) => {
           const checked = Boolean(state.progress[item.id]);
@@ -47,8 +82,16 @@ export default function Checklist() {
               accessibilityLabel={item.label}
               accessibilityState={{ checked }}
               aria-checked={checked}
+              disabled={saving.includes(item.id)}
               onPress={() => {
-                void toggleProgress(item.id).catch(() => {});
+                setSaving((current) => [...current, item.id]);
+                void toggleProgress(item.id)
+                  .catch(() => {})
+                  .finally(() =>
+                    setSaving((current) =>
+                      current.filter((id) => id !== item.id),
+                    ),
+                  );
               }}
               style={{
                 flexDirection: "row",

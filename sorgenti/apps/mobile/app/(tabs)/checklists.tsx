@@ -14,6 +14,7 @@ import {
   Screen,
   ui,
 } from "../../src/ui";
+import { checklistSummary } from "../../src/share-content";
 export default function Checklists() {
   const { checklists, state, contentLoading, contentError } = useApp();
   const [query, setQuery] = useState("");
@@ -29,12 +30,13 @@ export default function Checklists() {
     <Screen
       eyebrow="CHECKLIST"
       title="Un piccolo passo alla volta."
-      subtitle="Per alleggerire i pensieri e fare spazio a ciò che conta."
+      subtitle="Strumenti pratici per scegliere cosa fare e organizzare le attività, un gesto alla volta."
     >
       <Notice>
-        Queste liste sono suggerimenti adattabili, non requisiti medici. Le
-        indicazioni della struttura e del tuo professionista sanitario hanno la
-        precedenza.
+        Apri una lista, scegli ciò che ti serve e spunta le attività completate.
+        Vedrai i progressi e un piccolo traguardo quando la lista è completa.
+        Sono suggerimenti adattabili, non requisiti medici: le indicazioni della
+        struttura e del tuo professionista sanitario hanno la precedenza.
       </Notice>
       <View style={{ gap: 12, marginTop: 20 }}>
         <TextInput
@@ -92,6 +94,9 @@ export default function Checklists() {
             >
               <Text style={ui.heading}>{checklist.title}</Text>
               <Text style={ui.body}>{checklist.description}</Text>
+              {checklistSummary(checklist, state.progress).complete && (
+                <Text style={ui.label}>🌷 Traguardo raggiunto</Text>
+              )}
               <Progress
                 completed={
                   checklist.items.filter((i) => state.progress[i.id]).length

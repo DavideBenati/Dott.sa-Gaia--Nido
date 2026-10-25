@@ -18,6 +18,9 @@ import {
   publicChecklist,
   publicProfessionalText,
   nicknameIssue,
+  pregnancyEstimatedDueDate,
+  withSuppliedChecklists,
+  type PregnancyProfile,
   normalizeNickname,
   type Article,
   type Checklist,
@@ -40,6 +43,8 @@ import {
   saveNickname,
   saveSharedJourney,
 } from "@nido/data";
+
+import { loadMyPregnancyProfile } from "./pregnancy-profile";
 
 const LOCAL_KEY = "nido:user-state:v1";
 const authStorage =
@@ -86,6 +91,9 @@ interface AppContextValue {
   ready: boolean;
   demo: boolean;
   email: string | null;
+  pregnancyProfile: PregnancyProfile | null;
+  personalizedPreferences: Preferences;
+  updatePregnancyProfile: (profile: PregnancyProfile | null) => void;
   memberProfile: MemberProfile | null;
   memberProfileLoading: boolean;
   memberProfileError: string | null;
@@ -155,6 +163,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   );
   const memberProfileReadyRef = useRef(false);
   const memberRevisionRef = useRef(0);
+  const [pregnancyProfile, setPregnancyProfile] =
+    useState<PregnancyProfile | null>(null);
   const [passwordRecovery, setPasswordRecovery] = useState(false);
   const signedInRef = useRef(false);
   const userIdRef = useRef<string | null | undefined>(undefined);
@@ -165,7 +175,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     configured ? [] : fixtures.map(publicArticle),
   );
   const [checklists, setChecklists] = useState<Checklist[]>(
-    configured ? [] : fixtureChecklists.map(publicChecklist),
+    configured
+      ? []
+      : withSuppliedChecklists(fixtureChecklists.map(publicChecklist)),
   );
   const [categories, setCategories] = useState<Category[]>(
     configured ? [] : fixtureCategories,
@@ -227,6 +239,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         memberRevisionRef.current++;
         memberProfileReadyRef.current = false;
         setMemberProfile(null);
+        setPregnancyProfile(null);
         setMemberProfileError(null);
         setMemberProfileLoading(Boolean(user));
         setEmail(user?.email ?? null);
@@ -246,6 +259,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           epoch === sessionEpoch.current &&
           memberRevision === memberRevisionRef.current
         ) {
+          void loadMyPregnancyProfile(client)
+            .then((profile) => {
+              if (alive && epoch === sessionEpoch.current)
+                setPregnancyProfile(profile);
+            })
+            .catch(() => {
+              /* Missing clinical setup never blocks account access. */
+            });
           setMemberProfileLoading(true);
           memberProfileReadyRef.current = false;
           void loadMemberProfile(client).then(
@@ -597,14 +618,45 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       authTransitionRef.current = false;
     }
   };
-  const exportData = async () =>
-    signedInRef.current && client
-      ? exportUserData(client)
-      : {
-          exportedAt: new Date().toISOString(),
-          mode: configured ? "guest" : "demo",
-          ...stateRef.current,
-        };
+  const pregnancyOwnerId = userIdRef.current;
+  const updatePregnancyProfile = useCallback(
+    (profile: PregnancyProfile | null) => {
+      if (pregnancyOwnerId && pregnancyOwnerId === userIdRef.current)
+        setPregnancyProfile(profile);
+    },
+    [pregnancyOwnerId],
+  );
+  const dueDate = pregnancyProfile
+    ? pregnancyEstimatedDueDate(pregnancyProfile)
+    : null;
+  const personalizedPreferences: Preferences =
+    dueDate &&
+    state.preferences.journey === "pregnancy" &&
+    !state.preferences.exploreOnly
+      ? {
+          ...state.preferences,
+          date: dueDate,
+          personalized: true,
+          sensitiveConsent: true,
+        }
+      : state.preferences;
+  const exportData = async () => {
+    if (signedInRef.current && client) {
+      const epoch = sessionEpoch.current;
+      const [account, pregnancy] = await Promise.all([
+        exportUserData(client),
+        loadMyPregnancyProfile(client),
+      ]);
+      if (epoch !== sessionEpoch.current)
+        throw new Error("L’account è cambiato. Riprova l’esportazione.");
+      return { ...account, pregnancyProfile: pregnancy };
+    }
+    return {
+      exportedAt: new Date().toISOString(),
+      mode: configured ? "guest" : "demo",
+      ...stateRef.current,
+    };
+  };
   const eraseData = async () => {
     if (authTransitionRef.current)
       throw new Error("Attendi il completamento dell’operazione in corso.");
@@ -643,6 +695,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         demo: !configured,
         email,
         memberProfile,
+        pregnancyProfile,
+        personalizedPreferences,
+        updatePregnancyProfile,
         memberProfileLoading,
         memberProfileError,
         refreshMemberProfile,

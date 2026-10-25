@@ -7,6 +7,10 @@ import { Screen, Notice, Button, ui } from "../src/ui";
 import { useEditorAccess } from "../src/editor-access";
 import { requestNewsletterSubscription } from "../src/newsletter";
 import { colors } from "../src/theme";
+import {
+  prepareAccountEntry,
+  cancelAccountEntry,
+} from "../src/entry-navigation";
 import { nicknameIssue, normalizeNickname } from "@nido/core";
 export default function Account() {
   const {
@@ -22,7 +26,7 @@ export default function Account() {
     requestPasswordReset,
     changePassword,
   } = useApp();
-  const params = useLocalSearchParams<{ mode?: string }>();
+  const params = useLocalSearchParams<{ mode?: string; journey?: string }>();
   const { allowed: editorAllowed } = useEditorAccess();
   const [pendingEmail, setPendingEmail] = useState("");
   const [resendUntil, setResendUntil] = useState(0);
@@ -118,6 +122,7 @@ export default function Account() {
     setBusy(true);
     setMessage("");
     try {
+      prepareAccountEntry(email, params.journey);
       const result = await signIn(
         email.trim(),
         password,
@@ -125,6 +130,7 @@ export default function Account() {
         create ? normalizeNickname(nickname) : undefined,
       );
       setPassword("");
+      if (result.startsWith("Controlla")) cancelAccountEntry();
       if (create && result.startsWith("Controlla"))
         setPendingEmail(email.trim());
       if (create && newsletter) {
@@ -141,9 +147,9 @@ export default function Account() {
           );
         }
       } else setMessage(result);
-      // The auth event reloads the account's own state. Keep this route open:
-      // its signed-in panel offers personalization after hydration completes.
+      // Navigation opens the project only after this account is hydrated.
     } catch (error) {
+      cancelAccountEntry();
       const detail = error instanceof Error ? error.message.toLowerCase() : "";
       if (detail.includes("email not confirmed")) setPendingEmail(email.trim());
       setMessage(

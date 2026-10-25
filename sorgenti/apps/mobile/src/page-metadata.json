@@ -1,17 +1,17 @@
 {
   "/": {
-    "title": "MetiMaia | Crescere insieme, un passo alla volta",
-    "description": "Informazioni affidabili, strumenti pratici e competenza ostetrica per accompagnare le famiglie dalla gravidanza alla nascita e alla crescita.",
+    "title": "Da dove iniziamo? | MetiMaia",
+    "description": "Scegli il tuo percorso e crea un account MetiMaia. Checklist, argomenti e strumenti per accompagnare ogni famiglia.",
     "canonical": "/welcome",
     "index": true
   },
   "/welcome": {
-    "title": "MetiMaia | Crescere insieme, un passo alla volta",
-    "description": "Informazioni affidabili, strumenti pratici e competenza ostetrica per accompagnare le famiglie dalla gravidanza alla nascita e alla crescita.",
+    "title": "Da dove iniziamo? | MetiMaia",
+    "description": "Scegli il tuo percorso e crea un account MetiMaia. Checklist, argomenti e strumenti per accompagnare ogni famiglia.",
     "index": true
   },
   "/discover": {
-    "title": "Letture su gravidanza, nascita e dopo il parto | metiMaia",
+    "title": "Argomenti per gravidanza e dopo la nascita | MetiMaia",
     "description": "Esplora gli articoli di metiMaia per percorso e argomento. Consulta autore, fonti e data di revisione dei contenuti pubblicati.",
     "index": true
   },
@@ -87,7 +87,7 @@
   },
   "/gaia": {
     "title": "Il progetto MetiMaia | Conoscenza, ascolto e cura",
-    "description": "La filosofia di MetiMaia: conoscenza, crescita e sostegno per ogni famiglia. Scopri il significato del nome, il loto e le tappe del percorso.",
+    "description": "Conosci MetiMaia: strumenti pratici, conoscenza e ascolto per le famiglie. Una presentazione da esplorare anche da telefono.",
     "index": true
   },
   "/impostazioni": {
@@ -138,6 +138,11 @@
   "/videochiamate": {
     "title": "Videochiamate con Gaia | MetiMaia",
     "description": "Inviti riservati alle videochiamate concordate con Gaia.",
+    "index": false
+  },
+  "/condivisioni": {
+    "title": "Condivisioni con familiari e amici | MetiMaia",
+    "description": "Autorizzazioni riservate a checklist e letture preferite.",
     "index": false
   }
 }

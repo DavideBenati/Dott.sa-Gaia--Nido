@@ -4,15 +4,34 @@ import NidoSans from "../assets/fonts/DMSans_400Regular.ttf";
 import NidoSansMedium from "../assets/fonts/DMSans_500Medium.ttf";
 import NidoSansSemibold from "../assets/fonts/DMSans_600SemiBold.ttf";
 import NidoSansBold from "../assets/fonts/DMSans_700Bold.ttf";
-import React from "react";
+import React, { useEffect } from "react";
 import { useFonts } from "expo-font";
-import { Stack } from "expo-router";
+import { Stack, router } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppProvider, useApp } from "../src/state";
+import { consumeAccountEntry } from "../src/entry-navigation";
 import { UnsavedNavigationGuard } from "../src/unsaved-changes";
 function Navigation() {
-  const { ready } = useApp();
+  const { ready, email, passwordRecovery, state, updatePreferences } = useApp();
+  useEffect(() => {
+    if (!ready || !email || passwordRecovery) return;
+    const entry = consumeAccountEntry(email);
+    if (!entry) return;
+    const open = () => router.replace("/gaia?start=1");
+    if (!entry.journey) {
+      open();
+      return;
+    }
+    void updatePreferences({
+      ...state.preferences,
+      journey: entry.journey === "exploring" ? "pregnancy" : entry.journey,
+      exploreOnly: entry.journey === "exploring",
+      personalized: false,
+      sensitiveConsent: false,
+      date: null,
+    }).then(open, open);
+  }, [ready, email, passwordRecovery, state.preferences, updatePreferences]);
   return ready ? (
     <>
       <UnsavedNavigationGuard />

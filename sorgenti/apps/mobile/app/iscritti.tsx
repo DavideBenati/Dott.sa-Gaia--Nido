@@ -13,6 +13,7 @@ import { client, useApp } from "../src/state";
 import { useEditorAccess } from "../src/editor-access";
 import { Text, TextInput } from "../src/typography";
 import { Screen, Button, Notice, StageHeading, ui } from "../src/ui";
+import { PregnancyReadOnly } from "../src/pregnancy-read-only";
 
 const nickname = (member: MemberDirectoryEntry) =>
   member.nickname || "Nickname non impostato";
@@ -298,6 +299,12 @@ function MemberDirectory({
               </>
             )}
           </View>
+          {result?.can_view_journeys && !opening && (
+            <PregnancyReadOnly
+              key={selected.user_id}
+              userId={selected.user_id}
+            />
+          )}
           <Button
             variant="secondary"
             disabled={Boolean(opening)}

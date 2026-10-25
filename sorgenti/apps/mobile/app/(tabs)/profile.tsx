@@ -5,13 +5,20 @@ import { router } from "expo-router";
 import { calculateJourney, disclaimer } from "@nido/core";
 import { useApp } from "../../src/state";
 import { Screen, Button, Notice, SectionHeader, ui } from "../../src/ui";
+import { checklistSummary, checklistShare } from "../../src/share-content";
+import { ShareContentButton } from "../../src/share-content-button";
 import { MemberProfileEditor } from "../../src/member-profile-editor";
+import { PregnancyProfileEditor } from "../../src/pregnancy-profile-editor";
 export default function Profile() {
   const {
     state,
     demo,
     email,
     memberProfile,
+    pregnancyProfile,
+    checklists,
+    updatePregnancyProfile,
+    personalizedPreferences,
     updatePreferences,
     exportData,
     eraseData,
@@ -21,7 +28,7 @@ export default function Profile() {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const journey = calculateJourney(state.preferences);
+  const journey = calculateJourney(personalizedPreferences);
   function change(patch: Partial<typeof state.preferences>) {
     void updatePreferences({ ...state.preferences, ...patch }).catch(() => {});
   }
@@ -74,6 +81,36 @@ export default function Profile() {
             : "Ospite · dati su questo dispositivo")}
       </Notice>
       {email && <MemberProfileEditor key={email} />}
+      {email &&
+        ((!state.preferences.exploreOnly &&
+          state.preferences.journey === "pregnancy") ||
+          pregnancyProfile?.storage_consent) && (
+          <PregnancyProfileEditor
+            key={`pregnancy:${email}`}
+            onProfileChange={updatePregnancyProfile}
+          />
+        )}
+      <SectionHeader title="I miei traguardi" />
+      {checklists
+        .filter((list) => checklistSummary(list, state.progress).complete)
+        .map((list) => (
+          <View key={list.id} style={[ui.card, { gap: 10 }]}>
+            <Text style={ui.heading}>{`🌷 ${list.title}`}</Text>
+            <Text style={ui.body}>Checklist completata, con i tuoi tempi.</Text>
+            <ShareContentButton
+              content={checklistShare(list, state.progress)}
+              label={`Condividi il badge: ${list.title}`}
+            />
+          </View>
+        ))}
+      {!checklists.some(
+        (list) => checklistSummary(list, state.progress).complete,
+      ) && (
+        <Text style={ui.body}>
+          Qui ritroverai il badge di ogni checklist completata. Un piccolo
+          traguardo, senza confronti o scadenze.
+        </Text>
+      )}
       <SectionHeader title="Il mio percorso" />
       <View style={[ui.card, { gap: 12 }]}>
         <Text style={ui.heading}>{journey.label}</Text>
@@ -141,6 +178,14 @@ export default function Profile() {
           onPress={() => router.push("/videochiamate")}
         >
           Le mie videochiamate con Gaia
+        </Button>
+      )}
+      {email && (
+        <Button
+          variant="secondary"
+          onPress={() => router.push("/condivisioni")}
+        >
+          Condivisioni con familiari e amici
         </Button>
       )}
       <SectionHeader title="Conosci metiMaia" />

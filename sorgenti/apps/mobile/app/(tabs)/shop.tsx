@@ -606,13 +606,18 @@ function ShopContent({
             </View>
           ) : (
             <>
-              {settings.recommendations_enabled && products.length > 0 && (
+              <View style={{ gap: 10 }}>
                 <Field
                   label="Cerca nella selezione Amazon"
                   value={query}
                   onChange={setQuery}
                 />
-              )}
+                {!!query && (
+                  <Button variant="quiet" onPress={() => setQuery("")}>
+                    Azzera ricerca prodotti
+                  </Button>
+                )}
+              </View>
               {publicProducts.length === 0 && (
                 <View
                   style={[

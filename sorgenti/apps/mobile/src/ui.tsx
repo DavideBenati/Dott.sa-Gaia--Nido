@@ -174,34 +174,42 @@ export function Screen({
             <>
               <Link
                 href="/studio"
+                accessibilityState={{ selected: pathname === "/studio" }}
                 style={{
                   padding: 12,
                   minHeight: 44,
                   color: colors.sageDark,
                   fontSize: 14,
-                  fontWeight: "700",
+                  fontFamily:
+                    pathname === "/studio" ? "NidoSansBold" : "NidoSans",
                 }}
               >
                 Studio
               </Link>
               <Link
                 href="/discover"
+                accessibilityState={{ selected: pathname === "/discover" }}
                 style={{
                   padding: 12,
                   minHeight: 44,
                   color: colors.sageDark,
                   fontSize: 14,
+                  fontFamily:
+                    pathname === "/discover" ? "NidoSansBold" : "NidoSans",
                 }}
               >
                 Anteprima sito
               </Link>
               <Link
                 href="/sicurezza"
+                accessibilityState={{ selected: pathname === "/sicurezza" }}
                 style={{
                   padding: 12,
                   minHeight: 44,
                   color: colors.sageDark,
                   fontSize: 14,
+                  fontFamily:
+                    pathname === "/sicurezza" ? "NidoSansBold" : "NidoSans",
                 }}
               >
                 Sicurezza
@@ -211,36 +219,44 @@ export function Screen({
             <>
               <Link
                 href="/gaia"
+                accessibilityState={{ selected: pathname === "/gaia" }}
                 accessibilityLabel="Scopri il progetto MetiMaia"
                 style={{
                   padding: 12,
                   minHeight: 44,
                   color: colors.sageDark,
                   fontSize: 14,
+                  fontFamily:
+                    pathname === "/gaia" ? "NidoSansBold" : "NidoSans",
                 }}
               >
                 Il progetto
               </Link>
               <Link
                 href="/contatti"
+                accessibilityState={{ selected: pathname === "/contatti" }}
                 style={{
                   padding: 12,
                   minHeight: 44,
                   color: colors.sageDark,
                   fontSize: 14,
+                  fontFamily:
+                    pathname === "/contatti" ? "NidoSansBold" : "NidoSans",
                 }}
               >
                 Contatti
               </Link>
               <Link
                 href="/shop"
+                accessibilityState={{ selected: pathname === "/shop" }}
                 accessibilityLabel="Apri i consigli d’acquisto"
                 style={{
                   padding: 12,
                   minHeight: 44,
                   color: colors.sageDark,
                   fontSize: 14,
-                  fontWeight: "700",
+                  fontFamily:
+                    pathname === "/shop" ? "NidoSansBold" : "NidoSans",
                 }}
               >
                 Consigli d’acquisto

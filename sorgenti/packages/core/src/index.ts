@@ -5,3 +5,5 @@ export * from "./shop";
 export * from "./booking";
 export * from "./public-name";
 export * from "./member-profiles";
+export * from "./pregnancy";
+export * from "./supplied-checklists";

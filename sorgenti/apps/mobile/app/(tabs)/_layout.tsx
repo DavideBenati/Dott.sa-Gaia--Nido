@@ -14,7 +14,7 @@ export default function Layout() {
   const compact = width < 420;
   const tabs: [string, string, IconName][] = [
     ["index", "Il mio percorso", "home"],
-    ["discover", "Scopri", "discover"],
+    ["discover", "Argomenti", "discover"],
     ["checklists", "Checklist", "checklist"],
     ["shop", "Consigli d’acquisto", "shop"],
     ["profile", "Profilo", "profile"],
@@ -66,7 +66,7 @@ export default function Layout() {
                 }
               : {}),
             title,
-            tabBarLabel: ({ color }) => (
+            tabBarLabel: ({ color, focused }) => (
               <Text
                 numberOfLines={2}
                 style={{
@@ -74,7 +74,7 @@ export default function Layout() {
                   textAlign: "center",
                   color,
                   fontSize: compact ? (isAdministrator ? 10 : 11) : 12,
-                  fontFamily: "NidoSansSemibold",
+                  fontFamily: focused ? "NidoSansBold" : "NidoSans",
                   marginHorizontal: 0,
                   lineHeight: 14,
                   minHeight: 28,

@@ -17,8 +17,16 @@ import {
 import { Icon } from "../../src/icons";
 import { colors } from "../../src/theme";
 export default function Home() {
-  const { state, articles, checklists, email, memberProfile } = useApp();
-  const journey = calculateJourney(state.preferences);
+  const {
+    state,
+    articles,
+    checklists,
+    email,
+    memberProfile,
+    personalizedPreferences,
+    pregnancyProfile,
+  } = useApp();
+  const journey = calculateJourney(personalizedPreferences);
   const next =
     checklists.find((c) => c.stage === journey.stage) ?? checklists[0];
   return (
@@ -170,7 +178,7 @@ export default function Home() {
             ? `Una lettura per la settimana ${journey.week}`
             : "Consigliato per te"
         }
-        action="Scopri tutto"
+        action="Tutti gli Argomenti"
         onPress={() => router.navigate("/(tabs)/discover")}
       />
       <Button variant="secondary" onPress={() => router.push("/prenota")}>
@@ -178,7 +186,12 @@ export default function Home() {
       </Button>
       <ContentStatus />
       <ArticleGrid
-        items={recommendArticles(articles, state.preferences).slice(0, 3)}
+        items={recommendArticles(
+          articles,
+          personalizedPreferences,
+          new Date(),
+          pregnancyProfile,
+        ).slice(0, 3)}
       />
       {next && (
         <>

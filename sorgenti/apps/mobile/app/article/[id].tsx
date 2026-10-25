@@ -7,6 +7,8 @@ import { disclaimer } from "@nido/core";
 import { useApp } from "../../src/state";
 import { Screen, Notice, Button, EmptyState, ui } from "../../src/ui";
 import { ArticleCover } from "../../src/art";
+import { contentLink } from "../../src/share-content";
+import { ShareContentButton } from "../../src/share-content-button";
 export default function Article() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { articles, categories, state, toggleFavorite } = useApp();
@@ -134,6 +136,16 @@ export default function Article() {
       >
         {saved ? "Salvato in MAIA" : "Conserva questa lettura"}
       </Button>
+      <View style={{ marginTop: 12 }}>
+        <ShareContentButton
+          label="Condividi questa lettura"
+          content={{
+            title: `${article.title} · metiMaia`,
+            text: `${article.title}\n${article.subtitle}`,
+            url: contentLink("/article", { id: article.id }),
+          }}
+        />
+      </View>
       <Notice>{disclaimer}</Notice>
     </Screen>
   );

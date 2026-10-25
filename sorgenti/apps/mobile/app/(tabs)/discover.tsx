@@ -1,5 +1,5 @@
 import { TextInput, Text } from "../../src/typography";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Pressable } from "react-native";
 import { filterArticles, type Stage } from "@nido/core";
 import { useApp } from "../../src/state";
@@ -14,13 +14,32 @@ import {
 } from "../../src/ui";
 import { Icon } from "../../src/icons";
 import { colors } from "../../src/theme";
+import { useLocalSearchParams } from "expo-router";
+import { readTopicFilters, topicShare } from "../../src/share-content";
+import { ShareContentButton } from "../../src/share-content-button";
 export default function Discover() {
   const { articles, categories, demo, contentLoading, contentError } = useApp();
-  const [query, setQuery] = useState("");
-  const [categoryId, setCategory] = useState("all");
-  const [stage, setStage] = useState<Stage | "birth">("all");
-  const [shortOnly, setShortOnly] = useState(false);
-  const [sort, setSort] = useState<"recent" | "short" | "title">("recent");
+  const params = useLocalSearchParams<{
+    query?: string;
+    category?: string;
+    stage?: string;
+    short?: string;
+    sort?: string;
+  }>();
+  const initial = readTopicFilters(params);
+  const [query, setQuery] = useState(initial.query);
+  const [categoryId, setCategory] = useState(initial.category);
+  const [stage, setStage] = useState<Stage | "birth">(initial.stage);
+  const [shortOnly, setShortOnly] = useState(initial.short);
+  const [sort, setSort] = useState<"recent" | "short" | "title">(initial.sort);
+  useEffect(() => {
+    const next = readTopicFilters(params);
+    setQuery(next.query);
+    setCategory(next.category);
+    setStage(next.stage);
+    setShortOnly(next.short);
+    setSort(next.sort);
+  }, [params.query, params.category, params.stage, params.short, params.sort]);
   const result = filterArticles(articles, {
     query,
     categoryId,
@@ -51,7 +70,7 @@ export default function Discover() {
   }
   return (
     <Screen
-      eyebrow="SCOPRI"
+      eyebrow="ARGOMENTI"
       title="Le parole giuste, al momento giusto."
       subtitle="Una biblioteca da esplorare con i tuoi tempi."
     >
@@ -156,6 +175,7 @@ export default function Discover() {
           accessibilityRole="checkbox"
           accessibilityLabel="Solo letture entro 5 minuti"
           accessibilityState={{ checked: shortOnly }}
+          aria-checked={shortOnly}
           onPress={() => setShortOnly(!shortOnly)}
           style={{ paddingVertical: 10 }}
         >
@@ -186,6 +206,19 @@ export default function Discover() {
             </Pressable>
           ))}
         </View>
+      </View>
+      <View style={{ marginBottom: 18 }}>
+        <ShareContentButton
+          label={
+            categoryId === "all"
+              ? "Condividi questi argomenti"
+              : "Condividi questo argomento"
+          }
+          content={topicShare(
+            { query, category: categoryId, stage, short: shortOnly, sort },
+            categories.find((category) => category.id === categoryId)?.name,
+          )}
+        />
       </View>
       <ContentStatus />
       {!contentLoading && !contentError && (

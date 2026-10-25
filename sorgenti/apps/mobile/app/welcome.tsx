@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Pressable, View, Switch } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { type JourneyType } from "@nido/core";
+import { PregnancyProfileEditor } from "../src/pregnancy-profile-editor";
 import { useApp } from "../src/state";
 import {
   Brand,
@@ -13,7 +14,6 @@ import {
   Tag,
   ui,
 } from "../src/ui";
-import { NestArt } from "../src/art";
 import { colors, serif } from "../src/theme";
 const choices: {
   id: JourneyType | "exploring";
@@ -22,12 +22,12 @@ const choices: {
 }[] = [
   {
     id: "pregnancy",
-    title: "Sono in gravidanza",
+    title: "Aspetto un bambino",
     subtitle: "Informazioni e piccoli passi per la gravidanza.",
   },
   {
     id: "partner",
-    title: "Sono partner o familiare",
+    title: "Sono un familiare o amico",
     subtitle: "Per accompagnare la famiglia, nell’attesa o dopo la nascita.",
   },
   {
@@ -43,7 +43,8 @@ const choices: {
 ];
 export default function Welcome() {
   const { edit } = useLocalSearchParams<{ edit?: string }>();
-  const { state, updatePreferences, demo } = useApp();
+  const { state, updatePreferences, demo, email, updatePregnancyProfile } =
+    useApp();
   const [step, setStep] = useState(edit ? 1 : 0);
   const [draft, setDraft] = useState({ ...state.preferences });
   const [error, setError] = useState("");
@@ -105,34 +106,87 @@ export default function Welcome() {
   return (
     <Screen stageKey={step} focusTargetId={`welcome-step-${step}`}>
       {step === 0 ? (
-        <View style={{ gap: 22 }}>
-          <NestArt variant={2} style={{ height: 230, borderRadius: 25 }} />
-          <Brand />
+        <View
+          style={{ width: "100%", maxWidth: 680, alignSelf: "center", gap: 20 }}
+        >
+          <Brand compact />
           <Tag>IL TUO SPAZIO, FIN DALL’INIZIO</Tag>
           <StageHeading
             id="welcome-step-0"
             style={{
               fontFamily: serif,
-              fontSize: 43,
-              lineHeight: 50,
+              fontSize: 36,
+              lineHeight: 43,
               color: colors.ink,
             }}
           >
-            Uno spazio per ogni nuovo inizio.
+            Da dove iniziamo?
           </StageHeading>
           <Text style={ui.body}>
-            Gravidanza, nascita e primi giorni insieme. MAIA ti accompagna con
-            contenuti educativi e piccoli strumenti, da vivere con i tuoi tempi.
+            Scegli il punto da cui partire e crea il tuo account: ritroverai
+            checklist, articoli preferiti e le persone con cui vuoi condividere
+            il percorso.
           </Text>
-          <Text style={[ui.heading, { fontStyle: "italic" }]}>
-            Insieme, passo dopo passo.
-          </Text>
-          <Button onPress={() => router.push("/account")}>
-            Crea il tuo account
+          {choices.map((choice) => {
+            const selected =
+              choice.id === "exploring"
+                ? Boolean(draft.exploreOnly)
+                : !draft.exploreOnly && draft.journey === choice.id;
+            return (
+              <Pressable
+                key={choice.id}
+                accessibilityRole="radio"
+                accessibilityLabel={choice.title}
+                accessibilityState={{ checked: selected }}
+                aria-checked={selected}
+                onPress={() =>
+                  setDraft({
+                    ...draft,
+                    journey:
+                      choice.id === "exploring" ? "pregnancy" : choice.id,
+                    exploreOnly: choice.id === "exploring",
+                    date: null,
+                  })
+                }
+                style={[
+                  ui.card,
+                  {
+                    gap: 6,
+                    padding: 18,
+                    borderColor: selected ? colors.sageDark : colors.border,
+                    backgroundColor: selected ? colors.sagePale : colors.paper,
+                  },
+                ]}
+              >
+                <Text style={[ui.label, selected && { fontWeight: "700" }]}>
+                  {choice.title}
+                </Text>
+                <Text style={ui.body}>{choice.subtitle}</Text>
+              </Pressable>
+            );
+          })}
+          <Button
+            onPress={() =>
+              email
+                ? setStep(1)
+                : router.push({
+                    pathname: "/account",
+                    params: {
+                      journey: draft.exploreOnly ? "exploring" : draft.journey,
+                    },
+                  })
+            }
+          >
+            {email ? "Personalizza il mio percorso" : "Iscriviti e iniziamo"}
           </Button>
-          <Button variant="secondary" onPress={() => setStep(1)}>
-            Iniziamo insieme
-          </Button>
+          {!email && (
+            <Button
+              variant="secondary"
+              onPress={() => router.push("/account?mode=login")}
+            >
+              Hai già un account? Accedi
+            </Button>
+          )}
           <Button
             variant="quiet"
             disabled={busy}
@@ -142,29 +196,14 @@ export default function Welcome() {
           >
             Esplora come ospite
           </Button>
-          <Button variant="quiet" onPress={() => router.push("/prenota")}>
-            Chiedi disponibilità via email
-          </Button>
           <Text style={ui.body}>
-            Nessun account necessario. Nessuna data obbligatoria.
+            Puoi leggere anche senza account. Le informazioni personali restano
+            facoltative.
           </Text>
-          <View style={[ui.card, { gap: 12, backgroundColor: colors.peach }]}>
-            <Text style={ui.heading}>Consigli d’acquisto</Text>
-            <Text style={ui.body}>
-              Prodotti selezionati su Amazon per la quotidianità in famiglia.
-              Puoi esplorare i consigli anche senza account.
-            </Text>
-            <Button
-              variant="secondary"
-              onPress={() => router.navigate("/shop")}
-            >
-              Scopri i consigli d’acquisto
-            </Button>
-          </View>
           {demo && (
             <Notice warm>
-              DEMO MODE · Contenuti e percorsi sono esempi, non ancora
-              revisionati da un’ostetrica.
+              Modalità dimostrativa: account e sincronizzazione richiedono
+              Supabase.
             </Notice>
           )}
         </View>
@@ -233,8 +272,9 @@ export default function Welcome() {
                 </Pressable>
               ))}
               <Notice>
-                Il partner può utilizzare MAIA senza condividere date o
-                informazioni sulla salute di un’altra persona.
+                Un familiare o un amico può utilizzare MetiMaia senza
+                condividere date o informazioni sulla salute di un’altra
+                persona.
               </Notice>
             </>
           )}
@@ -277,11 +317,39 @@ export default function Welcome() {
                       {`${(draft.partnerStage ?? "pregnancy") === stage ? "✓ " : ""}${label}`}
                     </Button>
                   ))}
+                  {email && (
+                    <Button
+                      variant="secondary"
+                      onPress={() => router.push("/condivisioni")}
+                    >
+                      Collega il nickname della persona che accompagni
+                    </Button>
+                  )}
                   <Notice>
                     Per accompagnare una persona basta scegliere la fase: non
                     servono date o dati sulla salute di altri.
                   </Notice>
                 </>
+              ) : draft.journey === "pregnancy" ? (
+                email ? (
+                  <PregnancyProfileEditor
+                    key={email}
+                    onProfileChange={updatePregnancyProfile}
+                  />
+                ) : (
+                  <>
+                    <Notice>
+                      Accedi per compilare la scheda facoltativa della
+                      gravidanza. I dati non saranno condivisi con familiari e
+                      amici.
+                    </Notice>
+                    <Button
+                      onPress={() => router.push("/account?journey=pregnancy")}
+                    >
+                      Crea account o accedi
+                    </Button>
+                  </>
+                )
               ) : (
                 <>
                   <Text style={ui.body}>

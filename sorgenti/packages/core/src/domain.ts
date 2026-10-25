@@ -8,6 +8,8 @@ import type {
 
 export const disclaimer =
   "Le informazioni presenti nell'app hanno finalità educative e non sostituiscono il parere di un professionista sanitario.";
+import type { PregnancyProfile } from "./pregnancy";
+
 const DAY = 86_400_000;
 const dayNumber = (date: Date) =>
   Math.floor(
@@ -157,6 +159,7 @@ export function recommendArticles(
   items: Article[],
   preferences: Preferences,
   now = new Date(),
+  pregnancyProfile?: PregnancyProfile | null,
 ): Article[] {
   const journey = calculateJourney(preferences, now);
   const topicCategories: Record<string, string[]> = {
@@ -193,6 +196,26 @@ export function recommendArticles(
     if (preferences.journey === "partner" && article.categoryId === "partner")
       score += 3;
     if (selectedCategories.has(article.categoryId)) score += 2;
+    // Optional history only prioritizes existing educational readings; it never
+    // infers a diagnosis or recommends a mode of delivery.
+    if (
+      pregnancyProfile?.storage_consent &&
+      pregnancyProfile.personalization_consent &&
+      preferences.journey === "pregnancy" &&
+      !preferences.exploreOnly
+    ) {
+      const title = normalizeSearch(`${article.title} ${article.subtitle}`);
+      if (
+        pregnancyProfile.previous_outcomes.includes("cesarean") &&
+        /cesare[oa]|parto dopo/.test(title)
+      )
+        score += 2;
+      if (
+        pregnancyProfile.previous_pregnancies &&
+        /gravidanz[ae] successiv|second[oa] figli/.test(title)
+      )
+        score += 2;
+    }
     return { article, score, index };
   });
   ranked.sort((a, b) => b.score - a.score || a.index - b.index);

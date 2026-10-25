@@ -174,3 +174,47 @@ describe("Biblioteca e redazione", () => {
     expect(selected[0].categoryId).toBe("feeding");
   });
 });
+
+describe("Letture e storia ostetrica facoltativa", () => {
+  it("non usa un precedente cesareo senza il consenso distinto alla personalizzazione", async () => {
+    const { emptyPregnancyProfile } = await import("./pregnancy");
+    const neutral = {
+      ...articles[0],
+      id: "neutral",
+      title: "Prepararsi insieme",
+      subtitle: "Una lettura",
+      stage: "pregnancy" as const,
+      weekFrom: null,
+      weekTo: null,
+    };
+    const cesarean = { ...neutral, id: "cesarean", title: "Il parto cesareo" };
+    const clinical = {
+      ...emptyPregnancyProfile(),
+      storage_consent: true,
+      previous_pregnancies: true,
+      previous_outcomes: ["cesarean" as const],
+    };
+    expect(
+      recommendArticles(
+        [neutral, cesarean],
+        defaultPreferences,
+        now,
+        clinical,
+      )[0].id,
+    ).toBe("neutral");
+    expect(
+      recommendArticles([neutral, cesarean], defaultPreferences, now, {
+        ...clinical,
+        personalization_consent: true,
+      })[0].id,
+    ).toBe("cesarean");
+    expect(
+      recommendArticles(
+        [neutral, cesarean],
+        { ...defaultPreferences, journey: "partner" },
+        now,
+        { ...clinical, personalization_consent: true },
+      )[0].id,
+    ).toBe("neutral");
+  });
+});
