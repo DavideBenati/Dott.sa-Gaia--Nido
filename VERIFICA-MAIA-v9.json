@@ -1,0 +1,58 @@
+{
+  "version": "v9",
+  "source_commit": "0aeada656af282cc1a98b1b05e15333be6851139",
+  "unit_tests": {
+    "files_passed": 20,
+    "tests_passed": 144
+  },
+  "typecheck": "passed",
+  "eslint": "passed",
+  "production_build": "passed",
+  "browser_member_profiles": {
+    "checks_passed": 37,
+    "candidate": "maia-iscritti-v9-rc1",
+    "errors": [],
+    "services": "mocked"
+  },
+  "browser_new_content": {
+    "checks_passed": 11,
+    "candidate": "maia-v9-final-rc2",
+    "errors": [],
+    "services": "mocked"
+  },
+  "responsive_viewport_widths": [
+    390,
+    1440
+  ],
+  "site_files": 96,
+  "google_original_html_preserved": true,
+  "google_meta_verification_added": false,
+  "private_routes_noindex": [
+    "iscritti",
+    "videochiamate"
+  ],
+  "live_supabase_migrations_applied": false,
+  "live_cloudflare_deployed": false,
+  "live_hostpoint_call_tested": false,
+  "rollout": [
+    "Supabase 009",
+    "Supabase 010",
+    "Supabase 011",
+    "Optional Gaia journey grant and MFA",
+    "Cloudflare full site ZIP"
+  ],
+  "artifacts": {
+    "MAIA-Sito-v9-Completo.zip": {
+      "bytes": 2941986,
+      "sha256": "6f926725d2ade74893b5b5d1af16b29729d3a3f9440e0c41437c2f43f8762afd"
+    },
+    "MAIA-Configurazione-v9.zip": {
+      "bytes": 14045,
+      "sha256": "f32fa788678c22658e7aa1ad35c6e7f44565a65f3b8da959518ba334e4db044c"
+    },
+    "GUIDA-MAIA-v9.md": {
+      "bytes": 9276,
+      "sha256": "ec438ae64460355c3496898a237ea1950ca3f312dcb5f27d6088959a9aa98d4f"
+    }
+  }
+}
