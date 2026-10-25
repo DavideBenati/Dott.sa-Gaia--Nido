@@ -1,8 +1,6 @@
 import { client } from "./state";
 import {
   emptyShopSettings,
-  settingsIssues,
-  validCheckout,
   validAmazonLink,
   publicProfessionalText,
   type ShopProduct,
@@ -10,9 +8,7 @@ import {
 } from "@nido/core";
 export {
   emptyShopSettings,
-  formatPrice,
-  parsePrice,
-  validCheckout,
+  publicAmazonProducts,
   validAmazonLink,
   type ShopProduct,
   type ShopSettings,
@@ -36,11 +32,16 @@ export async function loadShop(editor = false) {
   ]);
   if (products.error || settings.error)
     throw new Error(
-      "Shop non ancora configurato o temporaneamente non disponibile.",
+      "Consigli d’acquisto non ancora configurati o temporaneamente non disponibili.",
     );
   const loaded = {
-    products: products.data as ShopProduct[],
-    settings: (settings.data as ShopSettings | null) ?? emptyShopSettings,
+    products: (products.data as ShopProduct[]).filter(
+      (product) => product.kind === "amazon",
+    ),
+    settings: {
+      ...((settings.data as ShopSettings | null) ?? emptyShopSettings),
+      enabled: false,
+    },
   };
   if (editor) return loaded;
   return {
@@ -63,6 +64,8 @@ export async function saveShopProduct(product: ShopProduct) {
   if (!client) throw new Error("Servizio non disponibile.");
   const { assertEditor } = await import("@nido/data");
   await assertEditor(client);
+  if (product.kind !== "amazon")
+    throw new Error("Questa vetrina accetta solo prodotti Amazon.");
   if (product.title.trim().length < 3)
     throw new Error("Inserisci un titolo di almeno 3 caratteri.");
   if (product.status === "published") {
@@ -72,29 +75,22 @@ export async function saveShopProduct(product: ShopProduct) {
       throw new Error(
         "Inserisci un link HTTPS Amazon.it, amzn.to o amzn.eu valido.",
       );
-    if (
-      product.kind === "doctor" &&
-      (!validCheckout(product.checkout_url) ||
-        !product.image_url.startsWith("https://") ||
-        product.price_cents <= 0)
-    )
-      throw new Error(
-        "Per vendere direttamente servono immagine HTTPS, prezzo e un Payment Link Stripe valido.",
-      );
   }
-  const { error } = await client.from("shop_products").upsert(product);
+  const { error } = await client
+    .from("shop_products")
+    .upsert({ ...product, kind: "amazon", price_cents: 0 });
   if (error)
     throw new Error(
-      "Salvataggio non riuscito. Verifica i campi, i permessi e la configurazione shop.",
+      "Salvataggio non riuscito. Verifica i campi, i permessi e la configurazione dei consigli d’acquisto.",
     );
 }
 export async function saveShopSettings(settings: ShopSettings) {
   if (!client) throw new Error("Servizio non disponibile.");
   const { assertEditor } = await import("@nido/data");
   await assertEditor(client);
-  const issues = settingsIssues(settings);
-  if (issues.length) throw new Error(issues.join(" "));
-  const { error } = await client.from("shop_settings").upsert(settings);
+  const { error } = await client
+    .from("shop_settings")
+    .upsert({ ...settings, enabled: false });
   if (error)
     throw new Error(
       "Configurazione non salvata. Verifica i dati e i permessi.",

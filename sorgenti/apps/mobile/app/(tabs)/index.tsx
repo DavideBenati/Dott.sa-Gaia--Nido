@@ -17,7 +17,7 @@ import {
 import { Icon } from "../../src/icons";
 import { colors } from "../../src/theme";
 export default function Home() {
-  const { state, articles, checklists, email } = useApp();
+  const { state, articles, checklists, email, memberProfile } = useApp();
   const journey = calculateJourney(state.preferences);
   const next =
     checklists.find((c) => c.stage === journey.stage) ?? checklists[0];
@@ -25,7 +25,11 @@ export default function Home() {
     <Screen
       eyebrow="IL MIO PERCORSO"
       title={
-        email ? "Bentornata nel tuo spazio." : "Ogni nuovo inizio, insieme."
+        email
+          ? memberProfile?.nickname
+            ? `Ciao, ${memberProfile.nickname}.`
+            : "Bentornata nel tuo spazio."
+          : "Ogni nuovo inizio, insieme."
       }
       subtitle="Ciao! Oggi facciamo un altro passo insieme."
     >
@@ -54,19 +58,24 @@ export default function Home() {
         >
           Personalizza il tuo percorso
         </Button>
+        {email && (
+          <Button variant="quiet" onPress={() => router.push("/profile")}>
+            La mia scheda per Gaia
+          </Button>
+        )}
       </View>
       <View style={[ui.card, { gap: 12, backgroundColor: colors.peach }]}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
           <Icon name="shop" size={28} />
-          <Text style={ui.heading}>Lo Shop di metiMaia</Text>
+          <Text style={ui.heading}>Consigli d’acquisto</Text>
         </View>
         <Text style={ui.body}>
-          Scopri la selezione Amazon e lo spazio dedicato ai prodotti della
-          dottoressa. Prezzi e disponibilità sono indicati nelle schede e sui
-          siti di acquisto.
+          Una selezione di prodotti su Amazon per la quotidianità in famiglia.
+          Prezzi, disponibilità e condizioni di acquisto sono indicati su
+          Amazon.
         </Text>
         <Button variant="secondary" onPress={() => router.navigate("/shop")}>
-          Esplora lo Shop
+          Scopri i consigli d’acquisto
         </Button>
       </View>
       <View

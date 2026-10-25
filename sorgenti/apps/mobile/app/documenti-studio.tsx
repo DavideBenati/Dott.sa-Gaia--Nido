@@ -22,6 +22,8 @@ import {
 } from "../src/session-documents";
 import { useDocumentDownload } from "../src/document-download";
 import { useUnsavedChanges } from "../src/unsaved-changes";
+const recipientName = (user?: DocumentRecipient) =>
+  user?.nickname || user?.email || "Account selezionato";
 export default function DocumentStudio() {
   const { email } = useApp();
   return email ? (
@@ -79,7 +81,9 @@ function Workspace() {
   const [recipientsVersion, setRecipientsVersion] = useState(0);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [baseline, setBaseline] = useState("");
-  const [knownUsers, setKnownUsers] = useState<Record<string, string>>({});
+  const [knownUsers, setKnownUsers] = useState<
+    Record<string, DocumentRecipient>
+  >({});
   const [term, setTerm] = useState("");
   const [results, setResults] = useState<DocumentRecipient[]>([]);
   const [searching, setSearching] = useState(false);
@@ -256,9 +260,7 @@ function Workspace() {
       (rows) => {
         if (active) {
           setSelectedIds(rows.map((r) => r.user_id));
-          setKnownUsers(
-            Object.fromEntries(rows.map((r) => [r.user_id, r.email])),
-          );
+          setKnownUsers(Object.fromEntries(rows.map((r) => [r.user_id, r])));
           setBaseline(JSON.stringify(rows.map((r) => r.user_id).sort()));
           setRecipientsReady(true);
         }
@@ -317,7 +319,7 @@ function Workspace() {
     }
   }
   async function search() {
-    if (locked || term.trim().length < 3) return;
+    if (locked || term.trim().length < 2) return;
     const sequence = ++searchSequence.current;
     setSearching(true);
     setSearchMessage("");
@@ -327,13 +329,13 @@ function Workspace() {
         setResults(rows);
         setKnownUsers((previous) => ({
           ...previous,
-          ...Object.fromEntries(rows.map((row) => [row.user_id, row.email])),
+          ...Object.fromEntries(rows.map((row) => [row.user_id, row])),
         }));
         setSearchMessage(
           rows.length === 0
-            ? "Nessun account confermato trovato. Controlla l’email o attendi la conferma dell’account."
+            ? "Nessun account confermato trovato. Controlla nickname ed email, oppure attendi la conferma dell’account."
             : rows.length === 20
-              ? "Mostrati al massimo 20 risultati: completa l’email per restringere la ricerca."
+              ? "Mostrati al massimo 20 risultati: completa nickname o email per restringere la ricerca."
               : `${rows.length} account trovati.`,
         );
       }
@@ -772,11 +774,11 @@ function Workspace() {
                               Ricarica destinatari attuali
                             </Button>
                             <Text style={ui.label}>
-                              Cerca utenti registrati per email
+                              Cerca utenti registrati per nickname o email
                             </Text>
                             <TextInput
-                              accessibilityLabel="Cerca destinatari per email"
-                              placeholder="Almeno 3 caratteri dell’email"
+                              accessibilityLabel="Cerca destinatari per nickname o email"
+                              placeholder="Almeno 2 caratteri del nickname o dell’email"
                               value={term}
                               onChangeText={(value) => {
                                 searchSequence.current++;
@@ -787,12 +789,11 @@ function Workspace() {
                               editable={!locked}
                               maxLength={254}
                               autoCapitalize="none"
-                              keyboardType="email-address"
                               style={ui.input}
                             />
                             <Button
                               variant="secondary"
-                              disabled={locked || term.trim().length < 3}
+                              disabled={locked || term.trim().length < 2}
                               onPress={() => void search()}
                             >
                               {searching
@@ -811,7 +812,7 @@ function Workspace() {
                               <Pressable
                                 key={user.user_id}
                                 accessibilityRole="checkbox"
-                                accessibilityLabel={`Condividi con ${user.email}`}
+                                accessibilityLabel={`Condividi con ${user.nickname ? `${user.nickname} · ` : ""}${user.email}`}
                                 accessibilityState={{
                                   checked: selectedIds.includes(user.user_id),
                                   disabled: locked,
@@ -824,8 +825,13 @@ function Workspace() {
                                 style={[ui.card, { padding: 16 }]}
                               >
                                 <Text
-                                  style={ui.body}
-                                >{`${selectedIds.includes(user.user_id) ? "☑" : "☐"} ${user.email}`}</Text>
+                                  style={ui.label}
+                                >{`${selectedIds.includes(user.user_id) ? "☑" : "☐"} ${recipientName(user)}`}</Text>
+                                {user.nickname && (
+                                  <Text selectable style={ui.body}>
+                                    {user.email}
+                                  </Text>
+                                )}
                               </Pressable>
                             ))}
                             <Text
@@ -844,13 +850,19 @@ function Workspace() {
                                 .map((id) => (
                                   <View key={id} style={{ gap: 4 }}>
                                     <Text selectable style={ui.body}>
-                                      {knownUsers[id] ?? "Account selezionato"}
+                                      {recipientName(knownUsers[id])}
                                     </Text>
+                                    {knownUsers[id]?.nickname && (
+                                      <Text selectable style={ui.body}>
+                                        {knownUsers[id].email}
+                                      </Text>
+                                    )}
                                     <Button
                                       variant="quiet"
+                                      accessibilityLabel={`Rimuovi ${knownUsers[id]?.nickname ? `${knownUsers[id].nickname} · ` : ""}${knownUsers[id]?.email || "destinatario"}`}
                                       disabled={locked}
                                       onPress={() => toggle(id)}
-                                    >{`Rimuovi ${knownUsers[id] ?? "destinatario"}`}</Button>
+                                    >{`Rimuovi ${recipientName(knownUsers[id])}`}</Button>
                                   </View>
                                 ))
                             )}

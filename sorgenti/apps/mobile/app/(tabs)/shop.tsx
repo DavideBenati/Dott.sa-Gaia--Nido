@@ -4,32 +4,27 @@ import {
   Image,
   Linking,
   Pressable,
-  Modal,
-  ScrollView,
   useWindowDimensions,
 } from "react-native";
-import Svg, { Path, Rect } from "react-native-svg";
 import { router, useLocalSearchParams } from "expo-router";
 import logo from "../../assets/brand/maia-logo.png";
 import { Text, TextInput } from "../../src/typography";
 import { Screen, Notice, Button, StageHeading, ui } from "../../src/ui";
 import { colors } from "../../src/theme";
-import { useDialogFocus } from "../../src/dialog-focus";
 import { useApp } from "../../src/state";
 import { useEditorAccess } from "../../src/editor-access";
 import { useUnsavedChanges } from "../../src/unsaved-changes";
 import {
   emptyShopSettings,
-  formatPrice,
   loadShop,
-  parsePrice,
   saveShopProduct,
   saveShopSettings,
-  validCheckout,
+  publicAmazonProducts,
   validAmazonLink,
   type ShopProduct,
   type ShopSettings,
 } from "../../src/shop";
+
 function Field({
   label,
   value,
@@ -60,106 +55,7 @@ function Field({
     </View>
   );
 }
-function CollectionIdea({
-  kind,
-  title,
-  text,
-}: {
-  kind: "bag" | "cup" | "book";
-  title: string;
-  text: string;
-}) {
-  return (
-    <View style={[ui.card, { flex: 1, minWidth: 230, gap: 15 }]}>
-      <View
-        style={{
-          height: 220,
-          backgroundColor: kind === "cup" ? colors.peach : colors.sagePale,
-          borderRadius: 18,
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Svg
-          width={180}
-          height={180}
-          viewBox="0 0 180 180"
-          accessibilityElementsHidden
-          importantForAccessibility="no-hide-descendants"
-        >
-          {kind === "bag" ? (
-            <>
-              <Path
-                d="M57 60V45C57 8 123 8 123 45V60"
-                stroke="#8C7868"
-                strokeWidth={6}
-                fill="none"
-              />
-              <Path
-                d="M38 55H142L150 160H30Z"
-                fill="#FAF7F2"
-                stroke="#C7BEAD"
-                strokeWidth={2}
-              />
-            </>
-          ) : kind === "cup" ? (
-            <>
-              <Rect
-                x={57}
-                y={52}
-                width={68}
-                height={110}
-                rx={14}
-                fill="#FAF7F2"
-                stroke="#C7BEAD"
-                strokeWidth={2}
-              />
-              <Rect
-                x={69}
-                y={26}
-                width={44}
-                height={31}
-                rx={6}
-                fill="#8C7868"
-              />
-              <Path d="M84 15H117V29H84Z" fill="#8C7868" />
-            </>
-          ) : (
-            <>
-              <Rect
-                x={39}
-                y={20}
-                width={105}
-                height={145}
-                rx={7}
-                fill="#FAF7F2"
-                stroke="#C7BEAD"
-                strokeWidth={2}
-              />
-              <Path d="M49 20V165" stroke="#B9C5B4" strokeWidth={4} />
-            </>
-          )}
-        </Svg>
-        <Image
-          source={logo}
-          accessibilityLabel="Logo metiMaia su esempio illustrativo"
-          resizeMode="contain"
-          style={{
-            position: "absolute",
-            width: kind === "bag" ? 74 : 65,
-            height: 70,
-            top: 90,
-            left: "50%",
-            marginLeft: kind === "bag" ? -37 : -32,
-          }}
-        />
-      </View>
-      <Text style={ui.heading}>{title}</Text>
-      <Text style={ui.body}>{text}</Text>
-      <Text style={ui.label}>ESEMPIO DI STILE · NON IN VENDITA</Text>
-    </View>
-  );
-}
+
 export default function Shop() {
   const { email } = useApp();
   const { allowed } = useEditorAccess();
@@ -172,12 +68,14 @@ export default function Shop() {
       stageKey={phase}
       focusTargetId="shop-workspace-heading"
       stageScroll="heading"
-      eyebrow={manage ? "STUDIO · SHOP" : "IL MONDO METIMAIA"}
-      title={manage ? "Gestione Shop" : "Lo Shop di metiMaia"}
+      eyebrow={
+        manage ? "STUDIO · CONSIGLI D’ACQUISTO" : "SCELTI PER LA FAMIGLIA"
+      }
+      title={manage ? "Gestisci i consigli d’acquisto" : "Consigli d’acquisto"}
       subtitle={
         manage
-          ? "Prodotti, selezione Amazon e impostazioni di vendita."
-          : "La selezione Amazon e i prodotti della Dott.sa Gaia."
+          ? "Prepara le schede e scegli quali prodotti Amazon mostrare."
+          : "Una selezione di prodotti da scoprire su Amazon, con i tuoi tempi e secondo le tue esigenze."
       }
     >
       <ShopContent
@@ -190,6 +88,7 @@ export default function Shop() {
     </Screen>
   );
 }
+
 function ShopContent({
   editor,
   manage,
@@ -206,7 +105,6 @@ function ShopContent({
   const [products, setProducts] = useState<ShopProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(false);
-  const [section, setSection] = useState<"amazon" | "doctor">("amazon");
   const [management, setManagement] = useState<"products" | "settings">(
     "products",
   );
@@ -214,9 +112,6 @@ function ShopContent({
   const [statusFilter, setStatusFilter] = useState<
     "all" | "draft" | "published"
   >("all");
-  const [kindFilter, setKindFilter] = useState<"all" | "amazon" | "doctor">(
-    "all",
-  );
   const [page, setPage] = useState(0);
   const [pageNavigation, setPageNavigation] = useState(0);
   const [version, setVersion] = useState(0);
@@ -224,15 +119,13 @@ function ShopContent({
     JSON.stringify(emptyShopSettings),
   );
   const [productBaseline, setProductBaseline] = useState("");
-  const busyLock = useRef(false);
   const [product, setProduct] = useState<ShopProduct | null>(null);
-  const [price, setPrice] = useState("");
+  const busyLock = useRef(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
-  const [checkout, setCheckout] = useState<ShopProduct | null>(null);
   const settingsDirty = JSON.stringify(settings) !== settingsBaseline;
   const productDirty = Boolean(
-    product && JSON.stringify({ product, price }) !== productBaseline,
+    product && JSON.stringify(product) !== productBaseline,
   );
   const { confirmDiscard, allowNavigation } = useUnsavedChanges(
     manage && (settingsDirty || productDirty),
@@ -244,8 +137,13 @@ function ShopContent({
         : "public",
     );
   }, [manage, management, product?.id, pageNavigation, onPhase]);
+
   function discard() {
-    if (!confirmDiscard("Uscire senza salvare le modifiche dello Shop?"))
+    if (
+      !confirmDiscard(
+        "Uscire senza salvare le modifiche ai consigli d’acquisto?",
+      )
+    )
       return false;
     setSettings(JSON.parse(settingsBaseline) as ShopSettings);
     setProduct(null);
@@ -254,18 +152,14 @@ function ShopContent({
     return true;
   }
   function editProduct(value: ShopProduct) {
-    const nextPrice = value.price_cents
-      ? (value.price_cents / 100).toFixed(2)
-      : "";
     setProduct(value);
-    setPrice(nextPrice);
-    setProductBaseline(JSON.stringify({ product: value, price: nextPrice }));
+    setProductBaseline(JSON.stringify(value));
     setMessage("");
   }
   const filtered = products.filter(
     (item) =>
+      item.kind === "amazon" &&
       (statusFilter === "all" || item.status === statusFilter) &&
-      (kindFilter === "all" || item.kind === kindFilter) &&
       `${item.title} ${item.description}`
         .toLocaleLowerCase("it-IT")
         .includes(query.trim().toLocaleLowerCase("it-IT")),
@@ -276,10 +170,13 @@ function ShopContent({
     currentPage * 12,
     currentPage * 12 + 12,
   );
-
-  useDialogFocus(Boolean(checkout), "metimaia-checkout", () =>
-    setCheckout(null),
+  const publicProducts = publicAmazonProducts(products, settings).filter(
+    (item) =>
+      `${item.title} ${item.description}`
+        .toLocaleLowerCase("it-IT")
+        .includes(query.trim().toLocaleLowerCase("it-IT")),
   );
+
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -311,18 +208,16 @@ function ShopContent({
   }
   async function saveProduct(status: ShopProduct["status"]) {
     if (!product || busyLock.current || loading || loadError) return;
-    const cents = product.kind === "doctor" ? parsePrice(price) : 0;
-    if (product.kind === "doctor" && price.trim() && cents === null) {
-      setMessage(
-        "Inserisci un prezzo positivo in euro, con massimo due decimali (esempio: 19,90).",
-      );
-      return;
-    }
     busyLock.current = true;
     setBusy(true);
     setMessage("");
     try {
-      const updated = { ...product, price_cents: cents ?? 0, status };
+      const updated: ShopProduct = {
+        ...product,
+        kind: "amazon",
+        price_cents: 0,
+        status,
+      };
       await saveShopProduct(updated);
       setProducts((items) => [
         updated,
@@ -338,10 +233,8 @@ function ShopContent({
       }
       setMessage(
         status === "draft"
-          ? "Prodotto salvato in bozza. Non è visibile ai clienti."
-          : product.kind === "amazon"
-            ? "Scheda Amazon pubblicata. Sarà visibile quando la selezione Amazon sarà attiva."
-            : "Prodotto pubblicato. Sarà visibile quando la vendita diretta sarà attiva.",
+          ? "Scheda salvata in bozza. Non è visibile ai visitatori."
+          : "Scheda Amazon pubblicata. Sarà visibile quando la selezione Amazon sarà attiva.",
       );
     } catch (error) {
       setMessage(
@@ -361,11 +254,9 @@ function ShopContent({
       await saveShopSettings(settings);
       setSettingsBaseline(JSON.stringify(settings));
       setMessage(
-        settings.enabled
-          ? "Negozio attivato. Verifica ogni acquisto con la modalità di test del fornitore prima del lancio."
-          : settings.recommendations_enabled
-            ? "Impostazioni salvate. Selezione Amazon attiva; vendita diretta disattivata."
-            : "Impostazioni salvate. Vendita diretta e selezione Amazon disattivate.",
+        settings.recommendations_enabled
+          ? "Impostazioni salvate. I prodotti Amazon pubblicati sono visibili."
+          : "Impostazioni salvate. La selezione Amazon è nascosta.",
       );
     } catch (error) {
       setMessage(
@@ -376,23 +267,7 @@ function ShopContent({
       setBusy(false);
     }
   }
-  async function openCheckout() {
-    if (
-      !checkout ||
-      checkout.kind !== "doctor" ||
-      !settings.enabled ||
-      !validCheckout(checkout.checkout_url)
-    )
-      return;
-    try {
-      await Linking.openURL(checkout.checkout_url);
-      setCheckout(null);
-    } catch {
-      setMessage(
-        "Non è stato possibile aprire il pagamento. Riprova più tardi.",
-      );
-    }
-  }
+
   return (
     <View
       style={{ gap: 24, width: "100%", maxWidth: 1100, alignSelf: "center" }}
@@ -403,11 +278,12 @@ function ShopContent({
             variant="secondary"
             disabled={busy}
             onPress={() => {
-              if (!discard()) return;
-              onManage(!manage);
+              if (discard()) onManage(!manage);
             }}
           >
-            {manage ? "Vedi lo shop" : "Gestisci prodotti e vendite"}
+            {manage
+              ? "Vedi i consigli d’acquisto"
+              : "Gestisci i consigli d’acquisto"}
           </Button>
           {manage && (
             <Button
@@ -426,57 +302,51 @@ function ShopContent({
         </View>
       )}
       {loading ? (
-        <Notice>Caricamento dello shop…</Notice>
+        <Notice>Caricamento dei consigli d’acquisto…</Notice>
       ) : manage && editor ? (
         <>
           <View
             style={{ gap: 10, flexDirection: width >= 650 ? "row" : "column" }}
           >
-            <View style={{ flex: 1 }}>
-              <Button
-                variant={management === "products" ? "secondary" : "quiet"}
-                disabled={busy}
-                onPress={() => {
-                  if ((management !== "products" || product) && !discard())
-                    return;
-                  setManagement("products");
-                }}
-              >
-                Prodotti
-              </Button>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Button
-                variant={management === "settings" ? "secondary" : "quiet"}
-                disabled={busy}
-                onPress={() => {
-                  if (management !== "settings" && !discard()) return;
-                  setManagement("settings");
-                }}
-              >
-                Impostazioni vendita
-              </Button>
-            </View>
+            {(
+              [
+                ["products", "Schede Amazon"],
+                ["settings", "Visibilità e affiliazione"],
+              ] as const
+            ).map(([value, label]) => (
+              <View key={value} style={{ flex: 1 }}>
+                <Button
+                  variant={management === value ? "secondary" : "quiet"}
+                  disabled={busy}
+                  onPress={() => {
+                    if ((management !== value || product) && !discard()) return;
+                    setManagement(value);
+                  }}
+                >
+                  {label}
+                </Button>
+              </View>
+            ))}
           </View>
           <StageHeading id="shop-workspace-heading">
             {product
-              ? "Modifica prodotto"
+              ? "Modifica scheda Amazon"
               : management === "settings"
-                ? "Impostazioni di vendita"
-                : "Catalogo prodotti"}
+                ? "Visibilità e affiliazione"
+                : "Catalogo Amazon"}
           </StageHeading>
           {(settingsDirty || productDirty) && (
-            <Notice>Modifiche allo Shop non salvate.</Notice>
+            <Notice>Modifiche ai consigli d’acquisto non salvate.</Notice>
           )}
           {loadError ? (
             <View accessibilityRole="alert" style={{ gap: 12 }}>
               {message !== "" && <Notice>{message}</Notice>}
               <Notice>
-                Non è stato possibile leggere i dati attuali dello Shop. Riprova
-                prima di modificarli o salvare.
+                Non è stato possibile leggere il catalogo attuale. Riprova prima
+                di modificarlo o salvare.
               </Notice>
               <Button onPress={() => setVersion((value) => value + 1)}>
-                Riprova caricamento shop
+                Riprova caricamento catalogo
               </Button>
             </View>
           ) : product ? (
@@ -484,31 +354,7 @@ function ShopContent({
               style={[ui.card, { gap: 18 }]}
               pointerEvents={busy ? "none" : "auto"}
             >
-              <Text style={ui.heading}>Scheda prodotto</Text>
-              <Text style={ui.label}>Tipo di scheda</Text>
-              <Button
-                disabled={busy}
-                variant={product.kind === "amazon" ? "secondary" : "quiet"}
-                onPress={() =>
-                  setProduct({
-                    ...product,
-                    kind: "amazon",
-                    checkout_url: "",
-                    price_cents: 0,
-                  })
-                }
-              >
-                Selezionato su Amazon
-              </Button>
-              <Button
-                disabled={busy}
-                variant={product.kind === "doctor" ? "secondary" : "quiet"}
-                onPress={() =>
-                  setProduct({ ...product, kind: "doctor", checkout_url: "" })
-                }
-              >
-                Prodotto della dottoressa
-              </Button>
+              <Text style={ui.heading}>Scheda Amazon</Text>
               <Field
                 disabled={busy}
                 label="Nome prodotto"
@@ -517,52 +363,33 @@ function ShopContent({
               />
               <Field
                 disabled={busy}
-                label="Descrizione prodotto"
+                label="Perché lo consigli"
                 value={product.description}
                 onChange={(description) =>
                   setProduct({ ...product, description })
                 }
                 multiline
               />
-              {product.kind === "doctor" && (
-                <Field
-                  disabled={busy}
-                  label="Prezzo in euro"
-                  value={price}
-                  onChange={setPrice}
-                />
-              )}
               <Field
                 disabled={busy}
-                label="Immagine prodotto (HTTPS)"
+                label="Immagine prodotto (HTTPS, facoltativa)"
                 value={product.image_url}
                 onChange={(image_url) => setProduct({ ...product, image_url })}
               />
               <Field
                 disabled={busy}
-                label={
-                  product.kind === "amazon"
-                    ? "Link Amazon"
-                    : "Stripe Payment Link"
-                }
+                label="Link Amazon"
                 value={product.checkout_url}
                 onChange={(checkout_url) =>
                   setProduct({ ...product, checkout_url })
                 }
               />
-              {product.kind === "doctor" && (
-                <Notice>
-                  Prima di pubblicare completa nella descrizione
-                  caratteristiche, modalità d’uso, ingredienti/materiali ed
-                  eventuali avvertenze o limiti d’età pertinenti. Verifica i
-                  dati con la documentazione del produttore: non inventare
-                  indicazioni o benefici sanitari.
-                </Notice>
-              )}
               <Notice>
-                {product.kind === "amazon"
-                  ? "Inserisci il link originale al prodotto, o il tuo link affiliato autorizzato. Prezzi, disponibilità e acquisti restano su Amazon. Non copiare immagini Amazon senza i relativi diritti: puoi lasciare l’immagine vuota. Nessuna commissione è attivata automaticamente dal sito."
-                  : "Crea il prodotto in Stripe e copia un Payment Link https://buy.stripe.com/. Configura lì varianti, quantità, indirizzo di spedizione, IVA e consegna. Prezzo e immagine qui devono corrispondere a quelli del pagamento. Non inserire chiavi API."}
+                Inserisci un link al prodotto su Amazon.it oppure il tuo link
+                affiliato autorizzato. Prezzo e disponibilità restano su Amazon.
+                Usa immagini proprie o autorizzate; puoi lasciare l’immagine
+                vuota. Il sito non crea l’affiliazione e non aggiunge
+                automaticamente il tuo codice.
               </Notice>
               {message !== "" && (
                 <View accessibilityRole="alert">
@@ -573,31 +400,21 @@ function ShopContent({
                 disabled={busy || loadError}
                 onPress={() => void saveProduct("draft")}
               >
-                Salva prodotto in bozza
+                Salva scheda in bozza
               </Button>
               <Button
                 disabled={busy || loadError}
                 variant="secondary"
                 onPress={() => void saveProduct("published")}
               >
-                Pubblica prodotto
+                Pubblica scheda
               </Button>
-              <Button
-                disabled={busy}
-                variant="quiet"
-                onPress={() => {
-                  if (!discard()) return;
-                }}
-              >
-                Annulla modifica prodotto
+              <Button disabled={busy} variant="quiet" onPress={discard}>
+                Torna al catalogo
               </Button>
             </View>
           ) : management === "settings" ? (
-            <View
-              style={[ui.card, { gap: 18 }]}
-              pointerEvents={busy ? "none" : "auto"}
-            >
-              <Text style={ui.heading}>Selezione Amazon</Text>
+            <View style={[ui.card, { gap: 18 }]}>
               <Pressable
                 disabled={busy}
                 accessibilityRole="checkbox"
@@ -631,57 +448,15 @@ function ShopContent({
               >
                 <Text style={ui.body}>
                   {settings.amazon_affiliate ? "☑" : "☐"} Uso link affiliati e
-                  ho un account Amazon Affiliati abilitato. Mostra la
-                  dichiarazione delle commissioni.
+                  ho un account Amazon Affiliati abilitato.
                 </Text>
               </Pressable>
-              <Text style={ui.heading}>
-                Vendita diretta: venditore, spedizioni e resi
-              </Text>
               <Notice>
-                Per avviare la vendita servono dati reali, condizioni di vendita
-                e un account di pagamento attivo. L’inserimento dei campi non
-                sostituisce la verifica degli obblighi fiscali e di vendita.
+                Con l’affiliazione attiva, la pagina indica le commissioni.
+                Incolla in ogni scheda il link generato dal tuo account Amazon
+                Affiliati. Ordini, pagamenti, spedizione e resi si gestiscono su
+                Amazon.
               </Notice>
-              {(
-                [
-                  ["seller_name", "Nome o ragione sociale del venditore"],
-                  ["seller_address", "Indirizzo del venditore"],
-                  ["seller_contact", "Email assistenza acquisti"],
-                  ["tax_details", "Dati fiscali del venditore"],
-                  ["shipping_terms", "Spedizioni: paesi, costi e tempi"],
-                  ["returns_terms", "Resi e diritto di recesso"],
-                  ["terms_url", "Link HTTPS alle condizioni di vendita"],
-                ] as const
-              ).map(([key, label]) => (
-                <Field
-                  disabled={busy}
-                  key={key}
-                  label={label}
-                  value={settings[key]}
-                  onChange={(value) =>
-                    setSettings({ ...settings, [key]: value })
-                  }
-                  multiline={
-                    key === "shipping_terms" || key === "returns_terms"
-                  }
-                />
-              ))}
-              <Pressable
-                disabled={busy}
-                accessibilityRole="checkbox"
-                accessibilityLabel="Attiva vendite shop"
-                accessibilityState={{ checked: settings.enabled }}
-                onPress={() =>
-                  setSettings({ ...settings, enabled: !settings.enabled })
-                }
-              >
-                <Text style={ui.body}>
-                  {settings.enabled ? "☑" : "☐"} Attiva gli acquisti dopo aver
-                  verificato prodotti, prezzi, condizioni e configurazione
-                  Stripe.
-                </Text>
-              </Pressable>
               {message !== "" && (
                 <View accessibilityRole="alert">
                   <Notice>{message}</Notice>
@@ -691,7 +466,7 @@ function ShopContent({
                 disabled={busy || !settingsDirty || loadError}
                 onPress={() => void saveSettings()}
               >
-                Salva impostazioni shop
+                Salva impostazioni consigli
               </Button>
             </View>
           ) : (
@@ -708,7 +483,7 @@ function ShopContent({
                 onPress={() =>
                   editProduct({
                     id: crypto.randomUUID(),
-                    kind: "doctor",
+                    kind: "amazon",
                     title: "",
                     description: "",
                     price_cents: 0,
@@ -718,7 +493,7 @@ function ShopContent({
                   })
                 }
               >
-                Nuovo prodotto
+                Nuova scheda Amazon
               </Button>
               <Field
                 label="Cerca prodotti per nome o descrizione"
@@ -752,29 +527,6 @@ function ShopContent({
                     </View>
                   ))}
                 </View>
-                <Text style={ui.label}>Tipo di prodotto</Text>
-                <View
-                  style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}
-                >
-                  {(
-                    [
-                      ["all", "Tutti"],
-                      ["amazon", "Amazon"],
-                      ["doctor", "Dottoressa"],
-                    ] as const
-                  ).map(([value, label]) => (
-                    <View key={value} style={{ flexGrow: 1, minWidth: 90 }}>
-                      <Button
-                        variant={kindFilter === value ? "secondary" : "quiet"}
-                        accessibilityLabel={`Tipo prodotto: ${label}`}
-                        onPress={() => {
-                          setKindFilter(value);
-                          setPage(0);
-                        }}
-                      >{`${kindFilter === value ? "✓ " : ""}${label}`}</Button>
-                    </View>
-                  ))}
-                </View>
               </View>
               <Text style={ui.body}>
                 {filtered.length} prodotti trovati · Pagina {currentPage + 1} di{" "}
@@ -782,25 +534,23 @@ function ShopContent({
               </Text>
               {visibleProducts.length === 0 && (
                 <Notice>
-                  Nessun prodotto corrisponde ai filtri. Puoi creare una nuova
-                  scheda o cambiare la ricerca.
+                  Nessun prodotto corrisponde ai filtri. Crea una scheda Amazon
+                  o cambia la ricerca.
                 </Notice>
               )}
               {visibleProducts.map((item) => (
                 <View key={item.id} style={[ui.card, { gap: 10 }]}>
                   <Text style={ui.heading}>{item.title}</Text>
                   <Text style={ui.body}>
-                    {item.status === "draft" ? "Bozza" : "Pubblicato"} ·{" "}
-                    {item.kind === "amazon"
-                      ? "Amazon"
-                      : "Prodotto della dottoressa"}{" "}
-                    ·{" "}
-                    {item.price_cents > 0
-                      ? formatPrice(item.price_cents)
-                      : item.kind === "amazon"
-                        ? "Prezzo su Amazon"
-                        : "Prezzo da definire"}
+                    {item.status === "draft" ? "Bozza" : "Pubblicato"} · Amazon
+                    · Prezzo su Amazon
                   </Text>
+                  {!validAmazonLink(item.checkout_url) && (
+                    <Notice>
+                      Completa o correggi il link Amazon prima di pubblicare
+                      questa scheda.
+                    </Notice>
+                  )}
                   <Button
                     variant="secondary"
                     onPress={() => editProduct({ ...item })}
@@ -832,265 +582,121 @@ function ShopContent({
         </>
       ) : (
         <>
-          <View style={{ gap: 10 }}>
-            <Button
-              variant={section === "amazon" ? "secondary" : "quiet"}
-              onPress={() => setSection("amazon")}
-            >
-              Selezionati su Amazon
-            </Button>
-            <Button
-              variant={section === "doctor" ? "secondary" : "quiet"}
-              onPress={() => setSection("doctor")}
-            >
-              I prodotti della dottoressa
-            </Button>
-          </View>
-          {loadError && (
-            <Notice>
-              Il catalogo non è ancora disponibile. Le schede qui sotto sono
-              solo un’anteprima di stile.
-            </Notice>
-          )}
-          {section === "amazon" ? (
-            <Notice>
-              {settings.amazon_affiliate
-                ? "In qualità di Affiliato Amazon ricevo un guadagno dagli acquisti idonei. Gli acquisti si effettuano su Amazon, dove sono indicati prezzo aggiornato, venditore, disponibilità, spedizione e resi."
-                : "Una selezione della Dott.sa Gaia. I collegamenti aprono Amazon: controlla lì prezzo aggiornato, venditore, disponibilità, spedizione e resi."}
-            </Notice>
-          ) : (
-            <Notice>
-              Oli e oggetti per i più piccoli: le schede dei prodotti
-              disponibili indicheranno caratteristiche, modalità d’uso, prezzo e
-              venditore. Nessun prodotto è presentato come sostituto di una
-              valutazione professionale.
-            </Notice>
-          )}
-          {products.filter(
-            (item) =>
-              item.status === "published" &&
-              item.kind === section &&
-              (item.kind === "amazon"
-                ? settings.recommendations_enabled
-                : settings.enabled),
-          ).length === 0 && (
-            <View
-              style={[ui.card, { backgroundColor: colors.sagePale, gap: 12 }]}
-            >
-              <Text style={ui.heading}>
-                {section === "amazon"
-                  ? "Stiamo preparando la nostra selezione."
-                  : "I prodotti della dottoressa, presto qui."}
-              </Text>
-              <Text style={ui.body}>
-                Prodotti, immagini e disponibilità saranno mostrati quando il
-                catalogo sarà pronto. Gli esempi di stile non sono acquistabili.
-              </Text>
+          <Notice>
+            {settings.amazon_affiliate
+              ? "In qualità di Affiliato Amazon ricevo un guadagno dagli acquisti idonei. I link di questa selezione possono generare una commissione, senza costi aggiuntivi per te."
+              : "Questa selezione può contenere link affiliati: acquistando tramite questi collegamenti, metiMaia può ricevere una commissione, senza costi aggiuntivi per te."}
+          </Notice>
+          <Text style={ui.body}>
+            Scegli ciò che è utile per la tua famiglia. Prezzo aggiornato,
+            disponibilità, venditore, spedizione e resi sono indicati su Amazon.
+            L’acquisto si conclude lì.
+          </Text>
+          {loadError ? (
+            <View accessibilityRole="alert" style={{ gap: 12 }}>
+              <Notice>
+                Non è stato possibile caricare la selezione. Riprova tra poco.
+              </Notice>
+              <Button
+                variant="secondary"
+                onPress={() => setVersion((value) => value + 1)}
+              >
+                Riprova caricamento catalogo
+              </Button>
             </View>
-          )}
-          <View
-            style={{
-              flexDirection: width >= 750 ? "row" : "column",
-              flexWrap: "wrap",
-              gap: 18,
-            }}
-          >
-            {products
-              .filter(
-                (item) =>
-                  item.status === "published" &&
-                  item.kind === section &&
-                  (item.kind === "amazon"
-                    ? settings.recommendations_enabled
-                    : settings.enabled),
-              )
-              .map((item) => (
+          ) : (
+            <>
+              {settings.recommendations_enabled && products.length > 0 && (
+                <Field
+                  label="Cerca nella selezione Amazon"
+                  value={query}
+                  onChange={setQuery}
+                />
+              )}
+              {publicProducts.length === 0 && (
                 <View
-                  key={item.id}
                   style={[
                     ui.card,
-                    { width: width >= 750 ? "48%" : "100%", gap: 14 },
+                    { backgroundColor: colors.sagePale, gap: 12 },
                   ]}
                 >
-                  <Image
-                    source={item.image_url ? { uri: item.image_url } : logo}
-                    accessibilityLabel={
-                      item.image_url ? item.title : "metiMaia"
-                    }
-                    resizeMode="contain"
-                    style={{
-                      height: 230,
-                      width: "100%",
-                      backgroundColor: colors.cream,
-                      borderRadius: 18,
-                    }}
-                  />
-                  <Text style={ui.label}>
-                    {item.kind === "amazon"
-                      ? "SELEZIONATO SU AMAZON"
-                      : "I PRODOTTI DELLA DOTTORESSA"}
+                  <Text style={ui.heading}>
+                    {query.trim() && settings.recommendations_enabled
+                      ? "Nessun prodotto trovato."
+                      : "La selezione è in preparazione."}
                   </Text>
-                  <Text style={ui.heading}>{item.title}</Text>
-                  <Text style={ui.body}>{item.description}</Text>
-                  {item.kind === "doctor" && (
-                    <Text style={[ui.heading, { fontSize: 24 }]}>
-                      {formatPrice(item.price_cents)}
-                    </Text>
-                  )}
                   <Text style={ui.body}>
-                    {item.kind === "amazon"
-                      ? "Prezzo e disponibilità aggiornati sono indicati su Amazon."
-                      : "Consulta spedizione e condizioni di vendita prima di acquistare."}
+                    {query.trim() && settings.recommendations_enabled
+                      ? "Prova con un’altra parola o cancella la ricerca."
+                      : "Qui troverai i prodotti scelti da Gaia, con una breve spiegazione e il collegamento ad Amazon."}
                   </Text>
-                  <Button
-                    disabled={
-                      item.kind === "amazon"
-                        ? !validAmazonLink(item.checkout_url)
-                        : !validCheckout(item.checkout_url)
-                    }
-                    onPress={() => {
-                      if (item.kind === "amazon") {
-                        if (validAmazonLink(item.checkout_url))
-                          void Linking.openURL(item.checkout_url).catch(() =>
-                            setMessage("Non è stato possibile aprire Amazon."),
-                          );
-                      } else {
-                        setCheckout(item);
-                        setMessage("");
-                      }
-                    }}
-                  >
-                    {item.kind === "amazon"
-                      ? `Vedi su Amazon: ${item.title}`
-                      : `Acquista ${item.title}`}
-                  </Button>
                 </View>
-              ))}
-          </View>
-          {!settings.enabled && !settings.recommendations_enabled && (
-            <>
-              <Text style={ui.heading}>
-                Due modi per trovare ciò che cerchi.
-              </Text>
+              )}
               <View
                 style={{
-                  flexDirection: width >= 900 ? "row" : "column",
+                  flexDirection: width >= 750 ? "row" : "column",
+                  flexWrap: "wrap",
                   gap: 18,
                 }}
               >
-                <CollectionIdea
-                  kind="book"
-                  title="Scelti per voi"
-                  text="Una selezione di prodotti da scoprire su Amazon."
-                />
-                <CollectionIdea
-                  kind="cup"
-                  title="I prodotti della dottoressa"
-                  text="Uno spazio per oli e prodotti della Dott.sa Gaia."
-                />
-                <CollectionIdea
-                  kind="bag"
-                  title="Per i più piccoli"
-                  text="Oggetti e accessori: il catalogo reale sarà definito dalla dottoressa."
-                />
+                {publicProducts.map((item) => (
+                  <View
+                    key={item.id}
+                    style={[
+                      ui.card,
+                      { width: width >= 750 ? "48%" : "100%", gap: 14 },
+                    ]}
+                  >
+                    <Image
+                      source={item.image_url ? { uri: item.image_url } : logo}
+                      accessibilityLabel={
+                        item.image_url ? item.title : "metiMaia"
+                      }
+                      resizeMode="contain"
+                      style={{
+                        height: 230,
+                        width: "100%",
+                        backgroundColor: colors.cream,
+                        borderRadius: 18,
+                      }}
+                    />
+                    <Text style={ui.label}>SELEZIONATO SU AMAZON</Text>
+                    <Text style={ui.heading}>{item.title}</Text>
+                    <Text style={ui.body}>{item.description}</Text>
+                    <Text style={ui.body}>
+                      Prezzo e disponibilità aggiornati su Amazon.
+                    </Text>
+                    <Text style={ui.label}>
+                      Link esterno Amazon · può essere affiliato
+                    </Text>
+                    <Button
+                      onPress={() => {
+                        if (validAmazonLink(item.checkout_url))
+                          void Linking.openURL(item.checkout_url).catch(() =>
+                            setMessage(
+                              "Non è stato possibile aprire Amazon. Riprova tra poco.",
+                            ),
+                          );
+                      }}
+                    >{`Vedi su Amazon: ${item.title}`}</Button>
+                  </View>
+                ))}
               </View>
             </>
           )}
           <View style={[ui.card, { gap: 16 }]}>
-            <Text style={ui.heading}>Acquisti e informazioni</Text>
-            {settings.enabled ? (
-              <>
-                <Text style={ui.label}>Il venditore</Text>
-                <Text style={ui.body}>
-                  {settings.seller_name}
-                  {"\n"}
-                  {settings.seller_address}
-                  {"\n"}
-                  {settings.tax_details}
-                  {"\n"}
-                  {settings.seller_contact}
-                </Text>
-                <Text style={ui.label}>Spedizioni</Text>
-                <Text style={ui.body}>{settings.shipping_terms}</Text>
-                <Text style={ui.label}>Resi e recesso</Text>
-                <Text style={ui.body}>{settings.returns_terms}</Text>
-                <Button
-                  variant="quiet"
-                  onPress={() => {
-                    if (settings.terms_url.startsWith("https://"))
-                      void Linking.openURL(settings.terms_url).catch(() =>
-                        setMessage(
-                          "Non è stato possibile aprire le condizioni di vendita.",
-                        ),
-                      );
-                  }}
-                >
-                  Condizioni di vendita
-                </Button>
-              </>
-            ) : (
-              <Text style={ui.body}>
-                La vendita diretta della dottoressa non è ancora attiva. Per i
-                prodotti Amazon, ordini e assistenza seguono le condizioni del
-                venditore indicate su Amazon.
-              </Text>
-            )}
+            <Text style={ui.heading}>Prima di scegliere</Text>
+            <Text style={ui.body}>
+              Leggi caratteristiche, materiali, istruzioni e limiti d’età
+              indicati dal produttore. I consigli d’acquisto non sostituiscono
+              una valutazione professionale. Per ordini e assistenza fai
+              riferimento al venditore indicato su Amazon.
+            </Text>
             <Button variant="quiet" onPress={() => router.push("/newsletter")}>
               Ricevi gli aggiornamenti di metiMaia
             </Button>
           </View>
         </>
-      )}
-      {checkout && settings.enabled && (
-        <Modal
-          transparent
-          visible
-          animationType="fade"
-          onRequestClose={() => setCheckout(null)}
-        >
-          <View
-            style={{
-              flex: 1,
-              backgroundColor: "rgba(48,58,53,0.45)",
-              justifyContent: "center",
-              alignItems: "center",
-              padding: 20,
-            }}
-          >
-            <ScrollView
-              style={{
-                width: "100%",
-                maxWidth: 520,
-                maxHeight: "90%",
-                flexGrow: 0,
-              }}
-              contentContainerStyle={[ui.card, { gap: 15 }]}
-              nativeID="metimaia-checkout"
-              role="dialog"
-              accessibilityLabel="Conferma apertura pagamento Stripe"
-              accessibilityViewIsModal
-            >
-              <Text style={ui.heading}>Prosegui al pagamento</Text>
-              <Text style={ui.body}>Venditore: {settings.seller_name}</Text>
-              <Text style={ui.body}>Spedizioni: {settings.shipping_terms}</Text>
-              <Text style={ui.body}>
-                Resi e recesso: {settings.returns_terms}
-              </Text>
-              <Text style={ui.body}>
-                {checkout.title} · {formatPrice(checkout.price_cents)}. Il
-                pagamento si apre su Stripe. Controlla variante, disponibilità,
-                importo totale e spedizione nel riepilogo prima di pagare. Le
-                informazioni della carta non vengono inserite in metiMaia.
-              </Text>
-              <Button onPress={() => void openCheckout()}>
-                Continua su Stripe
-              </Button>
-              <Button variant="quiet" onPress={() => setCheckout(null)}>
-                Annulla acquisto
-              </Button>
-            </ScrollView>
-          </View>
-        </Modal>
       )}
     </View>
   );

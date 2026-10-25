@@ -71,7 +71,9 @@ test("the former complete starter gets the supplied public presentation without 
   source.data = structuredClone(defaultProfile);
   const stored = await loadProfile({ strict: true });
   const presented = publicProfile(stored);
-  expect(presented.bio).toContain("Ciao, sono Gaia");
+  expect(presented.bio).toContain(
+    "MetiMaia è uno spazio dedicato alle famiglie",
+  );
   expect(presented.services).toHaveLength(4);
   expect(stored).toEqual(defaultProfile);
   expect(source.data).toEqual(defaultProfile);
@@ -95,7 +97,9 @@ test("intentional edited or removed presentation fields are not filled back from
     ...defaultProfile,
     contact_email: "changed@example.invalid",
   };
-  expect(publicProfile(changedContact)).toEqual(changedContact);
+  expect(publicProfile(changedContact).contact_email).toBe(
+    "changed@example.invalid",
+  );
 });
 
 test("explicit document import preserves photo and privacy fields and cannot mutate either the original profile or later imports", () => {
@@ -125,4 +129,26 @@ test("explicit document import preserves photo and privacy fields and cannot mut
   );
   expect(original.bio).toBe("Testo salvato");
   expect(original.services).toEqual([]);
+});
+
+test("the earlier supplied personal presentation becomes the project philosophy even when persisted", () => {
+  const legacy = {
+    ...defaultProfile,
+    bio: "Ciao, sono Gaia. Benvenuta in questo spazio dedicato a te, alla nuova vita che cresce e alla tua famiglia.",
+    qualifications:
+      "La mia formazione sul campo è iniziata con oltre 2.300 ore di tirocinio clinico nelle sale parto.",
+    services: [
+      { title: "Servizio precedente", description: "Descrizione", details: "" },
+    ],
+    portrait_url: "https://example.invalid/photo.jpg",
+    contact_email: "contact@example.invalid",
+  };
+  const shown = publicProfile(legacy);
+  expect(shown.bio).toContain("MetiMaia è uno spazio dedicato alle famiglie");
+  expect(shown.qualifications).toContain("Il fiore di loto");
+  expect(shown.qualifications).not.toContain("tirocinio");
+  expect(shown.services).toHaveLength(4);
+  expect(shown.contact_email).toBe(legacy.contact_email);
+  expect(shown.portrait_url).toBe(legacy.portrait_url);
+  expect(legacy.bio).toContain("Ciao, sono Gaia");
 });

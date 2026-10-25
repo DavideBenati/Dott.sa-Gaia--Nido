@@ -15,21 +15,30 @@ import {
 } from "../src/ui";
 import { NestArt } from "../src/art";
 import { colors, serif } from "../src/theme";
-const choices: { id: JourneyType; title: string; subtitle: string }[] = [
+const choices: {
+  id: JourneyType | "exploring";
+  title: string;
+  subtitle: string;
+}[] = [
   {
     id: "pregnancy",
-    title: "Aspetto un bambino",
+    title: "Sono in gravidanza",
     subtitle: "Informazioni e piccoli passi per la gravidanza.",
   },
   {
     id: "partner",
-    title: "Accompagno una persona",
-    subtitle: "Uno spazio anche per chi sta accanto.",
+    title: "Sono partner o familiare",
+    subtitle: "Per accompagnare la famiglia, nell’attesa o dopo la nascita.",
   },
   {
     id: "postpartum",
-    title: "Sono già genitore",
+    title: "Dopo la nascita",
     subtitle: "I primi incontri, il recupero e i nuovi ritmi.",
+  },
+  {
+    id: "exploring",
+    title: "Mi informo",
+    subtitle: "Esploro i contenuti senza indicare una fase personale.",
   },
 ];
 export default function Welcome() {
@@ -47,9 +56,18 @@ export default function Welcome() {
         ...draft,
         onboarded: true,
         marketing: false,
-        personalized: guest ? false : draft.personalized,
-        sensitiveConsent: guest ? false : draft.sensitiveConsent,
-        date: guest ? null : draft.date,
+        personalized:
+          guest || draft.exploreOnly || draft.journey === "partner"
+            ? false
+            : draft.personalized,
+        sensitiveConsent:
+          guest || draft.exploreOnly || draft.journey === "partner"
+            ? false
+            : draft.sensitiveConsent,
+        date:
+          guest || draft.exploreOnly || draft.journey === "partner"
+            ? null
+            : draft.date,
       });
       router.replace("/(tabs)");
     } catch {
@@ -131,16 +149,16 @@ export default function Welcome() {
             Nessun account necessario. Nessuna data obbligatoria.
           </Text>
           <View style={[ui.card, { gap: 12, backgroundColor: colors.peach }]}>
-            <Text style={ui.heading}>Scopri lo Shop di metiMaia</Text>
+            <Text style={ui.heading}>Consigli d’acquisto</Text>
             <Text style={ui.body}>
-              La selezione Amazon e i prodotti della dottoressa, in uno spazio
-              dedicato. Puoi esplorarlo anche senza account.
+              Prodotti selezionati su Amazon per la quotidianità in famiglia.
+              Puoi esplorare i consigli anche senza account.
             </Text>
             <Button
               variant="secondary"
               onPress={() => router.navigate("/shop")}
             >
-              Esplora lo Shop
+              Scopri i consigli d’acquisto
             </Button>
           </View>
           {demo && (
@@ -169,23 +187,44 @@ export default function Welcome() {
                   key={choice.id}
                   accessibilityRole="radio"
                   accessibilityLabel={choice.title}
-                  accessibilityState={{ checked: draft.journey === choice.id }}
-                  aria-checked={draft.journey === choice.id}
+                  accessibilityState={{
+                    checked:
+                      choice.id === "exploring"
+                        ? Boolean(draft.exploreOnly)
+                        : !draft.exploreOnly && draft.journey === choice.id,
+                  }}
+                  aria-checked={
+                    choice.id === "exploring"
+                      ? Boolean(draft.exploreOnly)
+                      : !draft.exploreOnly && draft.journey === choice.id
+                  }
                   onPress={() =>
-                    setDraft({ ...draft, journey: choice.id, date: null })
+                    setDraft({
+                      ...draft,
+                      journey:
+                        choice.id === "exploring" ? "pregnancy" : choice.id,
+                      exploreOnly: choice.id === "exploring",
+                      date: null,
+                    })
                   }
                   style={[
                     ui.card,
                     {
                       gap: 8,
-                      borderColor:
-                        draft.journey === choice.id
-                          ? colors.sageDark
-                          : colors.border,
-                      backgroundColor:
-                        draft.journey === choice.id
-                          ? colors.sagePale
-                          : colors.paper,
+                      borderColor: (
+                        choice.id === "exploring"
+                          ? draft.exploreOnly
+                          : !draft.exploreOnly && draft.journey === choice.id
+                      )
+                        ? colors.sageDark
+                        : colors.border,
+                      backgroundColor: (
+                        choice.id === "exploring"
+                          ? draft.exploreOnly
+                          : !draft.exploreOnly && draft.journey === choice.id
+                      )
+                        ? colors.sagePale
+                        : colors.paper,
                     },
                   ]}
                 >
@@ -204,96 +243,141 @@ export default function Welcome() {
               <StageHeading id="welcome-step-2">
                 Un percorso che ti somiglia.
               </StageHeading>
-              <Text style={ui.body}>
-                La data è facoltativa. Il tuo percorso funziona anche senza.
-              </Text>
-              <View style={[ui.row, { justifyContent: "space-between" }]}>
-                <Text style={[ui.label, { flex: 1 }]}>
-                  Desidero un percorso personalizzato
-                </Text>
-                <Switch
-                  accessibilityLabel="Desidero un percorso personalizzato"
-                  value={draft.personalized}
-                  onValueChange={(value) =>
-                    setDraft({
-                      ...draft,
-                      personalized: value,
-                      date: value ? draft.date : null,
-                      sensitiveConsent: value ? draft.sensitiveConsent : false,
-                    })
-                  }
-                />
-              </View>
-              {draft.personalized && (
+              {draft.exploreOnly ? (
+                <Notice>
+                  Il percorso generale non usa date o stime di settimane. Nel
+                  prossimo passaggio puoi scegliere i temi che ti interessano.
+                </Notice>
+              ) : draft.journey === "partner" ? (
                 <>
-                  <Notice icon="lock">
-                    Prima di scegliere una data: può rivelare informazioni sulla
-                    salute.{" "}
-                    {demo
-                      ? "Nella demo resta su questo dispositivo, senza cifratura locale dedicata."
-                      : "Se accedi sarà associata al tuo account; come ospite resta sul dispositivo."}{" "}
-                    Puoi ritirare il consenso e cancellarla dal profilo.
+                  <Text style={ui.body}>Quale fase desideri approfondire?</Text>
+                  {(
+                    [
+                      ["pregnancy", "Durante l’attesa"],
+                      ["postpartum", "Dopo la nascita"],
+                    ] as const
+                  ).map(([stage, label]) => (
+                    <Button
+                      key={stage}
+                      variant={
+                        (draft.partnerStage ?? "pregnancy") === stage
+                          ? "secondary"
+                          : "quiet"
+                      }
+                      onPress={() =>
+                        setDraft({
+                          ...draft,
+                          partnerStage: stage,
+                          date: null,
+                          personalized: false,
+                          sensitiveConsent: false,
+                        })
+                      }
+                    >
+                      {`${(draft.partnerStage ?? "pregnancy") === stage ? "✓ " : ""}${label}`}
+                    </Button>
+                  ))}
+                  <Notice>
+                    Per accompagnare una persona basta scegliere la fase: non
+                    servono date o dati sulla salute di altri.
                   </Notice>
-                  <Button
-                    variant="quiet"
-                    onPress={() => router.push("/privacy")}
-                  >
-                    Leggi l’informativa privacy
-                  </Button>
-                  <Pressable
-                    accessibilityRole="checkbox"
-                    accessibilityLabel="Acconsento al salvataggio della data facoltativa"
-                    accessibilityState={{ checked: draft.sensitiveConsent }}
-                    aria-checked={draft.sensitiveConsent}
-                    onPress={() =>
-                      setDraft({
-                        ...draft,
-                        sensitiveConsent: !draft.sensitiveConsent,
-                        date: draft.sensitiveConsent ? null : draft.date,
-                      })
-                    }
-                    style={[
-                      ui.card,
-                      {
-                        backgroundColor: draft.sensitiveConsent
-                          ? colors.sagePale
-                          : colors.paper,
-                      },
-                    ]}
-                  >
-                    <Text style={ui.body}>
-                      {draft.sensitiveConsent ? "✓ " : ""}Acconsento al
-                      trattamento della data facoltativa, che può rivelare
-                      informazioni sulla salute, per personalizzare il mio
-                      percorso. Posso revocare il consenso dal profilo e
-                      continuare senza data.
+                </>
+              ) : (
+                <>
+                  <Text style={ui.body}>
+                    La data è facoltativa. Il tuo percorso funziona anche senza.
+                  </Text>
+                  <View style={[ui.row, { justifyContent: "space-between" }]}>
+                    <Text style={[ui.label, { flex: 1 }]}>
+                      Desidero un percorso personalizzato
                     </Text>
-                  </Pressable>
-                  {draft.sensitiveConsent && (
+                    <Switch
+                      accessibilityLabel="Desidero un percorso personalizzato"
+                      value={draft.personalized}
+                      onValueChange={(value) =>
+                        setDraft({
+                          ...draft,
+                          personalized: value,
+                          date: value ? draft.date : null,
+                          sensitiveConsent: value
+                            ? draft.sensitiveConsent
+                            : false,
+                        })
+                      }
+                    />
+                  </View>
+                  {draft.personalized && (
                     <>
-                      <Text style={ui.label}>
-                        {draft.journey === "postpartum"
-                          ? "Data di nascita (facoltativa)"
-                          : "Data presunta del parto (facoltativa)"}
-                      </Text>
-                      <TextInput
-                        accessibilityLabel={
-                          draft.journey === "postpartum"
-                            ? "Data di nascita facoltativa"
-                            : "Data presunta del parto facoltativa"
+                      <Notice icon="lock">
+                        Prima di scegliere una data: può rivelare informazioni
+                        sulla salute.{" "}
+                        {demo
+                          ? "Nella demo resta su questo dispositivo, senza cifratura locale dedicata."
+                          : "Se accedi sarà associata al tuo account; come ospite resta sul dispositivo."}{" "}
+                        Puoi ritirare il consenso e cancellarla dal profilo.
+                      </Notice>
+                      <Button
+                        variant="quiet"
+                        onPress={() => router.push("/privacy")}
+                      >
+                        Leggi l’informativa privacy
+                      </Button>
+                      <Pressable
+                        accessibilityRole="checkbox"
+                        accessibilityLabel="Acconsento al salvataggio della data facoltativa"
+                        accessibilityState={{ checked: draft.sensitiveConsent }}
+                        aria-checked={draft.sensitiveConsent}
+                        onPress={() =>
+                          setDraft({
+                            ...draft,
+                            sensitiveConsent: !draft.sensitiveConsent,
+                            date: draft.sensitiveConsent ? null : draft.date,
+                          })
                         }
-                        placeholder="AAAA-MM-GG"
-                        value={draft.date ?? ""}
-                        maxLength={10}
-                        onChangeText={(date) =>
-                          setDraft({ ...draft, date: date || null })
-                        }
-                        style={ui.input}
-                      />
-                      <Text style={ui.body}>
-                        Stima educativa approssimativa, non sostituisce la
-                        datazione professionale.
-                      </Text>
+                        style={[
+                          ui.card,
+                          {
+                            backgroundColor: draft.sensitiveConsent
+                              ? colors.sagePale
+                              : colors.paper,
+                          },
+                        ]}
+                      >
+                        <Text style={ui.body}>
+                          {draft.sensitiveConsent ? "✓ " : ""}Acconsento al
+                          trattamento della data facoltativa, che può rivelare
+                          informazioni sulla salute, per personalizzare il mio
+                          percorso. Posso revocare il consenso dal profilo e
+                          continuare senza data.
+                        </Text>
+                      </Pressable>
+                      {draft.sensitiveConsent && (
+                        <>
+                          <Text style={ui.label}>
+                            {draft.journey === "postpartum"
+                              ? "Data di nascita (facoltativa)"
+                              : "Data presunta del parto (facoltativa)"}
+                          </Text>
+                          <TextInput
+                            accessibilityLabel={
+                              draft.journey === "postpartum"
+                                ? "Data di nascita facoltativa"
+                                : "Data presunta del parto facoltativa"
+                            }
+                            placeholder="AAAA-MM-GG"
+                            value={draft.date ?? ""}
+                            maxLength={10}
+                            onChangeText={(date) =>
+                              setDraft({ ...draft, date: date || null })
+                            }
+                            style={ui.input}
+                          />
+                          <Text style={ui.body}>
+                            Stima educativa approssimativa, non sostituisce la
+                            datazione professionale.
+                          </Text>
+                        </>
+                      )}
                     </>
                   )}
                 </>
@@ -311,6 +395,13 @@ export default function Welcome() {
               </Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
                 {[
+                  "Gravidanza",
+                  "Preparazione al parto",
+                  "Travaglio e nascita",
+                  "Dopo la nascita",
+                  "Cura del neonato",
+                  "Benessere emotivo",
+                  "Ruolo del partner",
                   "Allattamento al seno",
                   "Alimentazione con formula",
                   "Alimentazione mista",

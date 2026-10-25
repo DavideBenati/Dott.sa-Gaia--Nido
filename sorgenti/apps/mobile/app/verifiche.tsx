@@ -51,12 +51,11 @@ function ChecksContent() {
       if (p.status === "fulfilled") {
         const v = p.value;
         items.push({
-          title: "Gaia e servizi",
+          title: "Presentazione del progetto",
           href: "/impostazioni",
           items: [
             !v.portrait_url && "Foto professionale non inserita (facoltativa).",
-            !v.qualifications &&
-              "Qualifiche e iscrizione non compilate: richiedono verifica reale.",
+            !v.bio && "Presentazione del progetto non compilata.",
             !v.services.length &&
               "Servizi non definiti: il sito invita a chiedere informazioni.",
             v.service_area === defaultProfile.service_area &&
@@ -83,18 +82,15 @@ function ChecksContent() {
       if (s.status === "fulfilled") {
         const v = s.value;
         items.push({
-          title: "Prodotti e acquisti",
+          title: "Consigli d’acquisto",
           href: "/shop",
           items: [
-            v.settings.enabled
-              ? "Vendita diretta attiva: controlla che condizioni e prezzi siano aggiornati."
-              : "Vendita diretta disattivata.",
             v.settings.recommendations_enabled
               ? "Selezione Amazon attiva."
               : "Selezione Amazon disattivata.",
             `${v.products.filter((p) => p.status === "published").length} schede prodotto pubblicate.`,
-            "Per i prodotti reali verifica caratteristiche, uso, eventuali ingredienti/avvertenze, immagini autorizzate e corrispondenza con Stripe.",
-            "La prova completa del pagamento e del rimborso va eseguita nell’ambiente di test del tuo account Stripe, non con un acquisto reale involontario.",
+            "Verifica che i link aprano il prodotto Amazon corretto e contengano il tuo codice affiliato.",
+            "Usa immagini autorizzate e verifica la segnalazione dei link affiliati. Prezzi e condizioni si consultano su Amazon.",
           ],
         });
       }

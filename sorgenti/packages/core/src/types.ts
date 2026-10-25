@@ -55,6 +55,8 @@ export interface Checklist {
 }
 export interface Preferences {
   journey: JourneyType;
+  exploreOnly?: boolean;
+  partnerStage?: "pregnancy" | "postpartum";
   personalized: boolean;
   date: string | null;
   feedingTopics: string[];

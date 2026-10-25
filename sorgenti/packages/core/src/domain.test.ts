@@ -50,6 +50,37 @@ describe("Percorso e privacy", () => {
         .label,
     ).toBe("Insieme, in attesa");
   });
+  it("il percorso generale non deduce una fase o una settimana da una data precedente", () => {
+    const result = calculateJourney(
+      {
+        ...defaultPreferences,
+        exploreOnly: true,
+        personalized: true,
+        sensitiveConsent: true,
+        date: "2026-10-21",
+      },
+      now,
+    );
+    expect(result.stage).toBe("all");
+    expect(result.week).toBeNull();
+    expect(result.label).toBe("Esplora al tuo ritmo");
+  });
+  it("il partner può scegliere il dopo nascita senza usare date di altre persone", () => {
+    const result = calculateJourney(
+      {
+        ...defaultPreferences,
+        journey: "partner",
+        partnerStage: "postpartum",
+        personalized: true,
+        sensitiveConsent: true,
+        date: "2026-09-30",
+      },
+      now,
+    );
+    expect(result.stage).toBe("postpartum");
+    expect(result.week).toBeNull();
+    expect(result.label).toBe("Accanto alla famiglia");
+  });
   it("rifiuta date impossibili", () => {
     expect(
       calculateJourney(

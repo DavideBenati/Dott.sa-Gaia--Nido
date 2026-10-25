@@ -647,10 +647,22 @@ function Workspace({
             {(
               [
                 [
+                  "Iscritti e percorsi",
+                  "Riconosci gli iscritti per nickname e consulta le schede condivise con te.",
+                  "Iscritti e percorsi",
+                  "/iscritti",
+                ],
+                [
                   "Documenti e allegati",
                   "Carica materiali e scegli chi può consultarli.",
                   "Documenti e allegati riservati",
                   "/documenti-studio",
+                ],
+                [
+                  "Videochiamate",
+                  "Condividi un invito privato a una videochiamata con la persona scelta.",
+                  "Gestisci videochiamate",
+                  "/videochiamate?manage=1",
                 ],
                 [
                   "Conversazioni",
@@ -665,9 +677,9 @@ function Workspace({
                   "/richieste",
                 ],
                 [
-                  "Shop",
-                  "Gestisci prodotti, selezione Amazon e impostazioni di vendita.",
-                  "Gestisci shop e merchandise",
+                  "Consigli d’acquisto",
+                  "Scegli i prodotti Amazon e inserisci i tuoi collegamenti affiliati.",
+                  "Gestisci i consigli d’acquisto",
                   "/shop?manage=1",
                 ],
                 [
@@ -696,7 +708,7 @@ function Workspace({
               variant="secondary"
               onPress={() => router.push("/impostazioni")}
             >
-              Gaia, servizi e informazioni privacy
+              Presentazione MetiMaia e privacy
             </Button>
             <Button variant="quiet" onPress={() => router.push("/sicurezza")}>
               Sicurezza e verifica a due fattori

@@ -27,7 +27,7 @@ export const defaultProfile: SiteProfile = {
   services: [],
   contact_email: "ostetricamaia@gmail.com",
   privacy_providers:
-    "Cloudflare ospita il sito; Supabase gestisce autenticazione e database in Irlanda; Resend gestisce le email. Stripe gestisce i pagamenti quando lo Shop è attivo. Amazon è un servizio esterno.",
+    "Cloudflare ospita il sito; Supabase gestisce autenticazione e database in Irlanda; Resend gestisce le email. Amazon è un servizio esterno per i consigli d’acquisto.",
   privacy_retention: "",
   privacy_transfers: "",
   privacy_reviewed: false,
@@ -117,7 +117,7 @@ export async function saveProfile(profile: SiteProfile) {
     )
   )
     throw new Error(
-      "Completa titolo e descrizione di ogni servizio (massimo 20 servizi).",
+      "Completa titolo e descrizione di ogni tappa (massimo 20 tappe).",
     );
   const { error } = await client
     .from("site_profile")

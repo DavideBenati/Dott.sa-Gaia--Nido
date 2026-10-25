@@ -27,22 +27,38 @@ export function calculateJourney(
   preferences: Preferences,
   now = new Date(),
 ): JourneyInfo {
+  if (preferences.exploreOnly)
+    return {
+      stage: "all",
+      week: null,
+      days: null,
+      label: "Esplora al tuo ritmo",
+      description:
+        "Informazioni e strumenti da consultare liberamente, senza indicare una fase personale.",
+    };
   const stage: Stage =
-    preferences.journey === "postpartum" ? "postpartum" : "pregnancy";
+    preferences.journey === "postpartum" ||
+    (preferences.journey === "partner" &&
+      preferences.partnerStage === "postpartum")
+      ? "postpartum"
+      : "pregnancy";
   const base: JourneyInfo = {
     stage,
     week: null,
     days: null,
     label:
-      stage === "postpartum"
-        ? "Un nuovo inizio"
-        : preferences.journey === "partner"
-          ? "Insieme, in attesa"
+      preferences.journey === "partner"
+        ? stage === "postpartum"
+          ? "Accanto alla famiglia"
+          : "Insieme, in attesa"
+        : stage === "postpartum"
+          ? "Un nuovo inizio"
           : "Il tuo percorso",
     description:
       "Puoi esplorare tutti i contenuti anche senza condividere date o informazioni personali.",
   };
   if (
+    preferences.journey === "partner" ||
     !preferences.personalized ||
     !preferences.sensitiveConsent ||
     !preferences.date
@@ -144,6 +160,13 @@ export function recommendArticles(
 ): Article[] {
   const journey = calculateJourney(preferences, now);
   const topicCategories: Record<string, string[]> = {
+    gravidanza: ["pregnancy"],
+    "preparazione al parto": ["preparation"],
+    "travaglio e nascita": ["birth"],
+    "dopo la nascita": ["recovery", "home"],
+    "cura del neonato": ["home"],
+    "benessere emotivo": ["wellbeing"],
+    "ruolo del partner": ["partner"],
     "allattamento al seno": ["breastfeeding"],
     "alimentazione con formula": ["feeding"],
     "alimentazione mista": ["feeding", "breastfeeding"],

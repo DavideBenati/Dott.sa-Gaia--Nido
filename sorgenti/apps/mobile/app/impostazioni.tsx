@@ -22,7 +22,7 @@ export default function Settings() {
     <Screen
       back
       professional
-      title="Gaia, servizi e privacy"
+      title="Presentazione MetiMaia e privacy"
       subtitle="Le modifiche salvate alla presentazione diventano pubbliche."
     >
       {email ? (
@@ -87,7 +87,7 @@ function Editor() {
     try {
       await saveProfile(profile);
       setDirty(false);
-      setMessage("Modifiche salvate. La pagina Gaia e servizi è aggiornata.");
+      setMessage("Modifiche salvate. La presentazione MetiMaia è aggiornata.");
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Salvataggio non riuscito.");
     } finally {
@@ -147,9 +147,8 @@ function Editor() {
       ) : (
         <>
           <Notice>
-            Non inserire dati di pazienti. Pubblica solo qualifiche verificate e
-            servizi effettivamente disponibili. Foto: indirizzo HTTPS di
-            un’immagine che puoi utilizzare.
+            Non inserire dati di pazienti. Questi testi presentano il progetto
+            MetiMaia alle famiglie. La pagina pubblica usa il logo del progetto.
           </Notice>
           <Text style={ui.heading}>
             {isInitialGaiaPresentation(profile)
@@ -158,12 +157,10 @@ function Editor() {
           </Text>
           <Text style={ui.body}>
             {isInitialGaiaPresentation(profile)
-              ? "La pagina pubblica mostra già il testo fornito da Gaia. Per modificarlo da qui, premi Usa la presentazione dal documento e poi Salva modifiche."
+              ? "La pagina pubblica mostra già la filosofia di MetiMaia dal nuovo documento. Per modificarla da qui, premi Usa la presentazione dal documento e poi Salva modifiche."
               : [
-                  !profile.portrait_url && "Foto professionale facoltativa",
-                  !profile.qualifications &&
-                    "Qualifiche/iscrizione da verificare",
-                  !profile.services.length && "Servizi da definire",
+                  !profile.bio && "Introduzione del progetto da completare",
+                  !profile.services.length && "Tappe del percorso da definire",
                   !profile.privacy_retention &&
                     "Criteri di conservazione da definire",
                   !profile.privacy_transfers &&
@@ -175,18 +172,18 @@ function Editor() {
           </Text>
           <Notice>
             I campi non compilati non vengono sostituiti con informazioni
-            inventate. Non pubblicare prezzi o disponibilità provvisori come
-            confermati.
+            inventate. Puoi aggiornare i contenuti del progetto senza pubblicare
+            informazioni personali.
           </Notice>
           <View style={[ui.card, { gap: 12 }]}>
             <Text accessibilityRole="header" style={ui.heading}>
-              La presentazione fornita da Gaia
+              La filosofia di MetiMaia
             </Text>
             <Text style={ui.body}>
-              Inserisce nei campi presentazione, formazione, zona, quattro
-              servizi ed email dal documento. Puoi rivedere il testo prima di
-              premere Salva modifiche. Foto e informazioni privacy vengono
-              conservate.
+              Inserisce introduzione, significato del nome e del loto, quattro
+              tappe e filosofia dal nuovo documento. Puoi rivedere il testo
+              prima di premere Salva modifiche. Email, foto archiviata e
+              informazioni privacy vengono conservate.
             </Text>
             <Button
               variant="secondary"
@@ -194,7 +191,7 @@ function Editor() {
               onPress={() => {
                 if (
                   !confirmDiscard(
-                    "Vuoi sostituire presentazione, formazione, zona, servizi ed email con il testo del documento? Le modifiche non salvate in questi campi saranno sostituite.",
+                    "Vuoi sostituire i testi del progetto e le tappe con la filosofia di MetiMaia dal documento? Le modifiche non salvate in questi campi saranno sostituite.",
                   )
                 )
                   return;
@@ -207,27 +204,24 @@ function Editor() {
               Usa la presentazione dal documento
             </Button>
           </View>
-          {field("Presentazione", "bio")}
-          {field("Foto: URL HTTPS (facoltativo)", "portrait_url")}
-          {field(
-            "Qualifiche e iscrizione professionale verificate",
-            "qualifications",
-          )}
-          {field("Zone, modalità e disponibilità", "service_area")}
+          {field("Introduzione e benvenuto", "bio")}
+
+          {field("Il nome e il fiore di loto", "qualifications")}
+          {field("Filosofia e messaggio alle famiglie", "service_area")}
           {field("Email pubblica di contatto", "contact_email")}
-          <Text style={ui.heading}>Servizi</Text>
+          <Text style={ui.heading}>Tappe del percorso</Text>
           {profile.services.map((service, i) => (
             <View style={[ui.card, { gap: 12 }]} key={i}>
               {(["title", "description", "details"] as const).map((key) => (
                 <TextInput
                   key={key}
-                  accessibilityLabel={`${key === "title" ? "Titolo" : key === "description" ? "Descrizione" : "Dettagli"} servizio ${i + 1}`}
+                  accessibilityLabel={`${key === "title" ? "Titolo" : key === "description" ? "Descrizione" : "Dettagli"} tappa ${i + 1}`}
                   placeholder={
                     key === "title"
-                      ? "Nome del servizio"
+                      ? "Nome della tappa"
                       : key === "description"
                         ? "Descrizione"
-                        : "Modalità e altre informazioni confermate"
+                        : "Approfondimento facoltativo"
                   }
                   editable={!busy}
                   value={service[key]}
@@ -252,7 +246,7 @@ function Editor() {
                   })
                 }
               >
-                Rimuovi servizio
+                Rimuovi tappa
               </Button>
             </View>
           ))}
@@ -268,7 +262,7 @@ function Editor() {
               })
             }
           >
-            Aggiungi servizio
+            Aggiungi tappa
           </Button>
           <Text style={ui.heading}>Informazioni privacy</Text>
           <Notice>

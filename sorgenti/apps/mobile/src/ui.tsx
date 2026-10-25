@@ -211,7 +211,7 @@ export function Screen({
             <>
               <Link
                 href="/gaia"
-                accessibilityLabel="Conosci Gaia e i servizi"
+                accessibilityLabel="Scopri il progetto MetiMaia"
                 style={{
                   padding: 12,
                   minHeight: 44,
@@ -219,7 +219,7 @@ export function Screen({
                   fontSize: 14,
                 }}
               >
-                Gaia e servizi
+                Il progetto
               </Link>
               <Link
                 href="/contatti"
@@ -234,7 +234,7 @@ export function Screen({
               </Link>
               <Link
                 href="/shop"
-                accessibilityLabel="Apri lo Shop metiMaia"
+                accessibilityLabel="Apri i consigli d’acquisto"
                 style={{
                   padding: 12,
                   minHeight: 44,
@@ -243,7 +243,7 @@ export function Screen({
                   fontWeight: "700",
                 }}
               >
-                Shop
+                Consigli d’acquisto
               </Link>
             </>
           )}
@@ -319,7 +319,7 @@ export function Screen({
               Contatta Gaia via email
             </Button>
             <Button variant="quiet" onPress={() => router.push("/shop")}>
-              Shop metiMaia
+              Consigli d’acquisto
             </Button>
             <View style={ui.row}>
               <Pressable

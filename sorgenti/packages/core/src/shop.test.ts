@@ -2,6 +2,8 @@ import { describe, expect, test } from "vitest";
 import {
   emptyShopSettings,
   parsePrice,
+  publicAmazonProducts,
+  type ShopProduct,
   settingsIssues,
   validAmazonLink,
   validCheckout,
@@ -45,5 +47,43 @@ describe("shop links, prices and activation", () => {
     expect(
       settingsIssues({ ...emptyShopSettings, enabled: true }).length,
     ).toBeGreaterThan(0);
+  });
+});
+
+describe("Amazon-only showcase", () => {
+  test("hides legacy own products, drafts and unsafe links even when old direct selling is enabled", () => {
+    const item: ShopProduct = {
+      id: "a",
+      kind: "amazon",
+      title: "Libro",
+      description: "Lettura",
+      price_cents: 0,
+      image_url: "",
+      checkout_url: "https://www.amazon.it/dp/TEST?tag=example-21",
+      status: "published",
+    };
+    const products: ShopProduct[] = [
+      item,
+      {
+        ...item,
+        id: "b",
+        kind: "doctor",
+        checkout_url: "https://buy.stripe.com/TEST",
+      },
+      { ...item, id: "c", status: "draft" },
+      { ...item, id: "d", checkout_url: "https://amazon.it.evil.test/dp/TEST" },
+    ];
+    const settings = {
+      ...emptyShopSettings,
+      enabled: true,
+      recommendations_enabled: true,
+    };
+    expect(publicAmazonProducts(products, settings)).toEqual([item]);
+    expect(
+      publicAmazonProducts(products, {
+        ...settings,
+        recommendations_enabled: false,
+      }),
+    ).toEqual([]);
   });
 });

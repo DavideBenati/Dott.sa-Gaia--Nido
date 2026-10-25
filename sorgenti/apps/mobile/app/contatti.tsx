@@ -46,7 +46,7 @@ export default function Contacts() {
           servizi sanitari.
         </Notice>
         <Button variant="quiet" onPress={() => router.push("/gaia")}>
-          Conosci Gaia e i servizi
+          Scopri il progetto MetiMaia
         </Button>
       </View>
     </Screen>

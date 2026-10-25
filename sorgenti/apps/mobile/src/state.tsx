@@ -17,11 +17,15 @@ import {
   publicArticle,
   publicChecklist,
   publicProfessionalText,
+  nicknameIssue,
+  normalizeNickname,
   type Article,
   type Checklist,
   type Category,
   type Preferences,
   type UserState,
+  type MemberProfile,
+  type SharedJourneyInput,
 } from "@nido/core";
 import {
   createNidoClient,
@@ -32,6 +36,9 @@ import {
   setChecklistProgress,
   exportUserData,
   deleteAccount,
+  loadMemberProfile,
+  saveNickname,
+  saveSharedJourney,
 } from "@nido/data";
 
 const LOCAL_KEY = "nido:user-state:v1";
@@ -79,6 +86,12 @@ interface AppContextValue {
   ready: boolean;
   demo: boolean;
   email: string | null;
+  memberProfile: MemberProfile | null;
+  memberProfileLoading: boolean;
+  memberProfileError: string | null;
+  refreshMemberProfile: () => Promise<MemberProfile>;
+  updateNickname: (nickname: string) => Promise<MemberProfile>;
+  updateSharedJourney: (value: SharedJourneyInput) => Promise<MemberProfile>;
   articles: Article[];
   checklists: Checklist[];
   categories: Category[];
@@ -94,6 +107,7 @@ interface AppContextValue {
     email: string,
     password: string,
     signUp?: boolean,
+    nickname?: string,
   ) => Promise<string>;
   passwordRecovery: boolean;
   requestPasswordReset: (email: string) => Promise<void>;
@@ -132,6 +146,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const stateRef = useRef(state);
   const [ready, setReady] = useState(false);
   const [email, setEmail] = useState<string | null>(null);
+  const [memberProfile, setMemberProfile] = useState<MemberProfile | null>(
+    null,
+  );
+  const [memberProfileLoading, setMemberProfileLoading] = useState(false);
+  const [memberProfileError, setMemberProfileError] = useState<string | null>(
+    null,
+  );
+  const memberProfileReadyRef = useRef(false);
+  const memberRevisionRef = useRef(0);
   const [passwordRecovery, setPasswordRecovery] = useState(false);
   const signedInRef = useRef(false);
   const userIdRef = useRef<string | null | undefined>(undefined);
@@ -201,13 +224,56 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         hydratedRef.current = false;
         signedInRef.current = Boolean(user);
         replaceState(freshState());
+        memberRevisionRef.current++;
+        memberProfileReadyRef.current = false;
+        setMemberProfile(null);
+        setMemberProfileError(null);
+        setMemberProfileLoading(Boolean(user));
         setEmail(user?.email ?? null);
         setReady(false);
       }
       const revision = ++authRevision;
       const epoch = sessionEpoch.current;
+      const memberRevision = ++memberRevisionRef.current;
       // Defer database calls until Supabase releases its auth session lock.
       setTimeout(() => {
+        // Profile information has its own readiness/error state: a missing
+        // migration must not turn a successful login into an empty account.
+        if (
+          user &&
+          client &&
+          alive &&
+          epoch === sessionEpoch.current &&
+          memberRevision === memberRevisionRef.current
+        ) {
+          setMemberProfileLoading(true);
+          memberProfileReadyRef.current = false;
+          void loadMemberProfile(client).then(
+            (profile) => {
+              if (
+                alive &&
+                memberRevision === memberRevisionRef.current &&
+                epoch === sessionEpoch.current
+              ) {
+                setMemberProfile(profile);
+                setMemberProfileError(null);
+                setMemberProfileLoading(false);
+                memberProfileReadyRef.current = true;
+              }
+            },
+            (error: unknown) => {
+              if (
+                alive &&
+                memberRevision === memberRevisionRef.current &&
+                epoch === sessionEpoch.current
+              ) {
+                setMemberProfileError(errorMessage(error));
+                setMemberProfileLoading(false);
+                memberProfileReadyRef.current = false;
+              }
+            },
+          );
+        }
         void (async () => {
           try {
             const next =
@@ -304,6 +370,110 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     },
     [replaceState],
   );
+  const refreshMemberProfile = useCallback(() => {
+    const epoch = sessionEpoch.current;
+    const job = queue.current.then(async () => {
+      if (
+        epoch !== sessionEpoch.current ||
+        !signedInRef.current ||
+        !client ||
+        authTransitionRef.current
+      )
+        throw new Error("Accedi nuovamente per caricare il tuo profilo.");
+      const revision = ++memberRevisionRef.current;
+      memberProfileReadyRef.current = false;
+      setMemberProfileLoading(true);
+      setMemberProfileError(null);
+      try {
+        const next = await loadMemberProfile(client);
+        if (
+          epoch !== sessionEpoch.current ||
+          revision !== memberRevisionRef.current
+        )
+          throw new Error("La sessione è cambiata. Riapri il tuo profilo.");
+        setMemberProfile(next);
+        memberProfileReadyRef.current = true;
+        return next;
+      } catch (error) {
+        if (
+          epoch === sessionEpoch.current &&
+          revision === memberRevisionRef.current
+        )
+          setMemberProfileError(errorMessage(error));
+        throw error;
+      } finally {
+        if (
+          epoch === sessionEpoch.current &&
+          revision === memberRevisionRef.current
+        )
+          setMemberProfileLoading(false);
+      }
+    });
+    queue.current = job.then(
+      () => {},
+      () => {},
+    );
+    return job;
+  }, []);
+  const mutateMemberProfile = useCallback(
+    (remote: (ownerId: string) => Promise<MemberProfile>) => {
+      const epoch = sessionEpoch.current;
+      const ownerId = userIdRef.current;
+      const job = queue.current.then(async () => {
+        if (
+          epoch !== sessionEpoch.current ||
+          !ownerId ||
+          ownerId !== userIdRef.current ||
+          !signedInRef.current ||
+          !client ||
+          authTransitionRef.current ||
+          !memberProfileReadyRef.current
+        )
+          throw new Error(
+            "Il profilo non è ancora disponibile. Ricaricalo prima di salvare.",
+          );
+        const revision = ++memberRevisionRef.current;
+        setMemberProfileLoading(true);
+        try {
+          const next = await remote(ownerId);
+          if (
+            epoch !== sessionEpoch.current ||
+            revision !== memberRevisionRef.current
+          )
+            throw new Error("La sessione è cambiata. Riapri il tuo profilo.");
+          setMemberProfile(next);
+          setMemberProfileError(null);
+          return next;
+        } finally {
+          if (
+            epoch === sessionEpoch.current &&
+            revision === memberRevisionRef.current
+          )
+            setMemberProfileLoading(false);
+        }
+      });
+      queue.current = job.then(
+        () => {},
+        () => {},
+      );
+      return job;
+    },
+    [],
+  );
+  const updateNickname = useCallback(
+    (nickname: string) =>
+      mutateMemberProfile((ownerId) =>
+        saveNickname(client!, nickname, ownerId),
+      ),
+    [mutateMemberProfile],
+  );
+  const updateSharedJourney = useCallback(
+    (value: SharedJourneyInput) =>
+      mutateMemberProfile((ownerId) =>
+        saveSharedJourney(client!, value, ownerId),
+      ),
+    [mutateMemberProfile],
+  );
   const updatePreferences = (preferences: Preferences) =>
     mutate(
       (current) => ({
@@ -359,6 +529,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     loginEmail: string,
     password: string,
     signUp = false,
+    nickname?: string,
   ) => {
     if (!client)
       throw new Error(
@@ -366,6 +537,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       );
     if (authTransitionRef.current)
       throw new Error("Attendi il completamento dell’operazione in corso.");
+    if (signUp) {
+      const issue = nicknameIssue(nickname ?? "");
+      if (issue) throw new Error(issue);
+    }
     authTransitionRef.current = true;
     try {
       await queue.current;
@@ -373,7 +548,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ? await client.auth.signUp({
             email: loginEmail.trim(),
             password,
-            options: { emailRedirectTo: "https://metimaia.com/account" },
+            options: {
+              emailRedirectTo: "https://metimaia.com/account",
+              data: { nickname: normalizeNickname(nickname ?? "") },
+            },
           })
         : await client.auth.signInWithPassword({
             email: loginEmail.trim(),
@@ -445,6 +623,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       signedInRef.current = false;
       userIdRef.current = null;
       replaceState(freshState());
+      memberRevisionRef.current++;
+      memberProfileReadyRef.current = false;
+      setMemberProfile(null);
+      setMemberProfileError(null);
+      setMemberProfileLoading(false);
       setEmail(null);
       setReady(true);
       hydratedRef.current = true;
@@ -459,6 +642,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ready,
         demo: !configured,
         email,
+        memberProfile,
+        memberProfileLoading,
+        memberProfileError,
+        refreshMemberProfile,
+        updateNickname,
+        updateSharedJourney,
         articles,
         checklists,
         categories,

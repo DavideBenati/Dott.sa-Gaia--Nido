@@ -5,11 +5,12 @@ import { client, useApp } from "../src/state";
 import { Text, TextInput } from "../src/typography";
 import { Screen, Button, Notice, ui } from "../src/ui";
 
-type ReturnArea = "/studio" | "/documenti-studio" | "/messaggi";
+type ReturnArea = "/studio" | "/documenti-studio" | "/messaggi" | "/iscritti";
 const returnLabels: Record<ReturnArea, string> = {
   "/studio": "Torna a Studio",
   "/documenti-studio": "Torna ai documenti riservati",
   "/messaggi": "Torna alle conversazioni",
+  "/iscritti": "Torna agli iscritti e ai percorsi",
 };
 function qrImage(source: string): string {
   // The SVG comes from Supabase enrollment, never from a remote QR service.

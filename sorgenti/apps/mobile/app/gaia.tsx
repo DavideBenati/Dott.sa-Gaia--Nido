@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Image } from "react-native";
-import { router } from "expo-router";
 import { Text } from "../src/typography";
-import { Screen, Button, Notice, ui } from "../src/ui";
+import { Screen, Notice, ui } from "../src/ui";
 import {
   defaultProfile,
   loadProfile,
@@ -11,6 +10,13 @@ import {
 import logo from "../assets/brand/maia-logo.png";
 import { EmailContactButton } from "../src/email-contact";
 
+const sectionTitles = new Set([
+  "Benvenuti in MetiMaia",
+  "Il significato di MetiMaia",
+  "Il fiore di loto: il simbolo di MetiMaia",
+  "La nostra filosofia",
+  "Insieme, nel viaggio della genitorialità",
+]);
 function Paragraphs({ text }: { text: string }) {
   return (
     <View style={{ gap: 16 }}>
@@ -18,14 +24,20 @@ function Paragraphs({ text }: { text: string }) {
         .split(/\n\s*\n/)
         .filter(Boolean)
         .map((paragraph, index) => (
-          <Text key={index} style={ui.body}>
+          <Text
+            key={index}
+            accessibilityRole={
+              sectionTitles.has(paragraph) ? "header" : undefined
+            }
+            style={sectionTitles.has(paragraph) ? ui.heading : ui.body}
+          >
             {paragraph}
           </Text>
         ))}
     </View>
   );
 }
-export default function Gaia() {
+export default function MetiMaia() {
   const [profile, setProfile] = useState(() => publicProfile(defaultProfile));
   useEffect(() => {
     let active = true;
@@ -39,96 +51,70 @@ export default function Gaia() {
   return (
     <Screen
       back
-      eyebrow="CONOSCI LA TUA OSTETRICA"
-      title="Dott.sa Gaia"
-      subtitle="La tua ostetrica di fiducia a Roma."
+      eyebrow="IL PROGETTO"
+      title="MetiMaia"
+      subtitle="Crescere insieme, un passo alla volta."
     >
       <View
         style={{ maxWidth: 820, width: "100%", alignSelf: "center", gap: 24 }}
       >
         <View style={[ui.card, { gap: 18 }]}>
           <Image
-            source={profile.portrait_url ? { uri: profile.portrait_url } : logo}
-            accessibilityLabel={
-              profile.portrait_url ? "Dott.sa Gaia" : "Il logo di metiMaia"
-            }
+            source={logo}
+            accessibilityLabel="Il fiore di loto di MetiMaia"
             resizeMode="contain"
-            style={{
-              width: "100%",
-              height: profile.portrait_url ? 240 : 150,
-              borderRadius: 20,
-            }}
+            style={{ width: "100%", height: 150 }}
           />
-          <Text style={ui.heading}>Ostetrica | metiMaia</Text>
           <Paragraphs text={profile.bio} />
         </View>
-        <Button onPress={() => router.push("/contatti")}>
-          Contatta Gaia via email
-        </Button>
         {profile.qualifications !== "" && (
           <View style={[ui.card, { gap: 18 }]}>
-            <Text accessibilityRole="header" style={ui.heading}>
-              Il mio percorso e la formazione
-            </Text>
             <Paragraphs text={profile.qualifications} />
           </View>
         )}
-        <Text accessibilityRole="header" style={ui.heading}>
-          Servizi e modalità d’incontro
-        </Text>
-        <Text style={ui.body}>{profile.service_area}</Text>
-        <Text style={ui.body}>
-          Le richieste da questo sito riguardano le consulenze private. Per gli
-          appuntamenti ospedalieri fai riferimento ai canali della struttura.
-        </Text>
-        {profile.services.length ? (
-          profile.services.map((service, index) => (
-            <View key={index} style={[ui.card, { gap: 14 }]}>
-              <Text style={ui.heading}>{service.title}</Text>
-              <Text style={ui.body}>{service.description}</Text>
-              {service.details !== "" && (
-                <Text style={ui.body}>{service.details}</Text>
-              )}
-              <EmailContactButton
-                email={profile.contact_email}
-                subject={`metiMaia — ${service.title}`}
-              >
-                Chiedi informazioni via email
-              </EmailContactButton>
-            </View>
-          ))
-        ) : (
-          <Notice>
-            Servizi, zone, modalità e costi sono da concordare direttamente con
-            Gaia. Puoi chiedere informazioni senza creare un account e senza
-            inserire dati sanitari.
-          </Notice>
+        {profile.services.length > 0 && (
+          <>
+            <Text accessibilityRole="header" style={ui.heading}>
+              Accanto a voi, in ogni fase
+            </Text>
+            {profile.services.map((stage, index) => (
+              <View key={index} style={[ui.card, { gap: 14 }]}>
+                <Text accessibilityRole="header" style={ui.heading}>
+                  {stage.title}
+                </Text>
+                <Text style={ui.body}>{stage.description}</Text>
+                {stage.details !== "" && (
+                  <Text style={ui.body}>{stage.details}</Text>
+                )}
+              </View>
+            ))}
+          </>
         )}
-        <View style={[ui.card, { gap: 12 }]}>
+        {profile.service_area !== "" && (
+          <View style={[ui.card, { gap: 18 }]}>
+            <Paragraphs text={profile.service_area} />
+          </View>
+        )}
+        <View style={[ui.card, { gap: 14 }]}>
           <Text accessibilityRole="header" style={ui.heading}>
-            Cosa succede dopo la richiesta?
+            Parliamone insieme
           </Text>
           <Text style={ui.body}>
-            1. Scrivi un’email con le tue domande e preferenze, senza referti o
-            dati sanitari.
+            Per conoscere le possibilità di accompagnamento, scrivi a Gaia.
+            Modalità, disponibilità ed eventuali costi vengono concordati
+            direttamente via email.
           </Text>
-          <Text style={ui.body}>
-            2. Gaia valuta la disponibilità e risponde via email per concordare
-            modalità, luogo ed eventuali costi.
-          </Text>
-          <Text style={ui.body}>
-            3. L’incontro è confermato soltanto dopo un accordo diretto. I tempi
-            di risposta non sono ancora definiti.
+          <EmailContactButton email={profile.contact_email}>
+            Scrivi a Gaia via email
+          </EmailContactButton>
+          <Text selectable style={ui.body}>
+            {profile.contact_email}
           </Text>
         </View>
-        <EmailContactButton email={profile.contact_email} />
-        <Text selectable style={ui.body}>
-          {profile.contact_email}
-        </Text>
         <Notice>
-          Questo sito offre informazioni e strumenti educativi. Non è un
-          servizio di emergenza né sostituisce una valutazione sanitaria
-          individuale.
+          MetiMaia offre informazioni e strumenti educativi. Non è un servizio
+          di emergenza e non sostituisce la relazione con i professionisti
+          sanitari.
         </Notice>
       </View>
     </Screen>

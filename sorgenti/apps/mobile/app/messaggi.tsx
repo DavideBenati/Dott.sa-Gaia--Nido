@@ -9,12 +9,13 @@ import { useUnsavedChanges } from "../src/unsaved-changes";
 import { colors } from "../src/theme";
 type Conversation = {
   user_id: string;
+  nickname: string;
   email: string | null;
   last_message_at: string | null;
   last_message_preview: string;
 };
 const conversationLabel = (item: Conversation) =>
-  item.email || `Conversazione ${item.user_id.slice(0, 8)}`;
+  item.nickname || item.email || `Conversazione ${item.user_id.slice(0, 8)}`;
 export default function Inbox() {
   const { email } = useApp();
   const [phase, setPhase] = useState("list");
@@ -64,6 +65,7 @@ function InboxContent({
   const [query, setQuery] = useState("");
   const [search, setSearch] = useState("");
   const [legacy, setLegacy] = useState(false);
+  const [nicknameLookup, setNicknameLookup] = useState(true);
   const [loading, setLoading] = useState(true);
   const composer = useRef<React.ComponentRef<typeof TextInput>>(null);
   const { allowNavigation } = useUnsavedChanges(Boolean(body.trim()));
@@ -90,14 +92,26 @@ function InboxContent({
           }
           return;
         }
-        const contacts = await client.rpc(
-          "professional_conversation_contacts",
+        let contacts = await client.rpc(
+          "professional_conversation_contacts_v2",
           {
             search_term: search,
             page_offset: page * 50,
             page_limit: 50,
           },
         );
+        let hasNicknames = true;
+        if (
+          contacts.error &&
+          ["PGRST202", "42883"].includes(contacts.error.code)
+        ) {
+          hasNicknames = false;
+          contacts = await client.rpc("professional_conversation_contacts", {
+            search_term: search,
+            page_offset: page * 50,
+            page_limit: 50,
+          });
+        }
         let conversations: Conversation[];
         let legacyMode = false;
         if (contacts.error) {
@@ -115,6 +129,7 @@ function InboxContent({
           if (result.error) throw result.error;
           conversations = (result.data ?? []).map((item) => ({
             user_id: item.user_id,
+            nickname: "",
             email: null,
             last_message_at: item.created_at,
             last_message_preview: "",
@@ -126,6 +141,7 @@ function InboxContent({
             contacts.data.some(
               (item: Conversation) =>
                 typeof item.user_id !== "string" ||
+                (hasNicknames && typeof item.nickname !== "string") ||
                 (item.email !== null && typeof item.email !== "string") ||
                 (item.last_message_at !== null &&
                   typeof item.last_message_at !== "string") ||
@@ -133,11 +149,15 @@ function InboxContent({
             )
           )
             throw new Error("Elenco contatti non valido.");
-          conversations = contacts.data as Conversation[];
+          conversations = contacts.data.map((item: Conversation) => ({
+            ...item,
+            nickname: hasNicknames ? item.nickname : "",
+          })) as Conversation[];
         }
         if (active) {
           setAllowed(true);
           setLegacy(legacyMode);
+          setNicknameLookup(hasNicknames);
           setList(conversations);
           setError("");
         }
@@ -347,10 +367,16 @@ function InboxContent({
                 accessibilityLabel={
                   legacy
                     ? "Cerca identificativo in questa pagina"
-                    : "Cerca conversazioni per email"
+                    : nicknameLookup
+                      ? "Cerca conversazioni per nickname o email"
+                      : "Cerca conversazioni per email"
                 }
                 placeholder={
-                  legacy ? "Identificativo in questa pagina" : "Cerca per email"
+                  legacy
+                    ? "Identificativo in questa pagina"
+                    : nicknameLookup
+                      ? "Cerca per nickname o email"
+                      : "Cerca per email"
                 }
                 value={query}
                 onChangeText={setQuery}
@@ -372,6 +398,12 @@ function InboxContent({
                   questa pagina.
                 </Notice>
               )}
+              {!legacy && !nicknameLookup && (
+                <Notice>
+                  I nickname saranno disponibili con l’aggiornamento degli
+                  iscritti. Puoi cercare le conversazioni per email.
+                </Notice>
+              )}
               {loading ? (
                 <Text style={ui.body}>Caricamento conversazioni…</Text>
               ) : error && list.length === 0 ? null : visibleList.length ===
@@ -385,6 +417,11 @@ function InboxContent({
                 visibleList.map((item) => (
                   <View key={item.user_id} style={[ui.card, { gap: 10 }]}>
                     <Text style={ui.heading}>{conversationLabel(item)}</Text>
+                    {item.nickname && item.email && (
+                      <Text selectable style={ui.body}>
+                        {item.email}
+                      </Text>
+                    )}
                     <Text style={ui.body}>
                       {item.last_message_at
                         ? `${legacy ? "Creata il " : "Ultima attività: "}${new Date(item.last_message_at).toLocaleString("it-IT")}`
@@ -397,6 +434,11 @@ function InboxContent({
                     )}
                     <Button
                       variant="secondary"
+                      accessibilityLabel={
+                        legacy
+                          ? undefined
+                          : `Apri conversazione: ${conversationLabel(item)}${item.nickname && item.email ? ` · ${item.email}` : ""}`
+                      }
                       onPress={() => chooseConversation(item)}
                     >
                       {legacy
@@ -432,6 +474,11 @@ function InboxContent({
                   ? conversationLabel(selectedConversation)
                   : `Conversazione ${selected.slice(0, 8)}`}
               </StageHeading>
+              {selectedConversation?.nickname && selectedConversation.email && (
+                <Text selectable style={ui.body}>
+                  {selectedConversation.email}
+                </Text>
+              )}
               <Button
                 variant="secondary"
                 onPress={() => composer.current?.focus()}
@@ -462,7 +509,11 @@ function InboxContent({
                   ]}
                 >
                   <Text style={ui.label}>
-                    {m.sender_id === selected ? "Utente" : "Dott.sa Gaia"}
+                    {m.sender_id === selected
+                      ? selectedConversation?.nickname
+                        ? `Iscritto/a · ${selectedConversation.nickname}`
+                        : "Utente"
+                      : "Dott.sa Gaia"}
                   </Text>
                   <Text selectable style={ui.body}>
                     {m.body}

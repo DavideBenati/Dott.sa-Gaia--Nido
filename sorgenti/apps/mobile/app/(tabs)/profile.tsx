@@ -5,11 +5,13 @@ import { router } from "expo-router";
 import { calculateJourney, disclaimer } from "@nido/core";
 import { useApp } from "../../src/state";
 import { Screen, Button, Notice, SectionHeader, ui } from "../../src/ui";
+import { MemberProfileEditor } from "../../src/member-profile-editor";
 export default function Profile() {
   const {
     state,
     demo,
     email,
+    memberProfile,
     updatePreferences,
     exportData,
     eraseData,
@@ -64,15 +66,22 @@ export default function Profile() {
       subtitle="Le preferenze possono cambiare, proprio come il tuo percorso."
     >
       <Notice>
-        {email ??
+        {(email && memberProfile?.nickname
+          ? `${memberProfile.nickname}\n${email}`
+          : email) ??
           (demo
             ? "Ospite · DEMO MODE · dati su questo dispositivo"
             : "Ospite · dati su questo dispositivo")}
       </Notice>
+      {email && <MemberProfileEditor key={email} />}
       <SectionHeader title="Il mio percorso" />
       <View style={[ui.card, { gap: 12 }]}>
         <Text style={ui.heading}>{journey.label}</Text>
         <Text style={ui.body}>{journey.description}</Text>
+        <Text style={ui.body}>
+          Queste preferenze servono per i tuoi contenuti. La scheda condivisa
+          con Gaia si aggiorna separatamente qui sopra.
+        </Text>
         {state.preferences.date && (
           <Text style={ui.body}>
             Data facoltativa: {state.preferences.date}
@@ -126,9 +135,17 @@ export default function Profile() {
           dalla pagina dedicata, confermando la tua scelta via email.
         </Text>
       </View>
+      {email && (
+        <Button
+          variant="secondary"
+          onPress={() => router.push("/videochiamate")}
+        >
+          Le mie videochiamate con Gaia
+        </Button>
+      )}
       <SectionHeader title="Conosci metiMaia" />
       <Button variant="secondary" onPress={() => router.push("/gaia")}>
-        Gaia e servizi
+        Il progetto MetiMaia
       </Button>
       <Button variant="quiet" onPress={() => router.push("/contatti")}>
         Contatta Gaia via email
@@ -146,7 +163,7 @@ export default function Profile() {
         Newsletter metiMaia
       </Button>
       <Button variant="secondary" onPress={() => router.push("/shop")}>
-        Shop metiMaia
+        Consigli d’acquisto
       </Button>
       <SectionHeader title="Account e dati" />
       <Button variant="secondary" onPress={() => router.push("/account")}>

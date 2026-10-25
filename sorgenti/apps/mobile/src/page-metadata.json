@@ -1,13 +1,13 @@
 {
   "/": {
-    "title": "metiMaia | Dott.sa Gaia, ostetrica",
-    "description": "Informazioni e strumenti per gravidanza, nascita e dopo il parto, con la Dott.sa Gaia. Scopri letture, checklist e come richiedere un incontro.",
+    "title": "MetiMaia | Crescere insieme, un passo alla volta",
+    "description": "Informazioni affidabili, strumenti pratici e competenza ostetrica per accompagnare le famiglie dalla gravidanza alla nascita e alla crescita.",
     "canonical": "/welcome",
     "index": true
   },
   "/welcome": {
-    "title": "metiMaia | Dott.sa Gaia, ostetrica",
-    "description": "Uno spazio per gravidanza, nascita e primi giorni insieme. Letture, checklist e richieste di incontro con la Dott.sa Gaia.",
+    "title": "MetiMaia | Crescere insieme, un passo alla volta",
+    "description": "Informazioni affidabili, strumenti pratici e competenza ostetrica per accompagnare le famiglie dalla gravidanza alla nascita e alla crescita.",
     "index": true
   },
   "/discover": {
@@ -41,8 +41,8 @@
     "index": true
   },
   "/shop": {
-    "title": "Shop: selezione Amazon e prodotti della dottoressa | metiMaia",
-    "description": "Scopri la selezione Amazon e lo spazio dedicato ai prodotti della Dott.sa Gaia. Consulta disponibilità e condizioni dei singoli prodotti.",
+    "title": "Consigli d’acquisto su Amazon | MetiMaia",
+    "description": "Prodotti selezionati su Amazon per la quotidianità in famiglia. Collegamenti affiliati segnalati; prezzi e condizioni disponibili su Amazon.",
     "index": false
   },
   "/privacy": {
@@ -58,6 +58,11 @@
   "/chat": {
     "title": "Conversazione privata | metiMaia",
     "description": "Accedi alla tua conversazione privata con la Dott.sa Gaia.",
+    "index": false
+  },
+  "/iscritti": {
+    "title": "Iscritti e percorsi | metiMaia",
+    "description": "Area riservata agli account autorizzati dello studio.",
     "index": false
   },
   "/studio": {
@@ -81,8 +86,8 @@
     "index": false
   },
   "/gaia": {
-    "title": "Dott.sa Gaia, ostetrica a Roma | metiMaia",
-    "description": "Conosci la Dott.sa Gaia: percorso, formazione, corsi di accompagnamento al parto, movimento in gravidanza e supporto dopo la nascita a Roma.",
+    "title": "Il progetto MetiMaia | Conoscenza, ascolto e cura",
+    "description": "La filosofia di MetiMaia: conoscenza, crescita e sostegno per ogni famiglia. Scopri il significato del nome, il loto e le tappe del percorso.",
     "index": true
   },
   "/impostazioni": {
@@ -128,6 +133,11 @@
   "/miei-documenti": {
     "title": "I miei documenti | metiMaia",
     "description": "Materiali condivisi con il tuo account.",
+    "index": false
+  },
+  "/videochiamate": {
+    "title": "Videochiamate con Gaia | MetiMaia",
+    "description": "Inviti riservati alle videochiamate concordate con Gaia.",
     "index": false
   }
 }

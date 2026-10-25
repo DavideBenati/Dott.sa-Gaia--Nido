@@ -16,7 +16,7 @@ export default function Layout() {
     ["index", "Il mio percorso", "home"],
     ["discover", "Scopri", "discover"],
     ["checklists", "Checklist", "checklist"],
-    ["shop", "Shop", "shop"],
+    ["shop", "Consigli d’acquisto", "shop"],
     ["profile", "Profilo", "profile"],
     ["studio", "Studio", "studio"],
   ];
@@ -31,6 +31,7 @@ export default function Layout() {
       })}
       screenOptions={{
         headerShown: false,
+        tabBarLabelPosition: "below-icon",
         tabBarActiveTintColor: "#42624B",
         tabBarInactiveTintColor: "#67736C",
         tabBarStyle: {
@@ -38,7 +39,7 @@ export default function Layout() {
           borderTopColor: colors.border,
           paddingHorizontal:
             width >= 900 ? Math.max(24, (width - 1100) / 2) : 8,
-          height: 62 + Math.max(12, insets.bottom),
+          height: 72 + Math.max(12, insets.bottom),
           paddingBottom: Math.max(12, insets.bottom),
           paddingTop: 8,
         },
@@ -67,7 +68,7 @@ export default function Layout() {
             title,
             tabBarLabel: ({ color }) => (
               <Text
-                numberOfLines={1}
+                numberOfLines={2}
                 style={{
                   width: "100%",
                   textAlign: "center",
@@ -75,9 +76,15 @@ export default function Layout() {
                   fontSize: compact ? (isAdministrator ? 10 : 11) : 12,
                   fontFamily: "NidoSansSemibold",
                   marginHorizontal: 0,
+                  lineHeight: 14,
+                  minHeight: 28,
                 }}
               >
-                {name === "index" ? "Percorso" : title}
+                {name === "index"
+                  ? "Percorso"
+                  : name === "shop"
+                    ? "Consigli\nd’acquisto"
+                    : title}
               </Text>
             ),
             tabBarAccessibilityLabel: title,

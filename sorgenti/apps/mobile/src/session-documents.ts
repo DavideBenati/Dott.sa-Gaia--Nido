@@ -17,6 +17,7 @@ export type SessionDocument = {
 export type DocumentRecipient = {
   user_id: string;
   email: string;
+  nickname?: string;
   granted_at?: string;
 };
 export type DocumentAccess = {
@@ -181,27 +182,54 @@ export async function uploadDocument(
 }
 export async function documentRecipients(id: string) {
   await identity();
-  const { data, error } = await client!.rpc("document_recipients", {
+  let response = await client!.rpc("document_recipients_v2", {
     document_id: id,
   });
-  if (error)
+  if (response.error && ["PGRST202", "42883"].includes(response.error.code))
+    response = await client!.rpc("document_recipients", { document_id: id });
+  if (response.error)
     throw new Error(
       "Destinatari non disponibili. I permessi esistenti non sono stati modificati.",
     );
-  return (data ?? []) as DocumentRecipient[];
+  return recipientRows(response.data);
 }
 export async function searchDocumentUsers(term: string) {
   await identity();
-  if (term.trim().length < 3)
-    throw new Error("Inserisci almeno 3 caratteri dell’email.");
-  const { data, error } = await client!.rpc("search_document_users", {
+  if (term.trim().length < 2)
+    throw new Error("Inserisci almeno 2 caratteri del nickname o dell’email.");
+  let response = await client!.rpc("search_document_users_v2", {
     search_term: term.trim(),
   });
-  if (error)
+  if (response.error && ["PGRST202", "42883"].includes(response.error.code))
+    response = await client!.rpc("search_document_users", {
+      search_term: term.trim(),
+    });
+  if (response.error)
     throw new Error(
       "Ricerca non riuscita. Verifica permesso e secondo fattore.",
     );
-  return (data ?? []) as DocumentRecipient[];
+  return recipientRows(response.data);
+}
+function recipientRows(value: unknown): DocumentRecipient[] {
+  if (
+    !Array.isArray(value) ||
+    value.some(
+      (item) =>
+        !item ||
+        typeof item.user_id !== "string" ||
+        !item.user_id ||
+        typeof item.email !== "string" ||
+        (item.nickname !== undefined && typeof item.nickname !== "string") ||
+        (item.granted_at !== undefined && typeof item.granted_at !== "string"),
+    )
+  )
+    throw new Error(
+      "L’elenco degli account non è disponibile. Ricarica prima di modificare gli accessi.",
+    );
+  return value.map((item) => ({
+    ...item,
+    nickname: item.nickname ?? "",
+  })) as DocumentRecipient[];
 }
 export async function saveDocumentRecipients(
   id: string,

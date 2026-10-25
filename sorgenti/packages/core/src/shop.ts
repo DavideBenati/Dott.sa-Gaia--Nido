@@ -99,3 +99,17 @@ export function settingsIssues(settings: ShopSettings): string[] {
   }
   return issues;
 }
+
+/** Public showcase only. Legacy direct-sale products remain stored but never appear here. */
+export function publicAmazonProducts(
+  products: readonly ShopProduct[],
+  settings: ShopSettings,
+): ShopProduct[] {
+  if (!settings.recommendations_enabled) return [];
+  return products.filter(
+    (product) =>
+      product.kind === "amazon" &&
+      product.status === "published" &&
+      validAmazonLink(product.checkout_url),
+  );
+}

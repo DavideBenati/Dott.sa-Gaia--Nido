@@ -1,5 +1,5 @@
 import { Text, TextInput } from "../src/typography";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, Pressable, Platform } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { client, initialAuthLinkError, useApp } from "../src/state";
@@ -7,10 +7,15 @@ import { Screen, Notice, Button, ui } from "../src/ui";
 import { useEditorAccess } from "../src/editor-access";
 import { requestNewsletterSubscription } from "../src/newsletter";
 import { colors } from "../src/theme";
+import { nicknameIssue, normalizeNickname } from "@nido/core";
 export default function Account() {
   const {
     demo,
     email: accountEmail,
+    memberProfile,
+    memberProfileLoading,
+    memberProfileError,
+    refreshMemberProfile,
     signIn,
     signOut,
     passwordRecovery,
@@ -24,6 +29,9 @@ export default function Account() {
   const [remaining, setRemaining] = useState(0);
   const [newsletter, setNewsletter] = useState(false);
   const [email, setEmail] = useState("");
+  const [nickname, setNickname] = useState("");
+  const [nicknameError, setNicknameError] = useState("");
+  const nicknameInput = useRef<React.ComponentRef<typeof TextInput>>(null);
   const [password, setPassword] = useState("");
   const [create, setCreate] = useState(params.mode !== "login");
   const [showPassword, setShowPassword] = useState(false);
@@ -86,6 +94,16 @@ export default function Account() {
   }, [accountEmail]);
   async function submit() {
     if (busy || demo) return;
+    if (create) {
+      const issue = nicknameIssue(nickname);
+      if (issue) {
+        setNicknameError(issue);
+        setMessage("");
+        nicknameInput.current?.focus();
+        return;
+      }
+    }
+    setNicknameError("");
     if (
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) ||
       password.length < (create ? 8 : 1)
@@ -100,7 +118,12 @@ export default function Account() {
     setBusy(true);
     setMessage("");
     try {
-      const result = await signIn(email.trim(), password, create);
+      const result = await signIn(
+        email.trim(),
+        password,
+        create,
+        create ? normalizeNickname(nickname) : undefined,
+      );
       setPassword("");
       if (create && result.startsWith("Controlla"))
         setPendingEmail(email.trim());
@@ -296,7 +319,39 @@ export default function Account() {
           </View>
         ) : accountEmail ? (
           <View style={[ui.card, { gap: 18 }]}>
+            {memberProfile?.nickname ? (
+              <Text style={ui.heading}>{memberProfile.nickname}</Text>
+            ) : null}
             <Text style={ui.body}>{accountEmail}</Text>
+            {memberProfileLoading ? (
+              <Notice>Caricamento del tuo nickname e profilo…</Notice>
+            ) : memberProfileError ? (
+              <View style={{ gap: 12 }} accessibilityRole="alert">
+                <Notice>
+                  Non riusciamo a caricare il tuo nickname e la scheda. Riprova
+                  prima di modificarli.
+                </Notice>
+                <Button
+                  disabled={busy}
+                  variant="secondary"
+                  onPress={() => {
+                    void refreshMemberProfile().catch(() => {});
+                  }}
+                >
+                  Riprova caricamento profilo
+                </Button>
+              </View>
+            ) : memberProfile ? (
+              <Button
+                disabled={busy}
+                variant="secondary"
+                onPress={() => router.push("/profile")}
+              >
+                {memberProfile.nickname
+                  ? "Modifica nickname e scheda"
+                  : "Scegli il tuo nickname"}
+              </Button>
+            ) : null}
             <Button onPress={() => router.push("/welcome?edit=1")}>
               Personalizza il tuo percorso
             </Button>
@@ -360,6 +415,47 @@ export default function Account() {
                 Recupera la password
               </Text>
             )}
+            {create && !reset && (
+              <View style={{ gap: 8 }}>
+                <Text style={ui.label}>Nickname</Text>
+                <TextInput
+                  ref={nicknameInput}
+                  accessibilityLabel="Nickname"
+                  accessibilityHint="Da 2 a 40 caratteri. Non serve il nome completo."
+                  aria-invalid={Boolean(nicknameError)}
+                  aria-required
+                  style={[
+                    ui.input,
+                    nicknameError ? { borderColor: colors.error } : undefined,
+                  ]}
+                  placeholder="Come vuoi farti chiamare"
+                  value={nickname}
+                  onChangeText={(value) => {
+                    setNickname(value);
+                    setNicknameError("");
+                  }}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  autoComplete="username-new"
+                  maxLength={80}
+                  editable={!demo && !busy}
+                />
+                <Text
+                  style={{ color: colors.muted, fontSize: 13, lineHeight: 20 }}
+                >
+                  Da 2 a 40 caratteri, senza email. È il nome scelto per
+                  riconoscerti nell’area riservata; non serve il nome completo.
+                </Text>
+                {nicknameError !== "" && (
+                  <View
+                    accessibilityRole="alert"
+                    accessibilityLiveRegion="polite"
+                  >
+                    <Text style={{ color: colors.error }}>{nicknameError}</Text>
+                  </View>
+                )}
+              </View>
+            )}
             <Text style={ui.label}>Email</Text>
             <TextInput
               accessibilityLabel="Email account"
@@ -386,6 +482,8 @@ export default function Account() {
                   disabled={busy}
                   onPress={() => {
                     setReset(false);
+                    setCreate(false);
+                    setNicknameError("");
                     setMessage("");
                   }}
                 >
@@ -418,7 +516,11 @@ export default function Account() {
                     accessibilityLabel={
                       showPassword ? "Nascondi password" : "Mostra password"
                     }
-                    accessibilityState={{ selected: showPassword }}
+                    accessibilityState={{
+                      selected: showPassword,
+                      disabled: busy,
+                    }}
+                    disabled={busy}
                     onPress={() => setShowPassword(!showPassword)}
                     style={{
                       minHeight: 48,
@@ -458,6 +560,7 @@ export default function Account() {
                     </Pressable>
                     <Button
                       variant="quiet"
+                      disabled={busy}
                       onPress={() => router.push("/newsletter")}
                     >
                       Informazioni sulla newsletter e privacy
@@ -480,6 +583,7 @@ export default function Account() {
                   variant="quiet"
                   onPress={() => {
                     setCreate(!create);
+                    setNicknameError("");
                     setMessage("");
                     setPassword("");
                   }}
@@ -513,6 +617,7 @@ export default function Account() {
                   disabled={busy}
                   onPress={() => {
                     setReset(true);
+                    setNicknameError("");
                     setPassword("");
                     setMessage("");
                   }}
@@ -528,13 +633,18 @@ export default function Account() {
             >
               Continua come ospite
             </Button>
-            <Button variant="quiet" onPress={() => router.push("/privacy")}>
+            <Button
+              disabled={busy}
+              variant="quiet"
+              onPress={() => router.push("/privacy")}
+            >
               Come trattiamo i tuoi dati
             </Button>
             <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 20 }}>
-              L’email serve per accedere e confermare l’account. Leggere
-              l’informativa non equivale a un consenso generale. La newsletter è
-              facoltativa e richiede un consenso separato.
+              Il nickname serve per riconoscerti nell’area riservata. L’email
+              serve per accedere e confermare l’account. Leggere l’informativa
+              non equivale a un consenso generale. La newsletter è facoltativa e
+              richiede un consenso separato.
             </Text>
           </View>
         )}
