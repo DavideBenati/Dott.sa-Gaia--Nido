@@ -1,0 +1,68 @@
+{
+  "version": "v10",
+  "source_commit": "8cc6d19807323d999bd40932165f13c0762c5bd6",
+  "unit_tests": {
+    "files_passed": 26,
+    "tests_passed": 175
+  },
+  "typecheck": "passed",
+  "eslint": "passed",
+  "production_build": "passed",
+  "browser": {
+    "candidate": "maia-v10-final",
+    "checks_passed": 17,
+    "content_checks": [
+      "Checklist supplied from the document: 18 real checkboxes, earned badge, reversal and text snapshot",
+      "Web Share cancellation, confirmed clipboard success, and manual fallback produce honest feedback",
+      "Argomenti shared category URLs restore every filter on a direct page load",
+      "Public article sharing includes the reading title and refreshable public URL",
+      "The first mobile landing invites the visitor to choose where to begin",
+      "The selected journey continues into registration",
+      "The project introduction preserves the supplied text behind accessible expandable sections",
+      "Amazon search stays available when the product selection is empty",
+      "Header navigation moves bold emphasis to the selected page and fits desktop width"
+    ],
+    "private_checks": [
+      "390: authenticated callback opens the project page after hydration",
+      "390: pregnancy fields are optional, three consents start off and LMP previews age without a save",
+      "390: ultrasound override and previous outcomes work; saving without storage consent is rejected locally",
+      "390: explicit save carries owner/reference date, while clinical fields stay out of localStorage",
+      "390: clinical conflicts preserve the exact server version and request a reload",
+      "390: an invalid family code is rejected and a valid request exposes no snapshot before approval",
+      "390: approved family access renders only checklist progress and saved article titles without clinical data",
+      "390: revocation clears the loaded family snapshot and an incoming request can be declined"
+    ],
+    "services": "mocked; no production writes",
+    "responsive_viewport_widths": [
+      390,
+      1280
+    ],
+    "page_errors": [],
+    "unexpected_requests": []
+  },
+  "site_files": 98,
+  "google_original_html_preserved": true,
+  "google_meta_verification_added": false,
+  "live_supabase_migrations_applied": false,
+  "live_cloudflare_deployed": false,
+  "rollout": [
+    "Supabase 012",
+    "Supabase 013",
+    "Supabase 014",
+    "Cloudflare full site ZIP"
+  ],
+  "artifacts": {
+    "MAIA-Sito-v10-Completo.zip": {
+      "bytes": 2959468,
+      "sha256": "24c41eb7bf6b0346bf307c77fec6be782202bc373e1ceed09cceadadab84dc19"
+    },
+    "MAIA-Configurazione-v10.zip": {
+      "bytes": 13184,
+      "sha256": "985929a996610aa8ae1d9da9e6f16eaa96faecf2e9b8901721c03916552a42f3"
+    },
+    "GUIDA-MAIA-v10.md": {
+      "bytes": 9495,
+      "sha256": "aee78098eaf6c0706c53424234e94df8de0768be8e5dd0bfcdb0e42a81078315"
+    }
+  }
+}
