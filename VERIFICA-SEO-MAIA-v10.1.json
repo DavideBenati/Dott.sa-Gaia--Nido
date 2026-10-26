@@ -1,0 +1,224 @@
+{
+  "version": "v10.1 SEO",
+  "generated_html_pages": 29,
+  "indexable_pages": 10,
+  "unit_tests_passed": 17,
+  "typecheck": "passed",
+  "targeted_eslint": "passed",
+  "web_build": "passed",
+  "jsonld_name_preserved": "Dott.sa Gaia",
+  "pages": [
+    {
+      "route": "/",
+      "index": true,
+      "title": "Da dove iniziamo? | MetiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/welcome",
+      "index": true,
+      "title": "Da dove iniziamo? | MetiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/discover",
+      "index": true,
+      "title": "Argomenti per gravidanza e dopo la nascita | MetiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/checklists",
+      "index": true,
+      "title": "Checklist per gravidanza e dopo la nascita | metiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/prenota",
+      "index": true,
+      "title": "Richiedi un incontro con la Dott.sa Gaia | metiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/article",
+      "index": true,
+      "title": "Letture e approfondimenti | metiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/checklist",
+      "index": true,
+      "title": "Una checklist per il tuo percorso | metiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/help",
+      "index": true,
+      "title": "Quando chiedere aiuto | metiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/shop",
+      "index": false,
+      "title": "Consigli d’acquisto su Amazon | MetiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/privacy",
+      "index": false,
+      "title": "Privacy e dati personali | metiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/account",
+      "index": false,
+      "title": "Il tuo account | metiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/chat",
+      "index": false,
+      "title": "Conversazione privata | metiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/iscritti",
+      "index": false,
+      "title": "Iscritti e percorsi | metiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/studio",
+      "index": false,
+      "title": "Area professionista | metiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/profile",
+      "index": false,
+      "title": "Il tuo profilo | metiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/saved",
+      "index": false,
+      "title": "Le tue letture salvate | metiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/newsletter",
+      "index": false,
+      "title": "Newsletter | metiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/gaia",
+      "index": true,
+      "title": "Il progetto MetiMaia | Conoscenza, ascolto e cura",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/impostazioni",
+      "index": false,
+      "title": "Impostazioni del sito | metiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/messaggi",
+      "index": false,
+      "title": "Casella della professionista | metiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/richieste",
+      "index": false,
+      "title": "Richieste di incontro | metiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/sicurezza",
+      "index": false,
+      "title": "Sicurezza account | metiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/contatti",
+      "index": true,
+      "title": "Contatti e richieste di incontro | metiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/verifiche",
+      "index": false,
+      "title": "Verifiche del sito | metiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/newsletter-admin",
+      "index": false,
+      "title": "Gestione newsletter | metiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/documenti-studio",
+      "index": false,
+      "title": "Documenti riservati | metiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/miei-documenti",
+      "index": false,
+      "title": "I miei documenti | metiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/videochiamate",
+      "index": false,
+      "title": "Videochiamate con Gaia | MetiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    },
+    {
+      "route": "/condivisioni",
+      "index": false,
+      "title": "Condivisioni con familiari e amici | MetiMaia",
+      "head_surname_free": true,
+      "person_name": "Dott.sa Gaia"
+    }
+  ],
+  "public_name_only_mentions_preserved": true,
+  "legal_configured_identity_preserved": true,
+  "live_deployment_changed": false,
+  "source_commit": "dbf503c0de2224f68e6ea0c1511c964c7d17ce27",
+  "site_zip": {
+    "name": "MAIA-Sito-v10.1-SEO.zip",
+    "bytes": 2959368,
+    "sha256": "9f95d0ab6377e651bce0b251bdbd3504a6826de23181127dbb5fc4855c9f3d82"
+  }
+}
