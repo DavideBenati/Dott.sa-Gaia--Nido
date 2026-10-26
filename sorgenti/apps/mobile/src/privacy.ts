@@ -1,10 +1,8 @@
 // Public legal details only. Complete and independently review before enabling
 // personal-data services. These are not secrets and must match actual operations.
-import { publicProfessionalText } from "@nido/core";
 export const privacyDetails = {
-  controller: publicProfessionalText(
-    process.env.EXPO_PUBLIC_PRIVACY_CONTROLLER ?? "Dott.sa Gaia",
-  ),
+  // Legal identity must remain exactly as configured, independently of SEO.
+  controller: process.env.EXPO_PUBLIC_PRIVACY_CONTROLLER ?? "Dott.sa Gaia",
   address:
     process.env.EXPO_PUBLIC_PRIVACY_ADDRESS ??
     "Via San Godenzo 33, Roma, Italia",

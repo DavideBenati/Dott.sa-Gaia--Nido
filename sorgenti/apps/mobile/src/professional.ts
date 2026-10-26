@@ -48,9 +48,8 @@ export function publicProfile(stored: SiteProfile): SiteProfile {
       description: publicProfessionalText(service.description),
       details: publicProfessionalText(service.details),
     })),
-    privacy_providers: publicProfessionalText(profile.privacy_providers),
-    privacy_retention: publicProfessionalText(profile.privacy_retention),
-    privacy_transfers: publicProfessionalText(profile.privacy_transfers),
+    // Preserve legal disclosures verbatim; presentation normalization must
+    // never rewrite a controller identity or required privacy information.
   };
 }
 export async function loadProfile({

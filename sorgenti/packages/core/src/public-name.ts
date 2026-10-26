@@ -6,8 +6,9 @@ export const professionalPublicName = "Dott.sa Gaia";
 // patient messages, document filenames, links, email addresses or stored rows.
 export function publicProfessionalText(text: string): string {
   return text.replace(
-    /\b(?:Dott\.(?:ssa|sa)\s+)?Gaia\s+Brunetti\b|\bDott\.(?:ssa|sa)\s+Brunetti\b/gi,
-    professionalPublicName,
+    /\b(?:Ostetrica\s+)?(?:Dott\.(?:ssa|sa)\s+)?Gaia\s+Brunetti\b|\bDott\.(?:ssa|sa)\s+Brunetti\b/gi,
+    (match) =>
+      /^Ostetrica\b/i.test(match) ? "Ostetrica Gaia" : "Dott.ssa Gaia",
   );
 }
 

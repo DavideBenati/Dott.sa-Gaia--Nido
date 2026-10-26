@@ -152,3 +152,22 @@ test("the earlier supplied personal presentation becomes the project philosophy 
   expect(shown.portrait_url).toBe(legacy.portrait_url);
   expect(legacy.bio).toContain("Ciao, sono Gaia");
 });
+
+test("public presentation normalization never rewrites the original legal privacy disclosures", () => {
+  const stored = {
+    ...defaultProfile,
+    bio: "Contatta Gaia Brunetti",
+    privacy_providers: "Titolare: Gaia Brunetti; fornitori del servizio.",
+    privacy_retention: "Informazioni comunicate da Gaia Brunetti.",
+    privacy_transfers: "Recapito legale di Gaia Brunetti.",
+  };
+  const presented = publicProfile(stored);
+  expect(presented.bio).toBe("Contatta Dott.ssa Gaia");
+  for (const key of [
+    "privacy_providers",
+    "privacy_retention",
+    "privacy_transfers",
+  ] as const)
+    expect(presented[key]).toBe(stored[key]);
+  expect(stored.bio).toBe("Contatta Gaia Brunetti");
+});

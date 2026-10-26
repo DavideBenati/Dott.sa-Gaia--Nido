@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Platform } from "react-native";
 import { usePathname } from "expo-router";
+import { publicProfessionalText } from "@nido/core";
 import metadata from "./page-metadata.json";
 const site = "https://metimaia.com";
 type Metadata = {
@@ -21,13 +22,16 @@ export function usePageMetadata(article?: {
       ? article
       : undefined;
   const entry = (metadata as Record<string, Metadata>)[pathname];
-  const title = activeArticle
-    ? `${activeArticle.title} | metiMaia`
-    : (entry?.title ?? "metiMaia");
-  const description =
+  const title = publicProfessionalText(
+    activeArticle
+      ? `${activeArticle.title} | metiMaia`
+      : (entry?.title ?? "metiMaia"),
+  );
+  const description = publicProfessionalText(
     activeArticle?.subtitle ||
-    entry?.description ||
-    "Uno spazio per il tuo percorso, con la Dott.sa Gaia.";
+      entry?.description ||
+      "Uno spazio per il tuo percorso, con la Dott.sa Gaia.",
+  );
   const index = activeArticle
     ? activeArticle.published
     : (entry?.index ?? false);

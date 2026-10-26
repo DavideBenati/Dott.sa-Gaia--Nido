@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { publicProfessionalText } from "../packages/core/src/public-name.ts";
 export const metadata = JSON.parse(
   await readFile(
     new URL("../apps/mobile/src/page-metadata.json", import.meta.url),
@@ -13,10 +14,15 @@ const escape = (value) =>
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
 export function pageHTML(html, path) {
-  const page = metadata[path] ?? {
+  const source = metadata[path] ?? {
     title: "metiMaia",
     description: "Uno spazio per il tuo percorso.",
     index: false,
+  };
+  const page = {
+    ...source,
+    title: publicProfessionalText(source.title),
+    description: publicProfessionalText(source.description),
   };
   const canonical = site + (page.canonical ?? path);
   const schema = {

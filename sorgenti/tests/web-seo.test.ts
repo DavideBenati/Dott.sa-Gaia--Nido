@@ -44,3 +44,53 @@ test("Google verification uses only the original uploaded HTML file and no meta 
   ).toBe("google-site-verification: googlee8a922f3d8a9d320.html");
   expect(pageHTML(html, "/")).not.toContain('name="google-site-verification"');
 });
+
+test("all indexable HTML pages preserve Gaia-only identities and expose coherent surname-free SEO", () => {
+  for (const [path, entry] of Object.entries(metadata) as [
+    string,
+    { index: boolean; title: string; description: string },
+  ][]) {
+    if (!entry.index) continue;
+    const rendered = pageHTML(html, path);
+    expect(rendered).not.toMatch(/Brunetti/i);
+    expect(rendered.match(/<title>/g)).toHaveLength(1);
+    expect(rendered.match(/name="description"/g)).toHaveLength(1);
+    const graph = JSON.parse(
+      rendered.match(
+        /<script type="application\/ld\+json">([\s\S]*?)<\/script>/,
+      )[1],
+    );
+    expect(
+      graph["@graph"].find(
+        (node: { "@type": string }) => node["@type"] === "Person",
+      ).name,
+    ).toBe("Dott.sa Gaia");
+    for (const key of [
+      "og:title",
+      "og:description",
+      "twitter:title",
+      "twitter:description",
+    ])
+      expect(rendered).toContain(key);
+  }
+  for (const path of ["/", "/gaia", "/help"])
+    expect(pageHTML(html, path)).toContain(metadata[path].title);
+});
+
+test("a legacy surname in SEO input cannot return through public title, description or social metadata", () => {
+  const original = metadata["/gaia"];
+  try {
+    metadata["/gaia"] = {
+      ...original,
+      title: "Gaia Brunetti | metiMaia",
+      description: "Ostetrica Gaia Brunetti: Contatta Gaia.",
+    };
+    const rendered = pageHTML(html, "/gaia");
+    expect(rendered).not.toMatch(/Brunetti/i);
+    expect(rendered).toContain("Dott.ssa Gaia | metiMaia");
+    expect(rendered).toContain("Ostetrica Gaia: Contatta Gaia.");
+    expect(rendered).toContain('"name":"Dott.sa Gaia"');
+  } finally {
+    metadata["/gaia"] = original;
+  }
+});
