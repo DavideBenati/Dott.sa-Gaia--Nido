@@ -1,0 +1,82 @@
+{
+  "version": "v11",
+  "source_commit": "47fb1c7089b5ce7da0fcd747ce23985adae792b0",
+  "unit_tests": {
+    "tests_passed": 202,
+    "files_passed": 32,
+    "max_workers": 4
+  },
+  "typecheck": "passed",
+  "eslint": "passed",
+  "web_build": "passed",
+  "browser": {
+    "checks_passed": 14,
+    "viewports": [
+      390,
+      1280
+    ],
+    "candidate": "maia-v11-rc1 (same functional code; final copy updates privacy date and SEO descriptions)",
+    "checks": [
+      "390: guest starts with account creation; no pre-authentication profile choice or preference write",
+      "390: signup waits for confirmation, then explicit parent choice and optional medical step precede the project",
+      "1280: direct login resumes explicit partner selection and saves the selected phase without health data",
+      "390: confirmed direct entry maps relative to a general path and skips medical questions",
+      "390: confirmed direct entry maps friend to a general path and skips medical questions",
+      "390: confirmed direct entry maps exploring to a general path and skips medical questions",
+      "390: an interrupted parent checkpoint resumes after reload and can finish without personalization",
+      "1280: an existing complete profile opens the project without resetting its date, consent or journey from URL parameters",
+      "390: confirmation waits for remote preferences before deciding whether onboarding is already complete",
+      "390: password recovery stays on password editing and never redirects into signup or project",
+      "390: failed remote preference loading blocks onboarding saves instead of overwriting an account with defaults",
+      "390: guests earn only a fully checked nonempty checklist badge; unchecking reverses it and writes stay local",
+      "1280: account, completed-profile and saved-reading badges count correctly; shares exclude private data and unsaving reverses its badge",
+      "390: an authenticated Amazon selection records its own milestone without changing preferences; denied persistence leaves the badge locked and no purchase is claimed"
+    ],
+    "services": "mocked",
+    "errors": [],
+    "unexpected_requests": []
+  },
+  "site_files": 100,
+  "generated_html_pages_verified": 30,
+  "seo_person_name": "Dott.sa Gaia",
+  "private_routes_noindex": [
+    "traguardi"
+  ],
+  "google_verification_html_preserved": true,
+  "signup_profile_types": [
+    "Genitore",
+    "Partner",
+    "Parente",
+    "Amico/a",
+    "Mi informo"
+  ],
+  "badges": [
+    "Benvenuto in MetiMaia",
+    "Il mio spazio è pronto",
+    "Una lettura da ritrovare",
+    "Prima selezione",
+    "Nonempty completed checklists"
+  ],
+  "milestone_records_product_details": false,
+  "milestone_verifies_purchases": false,
+  "live_supabase_migration_applied": false,
+  "live_cloudflare_deployed": false,
+  "rollout": [
+    "Supabase 015",
+    "Cloudflare complete site ZIP"
+  ],
+  "artifacts": {
+    "MAIA-Sito-v11-Completo.zip": {
+      "bytes": 2965482,
+      "sha256": "32362f6ea074d1767b02ff567940670d08a23bb90eb5ada16e1c25c8c3acbde0"
+    },
+    "MAIA-Configurazione-v11.zip": {
+      "bytes": 3932,
+      "sha256": "c85f41d77a252016cd1fb194b96ba89cfac44220c9d96fabedb51725fb49cb42"
+    },
+    "GUIDA-MAIA-v11.md": {
+      "bytes": 6824,
+      "sha256": "5b19884ce593e6d4f2ad04bfd5c754037091db0a6985bae2560e70a56c884823"
+    }
+  }
+}
