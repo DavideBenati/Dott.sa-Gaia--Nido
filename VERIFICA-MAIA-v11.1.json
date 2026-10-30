@@ -1,0 +1,54 @@
+{
+  "release": "v11.1",
+  "date": "2026-10-30",
+  "changes": [
+    "Shared spacing",
+    "Project heading and card alignment",
+    "Responsive compact welcome card",
+    "Advertising setup guide only"
+  ],
+  "checks": {
+    "production_build": "passed",
+    "workspace_typescript": "passed",
+    "changed_files_eslint": "passed",
+    "browser_cases": 6,
+    "browser_errors": [],
+    "unexpected_external_requests": [],
+    "browser_widths": [
+      320,
+      390,
+      1280,
+      1577
+    ],
+    "project_metrics": {
+      "320": {
+        "first_card_moved_up_px": 36,
+        "first_paragraph_moved_up_px": 72
+      },
+      "390": {
+        "first_card_moved_up_px": 36,
+        "first_paragraph_moved_up_px": 72
+      },
+      "1280": {
+        "first_card_moved_up_px": 38,
+        "first_paragraph_moved_up_px": 120
+      },
+      "1577": {
+        "first_card_moved_up_px": 38,
+        "first_paragraph_moved_up_px": 120
+      }
+    },
+    "package": {
+      "html_metadata_unchanged": 31,
+      "files": 100,
+      "zip_bytes": 2965457,
+      "sha256": "7837d4f9c3f90a36987dc9f8397e26e81ace9399838fbd0df24d07e7b03853d3"
+    }
+  },
+  "limitations": [
+    "Browser checks use simulated external services.",
+    "Manual Cloudflare deployment still required.",
+    "No banners, ad scripts, ad management UI or new database changes introduced.",
+    "v11 migration 015 is still required for persistent first-selection badges if not applied previously."
+  ]
+}
