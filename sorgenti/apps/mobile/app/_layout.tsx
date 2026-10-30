@@ -4,34 +4,58 @@ import NidoSans from "../assets/fonts/DMSans_400Regular.ttf";
 import NidoSansMedium from "../assets/fonts/DMSans_500Medium.ttf";
 import NidoSansSemibold from "../assets/fonts/DMSans_600SemiBold.ttf";
 import NidoSansBold from "../assets/fonts/DMSans_700Bold.ttf";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useFonts } from "expo-font";
-import { Stack, router } from "expo-router";
+import { Stack, router, usePathname } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { AppProvider, useApp } from "../src/state";
-import { consumeAccountEntry } from "../src/entry-navigation";
+import { AppProvider, initialAuthLinkError, useApp } from "../src/state";
+import {
+  accountEntryDestination,
+  cancelAccountEntry,
+  consumeAccountEntry,
+} from "../src/entry-navigation";
 import { UnsavedNavigationGuard } from "../src/unsaved-changes";
 function Navigation() {
-  const { ready, email, passwordRecovery, state, updatePreferences } = useApp();
+  const { ready, email, userId, preferencesLoaded, passwordRecovery, state } =
+    useApp();
+  const pathname = usePathname();
+  const handledUser = useRef<string | null>(null);
   useEffect(() => {
-    if (!ready || !email || passwordRecovery) return;
-    const entry = consumeAccountEntry(email);
-    if (!entry) return;
-    const open = () => router.replace("/gaia?start=1");
-    if (!entry.journey) {
-      open();
+    if (!ready) return;
+    if (!email || !userId) {
+      handledUser.current = null;
       return;
     }
-    void updatePreferences({
-      ...state.preferences,
-      journey: entry.journey === "exploring" ? "pregnancy" : entry.journey,
-      exploreOnly: entry.journey === "exploring",
-      personalized: false,
-      sensitiveConsent: false,
-      date: null,
-    }).then(open, open);
-  }, [ready, email, passwordRecovery, state.preferences, updatePreferences]);
+    if (handledUser.current === userId) return;
+    if (passwordRecovery) {
+      cancelAccountEntry();
+      handledUser.current = userId;
+      return;
+    }
+    if (!preferencesLoaded) return;
+    const entry = consumeAccountEntry(email);
+    if (initialAuthLinkError && !entry) {
+      handledUser.current = userId;
+      return;
+    }
+    const destination = accountEntryDestination({
+      preferences: state.preferences,
+      pathname,
+      passwordRecovery,
+      hasEntry: Boolean(entry),
+    });
+    handledUser.current = userId;
+    if (destination) router.replace(destination);
+  }, [
+    ready,
+    email,
+    userId,
+    preferencesLoaded,
+    passwordRecovery,
+    pathname,
+    state.preferences,
+  ]);
   return ready ? (
     <>
       <UnsavedNavigationGuard />

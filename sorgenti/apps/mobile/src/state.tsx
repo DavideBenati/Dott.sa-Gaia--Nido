@@ -42,6 +42,8 @@ import {
   loadMemberProfile,
   saveNickname,
   saveSharedJourney,
+  loadMemberMilestones,
+  recordFirstRecommendationSelection,
 } from "@nido/data";
 
 import { loadMyPregnancyProfile } from "./pregnancy-profile";
@@ -65,7 +67,9 @@ let configurationError: string | null = null;
 let pendingRecovery =
   Platform.OS === "web" &&
   typeof window !== "undefined" &&
-  new URLSearchParams(window.location.hash.slice(1)).get("type") === "recovery";
+  (new URLSearchParams(window.location.hash.slice(1)).get("type") ===
+    "recovery" ||
+    new URLSearchParams(window.location.search).get("mode") === "recovery");
 // Only retain a public error code, never the full callback URL or its tokens.
 export const initialAuthLinkError =
   Platform.OS === "web" && typeof window !== "undefined"
@@ -91,6 +95,13 @@ interface AppContextValue {
   ready: boolean;
   demo: boolean;
   email: string | null;
+  userId: string | null;
+  preferencesLoaded: boolean;
+  firstRecommendationSelected: boolean;
+  milestoneLoading: boolean;
+  milestoneError: string | null;
+  refreshMilestones: () => Promise<void>;
+  recordRecommendationSelection: () => Promise<boolean>;
   pregnancyProfile: PregnancyProfile | null;
   personalizedPreferences: Preferences;
   updatePregnancyProfile: (profile: PregnancyProfile | null) => void;
@@ -161,6 +172,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [memberProfileError, setMemberProfileError] = useState<string | null>(
     null,
   );
+  const [milestone, setMilestone] = useState({
+    earned: false,
+    loading: false,
+    error: null as string | null,
+  });
   const memberProfileReadyRef = useRef(false);
   const memberRevisionRef = useRef(0);
   const [pregnancyProfile, setPregnancyProfile] =
@@ -240,6 +256,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         memberProfileReadyRef.current = false;
         setMemberProfile(null);
         setPregnancyProfile(null);
+        setMilestone({ earned: false, loading: Boolean(user), error: null });
         setMemberProfileError(null);
         setMemberProfileLoading(Boolean(user));
         setEmail(user?.email ?? null);
@@ -259,6 +276,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           epoch === sessionEpoch.current &&
           memberRevision === memberRevisionRef.current
         ) {
+          void loadMemberMilestones(client, user.id)
+            .then((data) => {
+              if (alive && epoch === sessionEpoch.current)
+                setMilestone((previous) => ({
+                  earned: previous.earned || data.first_recommendation_selected,
+                  loading: false,
+                  error: null,
+                }));
+            })
+            .catch(() => {
+              if (alive && epoch === sessionEpoch.current)
+                setMilestone((previous) => ({
+                  ...previous,
+                  loading: false,
+                  error: previous.earned
+                    ? null
+                    : "Non riusciamo a verificare il traguardo Prima selezione. Riprova.",
+                }));
+            });
           void loadMyPregnancyProfile(client)
             .then((profile) => {
               if (alive && epoch === sessionEpoch.current)
@@ -618,6 +654,69 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       authTransitionRef.current = false;
     }
   };
+  const milestonesOwnerId = userIdRef.current;
+  const milestonesEpoch = sessionEpoch.current;
+  const recordRecommendationSelection = useCallback(() => {
+    const owner = milestonesOwnerId;
+    const epoch = milestonesEpoch;
+    const job = queue.current.then(async () => {
+      if (
+        !owner ||
+        owner !== userIdRef.current ||
+        epoch !== sessionEpoch.current ||
+        !client ||
+        !hydratedRef.current ||
+        authTransitionRef.current
+      )
+        throw new Error("Accedi nuovamente prima di salvare il traguardo.");
+      const data = await recordFirstRecommendationSelection(client, owner);
+      if (owner !== userIdRef.current || epoch !== sessionEpoch.current)
+        throw new Error(
+          "L’account è cambiato: riapri il tuo spazio personale.",
+        );
+      setMilestone({
+        earned: data.first_recommendation_selected,
+        loading: false,
+        error: null,
+      });
+      return data.first_recommendation_selected;
+    });
+    queue.current = job.then(
+      () => {},
+      () => {},
+    );
+    return job;
+  }, [milestonesOwnerId, milestonesEpoch]);
+  const refreshMilestones = useCallback(async () => {
+    const owner = milestonesOwnerId;
+    const epoch = milestonesEpoch;
+    if (
+      !owner ||
+      !client ||
+      owner !== userIdRef.current ||
+      epoch !== sessionEpoch.current
+    )
+      return;
+    setMilestone((previous) => ({ ...previous, loading: true, error: null }));
+    try {
+      const data = await loadMemberMilestones(client, owner);
+      if (epoch === sessionEpoch.current && owner === userIdRef.current)
+        setMilestone((previous) => ({
+          earned: previous.earned || data.first_recommendation_selected,
+          loading: false,
+          error: null,
+        }));
+    } catch {
+      if (epoch === sessionEpoch.current && owner === userIdRef.current)
+        setMilestone((previous) => ({
+          ...previous,
+          loading: false,
+          error: previous.earned
+            ? null
+            : "Non riusciamo a verificare il traguardo Prima selezione. Riprova.",
+        }));
+    }
+  }, [milestonesOwnerId, milestonesEpoch]);
   const pregnancyOwnerId = userIdRef.current;
   const updatePregnancyProfile = useCallback(
     (profile: PregnancyProfile | null) => {
@@ -643,13 +742,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const exportData = async () => {
     if (signedInRef.current && client) {
       const epoch = sessionEpoch.current;
-      const [account, pregnancy] = await Promise.all([
+      const [account, pregnancy, milestones] = await Promise.all([
         exportUserData(client),
         loadMyPregnancyProfile(client),
+        loadMemberMilestones(client),
       ]);
       if (epoch !== sessionEpoch.current)
         throw new Error("L’account è cambiato. Riprova l’esportazione.");
-      return { ...account, pregnancyProfile: pregnancy };
+      return {
+        ...account,
+        pregnancyProfile: pregnancy,
+        memberMilestones: milestones,
+      };
     }
     return {
       exportedAt: new Date().toISOString(),
@@ -694,6 +798,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ready,
         demo: !configured,
         email,
+        userId: userIdRef.current ?? null,
+        preferencesLoaded: ready && hydratedRef.current,
+        firstRecommendationSelected: milestone.earned,
+        milestoneLoading: milestone.loading,
+        milestoneError: milestone.error,
+        refreshMilestones,
+        recordRecommendationSelection,
         memberProfile,
         pregnancyProfile,
         personalizedPreferences,

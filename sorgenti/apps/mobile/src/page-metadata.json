@@ -1,13 +1,13 @@
 {
   "/": {
     "title": "Da dove iniziamo? | MetiMaia",
-    "description": "Scegli il tuo percorso e crea un account MetiMaia. Checklist, argomenti e strumenti per accompagnare ogni famiglia.",
+    "description": "Crea il tuo account MetiMaia e scegli il tipo di profilo dopo l’accesso. Checklist, argomenti e strumenti per accompagnare ogni famiglia.",
     "canonical": "/welcome",
     "index": true
   },
   "/welcome": {
     "title": "Da dove iniziamo? | MetiMaia",
-    "description": "Scegli il tuo percorso e crea un account MetiMaia. Checklist, argomenti e strumenti per accompagnare ogni famiglia.",
+    "description": "Crea il tuo account MetiMaia e scegli il tipo di profilo dopo l’accesso. Checklist, argomenti e strumenti per accompagnare ogni famiglia.",
     "index": true
   },
   "/discover": {
@@ -52,7 +52,7 @@
   },
   "/account": {
     "title": "Il tuo account | metiMaia",
-    "description": "Accesso, registrazione e conferma email per il tuo spazio personale.",
+    "description": "Creazione account, conferma email e accesso al percorso per scegliere il tuo tipo di profilo MetiMaia.",
     "index": false
   },
   "/chat": {
@@ -143,6 +143,11 @@
   "/condivisioni": {
     "title": "Condivisioni con familiari e amici | MetiMaia",
     "description": "Autorizzazioni riservate a checklist e letture preferite.",
+    "index": false
+  },
+  "/traguardi": {
+    "title": "I miei traguardi | MetiMaia",
+    "description": "Badge personali per iscrizione, profilo, letture, prima selezione e checklist.",
     "index": false
   }
 }

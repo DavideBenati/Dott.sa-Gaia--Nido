@@ -1,5 +1,6 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 export * from "./member-profiles";
+export * from "./member-milestones";
 import {
   defaultUserState,
   type Article,

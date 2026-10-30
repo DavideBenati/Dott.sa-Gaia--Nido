@@ -1,8 +1,13 @@
 import { Text, TextInput } from "../src/typography";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Pressable, View, Switch } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import { type JourneyType } from "@nido/core";
+import {
+  PROFILE_TYPE_CHOICES,
+  isProfileType,
+  preferencesForProfileType,
+  type Preferences,
+} from "@nido/core";
 import { PregnancyProfileEditor } from "../src/pregnancy-profile-editor";
 import { useApp } from "../src/state";
 import {
@@ -15,70 +20,114 @@ import {
   ui,
 } from "../src/ui";
 import { colors, serif } from "../src/theme";
-const choices: {
-  id: JourneyType | "exploring";
-  title: string;
-  subtitle: string;
-}[] = [
-  {
-    id: "pregnancy",
-    title: "Aspetto un bambino",
-    subtitle: "Informazioni e piccoli passi per la gravidanza.",
-  },
-  {
-    id: "partner",
-    title: "Sono un familiare o amico",
-    subtitle: "Per accompagnare la famiglia, nell’attesa o dopo la nascita.",
-  },
-  {
-    id: "postpartum",
-    title: "Dopo la nascita",
-    subtitle: "I primi incontri, il recupero e i nuovi ritmi.",
-  },
-  {
-    id: "exploring",
-    title: "Mi informo",
-    subtitle: "Esploro i contenuti senza indicare una fase personale.",
-  },
-];
+import { cancelAccountEntry } from "../src/entry-navigation";
+import { confirmPendingNavigation } from "../src/unsaved-changes";
+
 export default function Welcome() {
-  const { edit } = useLocalSearchParams<{ edit?: string }>();
-  const { state, updatePreferences, demo, email, updatePregnancyProfile } =
-    useApp();
-  const [step, setStep] = useState(edit ? 1 : 0);
+  const { userId, email, preferencesLoaded } = useApp();
+  if (email && !preferencesLoaded)
+    return (
+      <Screen>
+        <Notice>
+          Non riusciamo a caricare le preferenze. Accedi nuovamente prima di
+          completare il profilo.
+        </Notice>
+        <Button onPress={() => router.replace("/account")}>
+          Vai all’account
+        </Button>
+      </Screen>
+    );
+  return <WelcomeFlow key={userId ?? "guest"} />;
+}
+
+function WelcomeFlow() {
+  const { edit, returnTo, stage } = useLocalSearchParams<{
+    edit?: string;
+    returnTo?: string;
+    stage?: string;
+  }>();
+  const {
+    state,
+    updatePreferences,
+    demo,
+    email,
+    userId,
+    updatePregnancyProfile,
+  } = useApp();
+  const [step, setStep] = useState(() => {
+    if (!email) return 0;
+    if (
+      !isProfileType(state.preferences.profileType) ||
+      stage === "profile" ||
+      (edit && !stage)
+    )
+      return 1;
+    if (stage === "topics") return 3;
+    return ["parent", "partner"].includes(state.preferences.profileType)
+      ? 2
+      : 3;
+  });
   const [draft, setDraft] = useState({ ...state.preferences });
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  async function finish(guest = false) {
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+  function moveTo(nextStep: number) {
+    router.setParams({
+      stage: nextStep === 1 ? "profile" : nextStep === 2 ? "journey" : "topics",
+    });
+    setStep(nextStep);
+  }
+  function browse() {
+    if (!confirmPendingNavigation()) return;
+    cancelAccountEntry();
+    router.replace("/(tabs)");
+  }
+  async function finish(skipPersonalization = false) {
+    if (busy || !confirmPendingNavigation()) return;
+    if (!email) {
+      browse();
+      return;
+    }
+    if (!isProfileType(draft.profileType)) {
+      setError("Scegli il tipo di profilo per completare l’iscrizione.");
+      moveTo(1);
+      return;
+    }
     setBusy(true);
     setError("");
     try {
+      const general = draft.profileType !== "parent";
       await updatePreferences({
         ...draft,
         onboarded: true,
-        marketing: false,
         personalized:
-          guest || draft.exploreOnly || draft.journey === "partner"
-            ? false
-            : draft.personalized,
+          skipPersonalization || general ? false : draft.personalized,
         sensitiveConsent:
-          guest || draft.exploreOnly || draft.journey === "partner"
-            ? false
-            : draft.sensitiveConsent,
-        date:
-          guest || draft.exploreOnly || draft.journey === "partner"
-            ? null
-            : draft.date,
+          skipPersonalization || general ? false : draft.sensitiveConsent,
+        date: skipPersonalization || general ? null : draft.date,
       });
-      router.replace("/(tabs)");
+      if (mounted.current)
+        router.replace(returnTo === "project" ? "/gaia?start=1" : "/(tabs)");
     } catch {
-      setError("Non abbiamo salvato le preferenze. Riprova.");
+      if (mounted.current)
+        setError("Non abbiamo salvato le preferenze. Riprova.");
     } finally {
-      setBusy(false);
+      if (mounted.current) setBusy(false);
     }
   }
-  function next() {
+  async function next() {
+    if (busy || !confirmPendingNavigation()) return;
     setError("");
+    if (step === 1 && !isProfileType(draft.profileType)) {
+      setError("Scegli il tipo di profilo per continuare.");
+      return;
+    }
     if (
       step === 2 &&
       draft.date &&
@@ -101,7 +150,29 @@ export default function Welcome() {
         return;
       }
     }
-    setStep(step + 1);
+    setBusy(true);
+    try {
+      const nextDraft: Preferences =
+        step === 1
+          ? {
+              ...preferencesForProfileType(draft, draft.profileType!),
+              onboarded: false,
+            }
+          : draft;
+      await updatePreferences(nextDraft);
+      if (!mounted.current) return;
+      setDraft(nextDraft);
+      moveTo(
+        step === 1 && !["parent", "partner"].includes(nextDraft.profileType!)
+          ? 3
+          : step + 1,
+      );
+    } catch {
+      if (mounted.current)
+        setError("Non abbiamo salvato le preferenze. Riprova.");
+    } finally {
+      if (mounted.current) setBusy(false);
+    }
   }
   return (
     <Screen stageKey={step} focusTargetId={`welcome-step-${step}`}>
@@ -123,61 +194,12 @@ export default function Welcome() {
             Da dove iniziamo?
           </StageHeading>
           <Text style={ui.body}>
-            Scegli il punto da cui partire e crea il tuo account: ritroverai
-            checklist, articoli preferiti e le persone con cui vuoi condividere
-            il percorso.
+            Crea il tuo account per ritrovare checklist, articoli preferiti e le
+            persone con cui vuoi condividere il percorso. Dopo l’accesso
+            sceglierai il tipo di profilo e ciò che desideri approfondire.
           </Text>
-          {choices.map((choice) => {
-            const selected =
-              choice.id === "exploring"
-                ? Boolean(draft.exploreOnly)
-                : !draft.exploreOnly && draft.journey === choice.id;
-            return (
-              <Pressable
-                key={choice.id}
-                accessibilityRole="radio"
-                accessibilityLabel={choice.title}
-                accessibilityState={{ checked: selected }}
-                aria-checked={selected}
-                onPress={() =>
-                  setDraft({
-                    ...draft,
-                    journey:
-                      choice.id === "exploring" ? "pregnancy" : choice.id,
-                    exploreOnly: choice.id === "exploring",
-                    date: null,
-                  })
-                }
-                style={[
-                  ui.card,
-                  {
-                    gap: 6,
-                    padding: 18,
-                    borderColor: selected ? colors.sageDark : colors.border,
-                    backgroundColor: selected ? colors.sagePale : colors.paper,
-                  },
-                ]}
-              >
-                <Text style={[ui.label, selected && { fontWeight: "700" }]}>
-                  {choice.title}
-                </Text>
-                <Text style={ui.body}>{choice.subtitle}</Text>
-              </Pressable>
-            );
-          })}
-          <Button
-            onPress={() =>
-              email
-                ? setStep(1)
-                : router.push({
-                    pathname: "/account",
-                    params: {
-                      journey: draft.exploreOnly ? "exploring" : draft.journey,
-                    },
-                  })
-            }
-          >
-            {email ? "Personalizza il mio percorso" : "Iscriviti e iniziamo"}
+          <Button onPress={() => router.push("/account")}>
+            Iscriviti e iniziamo
           </Button>
           {!email && (
             <Button
@@ -187,13 +209,7 @@ export default function Welcome() {
               Hai già un account? Accedi
             </Button>
           )}
-          <Button
-            variant="quiet"
-            disabled={busy}
-            onPress={() => {
-              void finish(true);
-            }}
-          >
+          <Button variant="quiet" disabled={busy} onPress={browse}>
             Esplora come ospite
           </Button>
           <Text style={ui.body}>
@@ -211,71 +227,63 @@ export default function Welcome() {
         <View
           style={{ width: "100%", maxWidth: 620, alignSelf: "center", gap: 20 }}
         >
-          <Button variant="quiet" onPress={() => setStep(step - 1)}>
-            Passo precedente
-          </Button>
-          <Tag>{`IL TUO PERCORSO · ${step} DI 3`}</Tag>
+          {step > 1 && (
+            <Button
+              variant="quiet"
+              disabled={busy}
+              onPress={() => {
+                if (confirmPendingNavigation())
+                  moveTo(
+                    step === 3 &&
+                      !["parent", "partner"].includes(draft.profileType ?? "")
+                      ? 1
+                      : step - 1,
+                  );
+              }}
+            >
+              Passo precedente
+            </Button>
+          )}
+          <Tag>{`IL TUO PROFILO · ${step} DI 3`}</Tag>
           {step === 1 && (
             <>
-              <StageHeading id="welcome-step-1">Da dove iniziamo?</StageHeading>
+              <StageHeading id="welcome-step-1">
+                Come vuoi vivere MAIA?
+              </StageHeading>
               <Text style={ui.body}>
-                Ogni storia è diversa. Potrai cambiare percorso quando vuoi.
+                Scegli il tipo di profilo per completare l’iscrizione. Potrai
+                cambiarlo dal profilo; date e informazioni personali restano
+                facoltative.
               </Text>
-              {choices.map((choice) => (
-                <Pressable
-                  key={choice.id}
-                  accessibilityRole="radio"
-                  accessibilityLabel={choice.title}
-                  accessibilityState={{
-                    checked:
-                      choice.id === "exploring"
-                        ? Boolean(draft.exploreOnly)
-                        : !draft.exploreOnly && draft.journey === choice.id,
-                  }}
-                  aria-checked={
-                    choice.id === "exploring"
-                      ? Boolean(draft.exploreOnly)
-                      : !draft.exploreOnly && draft.journey === choice.id
-                  }
-                  onPress={() =>
-                    setDraft({
-                      ...draft,
-                      journey:
-                        choice.id === "exploring" ? "pregnancy" : choice.id,
-                      exploreOnly: choice.id === "exploring",
-                      date: null,
-                    })
-                  }
-                  style={[
-                    ui.card,
-                    {
-                      gap: 8,
-                      borderColor: (
-                        choice.id === "exploring"
-                          ? draft.exploreOnly
-                          : !draft.exploreOnly && draft.journey === choice.id
-                      )
-                        ? colors.sageDark
-                        : colors.border,
-                      backgroundColor: (
-                        choice.id === "exploring"
-                          ? draft.exploreOnly
-                          : !draft.exploreOnly && draft.journey === choice.id
-                      )
-                        ? colors.sagePale
-                        : colors.paper,
-                    },
-                  ]}
-                >
-                  <Text style={ui.label}>{choice.title}</Text>
-                  <Text style={ui.body}>{choice.subtitle}</Text>
-                </Pressable>
-              ))}
-              <Notice>
-                Un familiare o un amico può utilizzare MetiMaia senza
-                condividere date o informazioni sulla salute di un’altra
-                persona.
-              </Notice>
+              {PROFILE_TYPE_CHOICES.map((choice) => {
+                const selected = draft.profileType === choice.id;
+                return (
+                  <Pressable
+                    key={choice.id}
+                    accessibilityRole="radio"
+                    accessibilityLabel={choice.title}
+                    accessibilityState={{ checked: selected, disabled: busy }}
+                    aria-checked={selected}
+                    disabled={busy}
+                    onPress={() =>
+                      setDraft({ ...draft, profileType: choice.id })
+                    }
+                    style={[
+                      ui.card,
+                      {
+                        gap: 8,
+                        borderColor: selected ? colors.sageDark : colors.border,
+                        backgroundColor: selected
+                          ? colors.sagePale
+                          : colors.paper,
+                      },
+                    ]}
+                  >
+                    <Text style={ui.label}>{choice.title}</Text>
+                    <Text style={ui.body}>{choice.subtitle}</Text>
+                  </Pressable>
+                );
+              })}
             </>
           )}
           {step === 2 && (
@@ -283,6 +291,56 @@ export default function Welcome() {
               <StageHeading id="welcome-step-2">
                 Un percorso che ti somiglia.
               </StageHeading>
+              {draft.profileType === "parent" && (
+                <>
+                  <Text style={ui.body}>Quale fase desideri approfondire?</Text>
+                  {(
+                    [
+                      ["pregnancy", "Durante l’attesa"],
+                      ["postpartum", "Dopo la nascita"],
+                    ] as const
+                  ).map(([stage, label]) => (
+                    <Pressable
+                      key={stage}
+                      accessibilityRole="radio"
+                      accessibilityLabel={label}
+                      accessibilityState={{
+                        checked: draft.journey === stage,
+                        disabled: busy,
+                      }}
+                      aria-checked={draft.journey === stage}
+                      disabled={busy}
+                      onPress={() => {
+                        if (
+                          draft.journey === stage ||
+                          !confirmPendingNavigation()
+                        )
+                          return;
+                        setDraft({
+                          ...draft,
+                          journey: stage,
+                          date: null,
+                          personalized: false,
+                          sensitiveConsent: false,
+                        });
+                      }}
+                      style={[
+                        ui.card,
+                        {
+                          backgroundColor:
+                            draft.journey === stage
+                              ? colors.sagePale
+                              : colors.paper,
+                        },
+                      ]}
+                    >
+                      <Text
+                        style={ui.label}
+                      >{`${draft.journey === stage ? "● " : "○ "}${label}`}</Text>
+                    </Pressable>
+                  ))}
+                </>
+              )}
               {draft.exploreOnly ? (
                 <Notice>
                   Il percorso generale non usa date o stime di settimane. Nel
@@ -299,6 +357,7 @@ export default function Welcome() {
                   ).map(([stage, label]) => (
                     <Button
                       key={stage}
+                      disabled={busy}
                       variant={
                         (draft.partnerStage ?? "pregnancy") === stage
                           ? "secondary"
@@ -333,7 +392,7 @@ export default function Welcome() {
               ) : draft.journey === "pregnancy" ? (
                 email ? (
                   <PregnancyProfileEditor
-                    key={email}
+                    key={userId ?? email}
                     onProfileChange={updatePregnancyProfile}
                   />
                 ) : (
@@ -343,9 +402,7 @@ export default function Welcome() {
                       gravidanza. I dati non saranno condivisi con familiari e
                       amici.
                     </Notice>
-                    <Button
-                      onPress={() => router.push("/account?journey=pregnancy")}
-                    >
+                    <Button onPress={() => router.push("/account")}>
                       Crea account o accedi
                     </Button>
                   </>
@@ -461,6 +518,20 @@ export default function Welcome() {
                 Scegli i temi che desideri esplorare. Ogni famiglia può seguire
                 un percorso diverso.
               </Text>
+              {["relative", "friend"].includes(draft.profileType ?? "") && (
+                <>
+                  <Notice>
+                    Puoi sostenere la famiglia senza indicare date o
+                    informazioni sulla salute di un’altra persona.
+                  </Notice>
+                  <Button
+                    variant="secondary"
+                    onPress={() => router.push("/condivisioni")}
+                  >
+                    Collega il nickname della persona che accompagni
+                  </Button>
+                </>
+              )}
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
                 {[
                   "Gravidanza",
@@ -528,22 +599,27 @@ export default function Welcome() {
             </Text>
           )}
           <Button
-            disabled={busy}
+            disabled={busy || (step === 1 && !isProfileType(draft.profileType))}
             onPress={() => {
               if (step === 3) void finish();
-              else next();
+              else void next();
             }}
           >
             {busy ? "Salvataggio…" : step === 3 ? "Entra in MAIA" : "Continua"}
           </Button>
-          <Button
-            variant="quiet"
-            disabled={busy}
-            onPress={() => {
-              void finish(true);
-            }}
-          >
-            Continua senza personalizzazione
+          {step > 1 && (
+            <Button
+              variant="quiet"
+              disabled={busy}
+              onPress={() => {
+                void finish(true);
+              }}
+            >
+              Continua senza personalizzazione
+            </Button>
+          )}
+          <Button variant="quiet" disabled={busy} onPress={browse}>
+            Continua a leggere, completo il profilo più tardi
           </Button>
         </View>
       )}

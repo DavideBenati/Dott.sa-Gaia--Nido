@@ -1,4 +1,5 @@
 export * from "./types";
+export * from "./profile-types";
 export * from "./domain";
 export * from "./fixtures";
 export * from "./shop";
@@ -7,3 +8,4 @@ export * from "./public-name";
 export * from "./member-profiles";
 export * from "./pregnancy";
 export * from "./supplied-checklists";
+export * from "./achievements";

@@ -101,6 +101,15 @@ function ShopContent({
   onPhase: (value: string) => void;
 }) {
   const { width } = useWindowDimensions();
+  const { email, recordRecommendationSelection } = useApp();
+  const [selectionMessage, setSelectionMessage] = useState("");
+  const selectionMounted = useRef(true);
+  useEffect(() => {
+    selectionMounted.current = true;
+    return () => {
+      selectionMounted.current = false;
+    };
+  }, []);
   const [settings, setSettings] = useState<ShopSettings>(emptyShopSettings);
   const [products, setProducts] = useState<ShopProduct[]>([]);
   const [loading, setLoading] = useState(true);
@@ -301,6 +310,7 @@ function ShopContent({
           <Notice>{message}</Notice>
         </View>
       )}
+      {!!selectionMessage && !manage && <Notice>{selectionMessage}</Notice>}
       {loading ? (
         <Notice>Caricamento dei consigli d’acquisto…</Notice>
       ) : manage && editor ? (
@@ -676,12 +686,30 @@ function ShopContent({
                     </Text>
                     <Button
                       onPress={() => {
-                        if (validAmazonLink(item.checkout_url))
-                          void Linking.openURL(item.checkout_url).catch(() =>
+                        if (!validAmazonLink(item.checkout_url)) return;
+                        setSelectionMessage("");
+                        // The click is the selection. Open immediately in the user
+                        // gesture; saving its badge never asserts an Amazon purchase.
+                        void Linking.openURL(item.checkout_url).catch(() => {
+                          if (selectionMounted.current)
                             setMessage(
                               "Non è stato possibile aprire Amazon. Riprova tra poco.",
-                            ),
-                          );
+                            );
+                        });
+                        if (email)
+                          void recordRecommendationSelection()
+                            .then(() => {
+                              if (selectionMounted.current)
+                                setSelectionMessage(
+                                  "Hai ottenuto il badge Prima selezione. Lo trovi nei tuoi traguardi.",
+                                );
+                            })
+                            .catch(() => {
+                              if (selectionMounted.current)
+                                setSelectionMessage(
+                                  "La selezione è stata effettuata, ma il badge non è stato salvato. Puoi riprovare.",
+                                );
+                            });
                       }}
                     >{`Vedi su Amazon: ${item.title}`}</Button>
                   </View>

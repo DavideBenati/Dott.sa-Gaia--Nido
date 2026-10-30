@@ -11,10 +11,15 @@ import {
   prepareAccountEntry,
   cancelAccountEntry,
 } from "../src/entry-navigation";
-import { nicknameIssue, normalizeNickname } from "@nido/core";
+import {
+  hasCompletedProfileType,
+  nicknameIssue,
+  normalizeNickname,
+} from "@nido/core";
 export default function Account() {
   const {
     demo,
+    state,
     email: accountEmail,
     memberProfile,
     memberProfileLoading,
@@ -26,7 +31,7 @@ export default function Account() {
     requestPasswordReset,
     changePassword,
   } = useApp();
-  const params = useLocalSearchParams<{ mode?: string; journey?: string }>();
+  const params = useLocalSearchParams<{ mode?: string }>();
   const { allowed: editorAllowed } = useEditorAccess();
   const [pendingEmail, setPendingEmail] = useState("");
   const [resendUntil, setResendUntil] = useState(0);
@@ -50,6 +55,7 @@ export default function Account() {
         ? "Il collegamento email non è valido. Accedi o richiedi una nuova conferma."
         : "",
   );
+  useEffect(() => () => cancelAccountEntry(), []);
   useEffect(() => {
     if (!resendUntil) return;
     const update = () =>
@@ -92,10 +98,17 @@ export default function Account() {
     if (
       Platform.OS === "web" &&
       accountEmail &&
-      window.location.hash.includes("access_token=")
-    )
-      router.replace("/account");
-  }, [accountEmail]);
+      (passwordRecovery || window.location.hash.includes("access_token="))
+    ) {
+      const search = new URLSearchParams(window.location.search);
+      if (passwordRecovery) search.set("mode", "recovery");
+      window.history.replaceState(
+        window.history.state,
+        "",
+        window.location.pathname + (search.size ? `?${search.toString()}` : ""),
+      );
+    }
+  }, [accountEmail, passwordRecovery]);
   async function submit() {
     if (busy || demo) return;
     if (create) {
@@ -122,7 +135,7 @@ export default function Account() {
     setBusy(true);
     setMessage("");
     try {
-      prepareAccountEntry(email, params.journey);
+      prepareAccountEntry(email);
       const result = await signIn(
         email.trim(),
         password,
@@ -130,7 +143,6 @@ export default function Account() {
         create ? normalizeNickname(nickname) : undefined,
       );
       setPassword("");
-      if (result.startsWith("Controlla")) cancelAccountEntry();
       if (create && result.startsWith("Controlla"))
         setPendingEmail(email.trim());
       if (create && newsletter) {
@@ -147,7 +159,7 @@ export default function Account() {
           );
         }
       } else setMessage(result);
-      // Navigation opens the project only after this account is hydrated.
+      // Navigation resumes the profile choice after this account is hydrated.
     } catch (error) {
       cancelAccountEntry();
       const detail = error instanceof Error ? error.message.toLowerCase() : "";
@@ -167,6 +179,7 @@ export default function Account() {
   }
   async function resetPassword() {
     if (busy || demo) return;
+    cancelAccountEntry();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       setMessage("Inserisci una email valida.");
       return;
@@ -197,6 +210,7 @@ export default function Account() {
       await changePassword(password);
       setPassword("");
       setChange(false);
+      router.setParams({ mode: "login" });
       setMessage("Password aggiornata. Usa la nuova password anche nell’app.");
     } catch {
       setMessage(
@@ -289,6 +303,7 @@ export default function Account() {
               variant="secondary"
               disabled={busy}
               onPress={() => {
+                cancelAccountEntry();
                 setPendingEmail("");
                 setCreate(false);
                 setMessage("");
@@ -300,6 +315,7 @@ export default function Account() {
               variant="quiet"
               disabled={busy}
               onPress={() => {
+                cancelAccountEntry();
                 setPendingEmail("");
                 setCreate(true);
                 setMessage("");
@@ -311,6 +327,7 @@ export default function Account() {
               variant="quiet"
               disabled={busy}
               onPress={() => {
+                cancelAccountEntry();
                 setPendingEmail("");
                 setReset(true);
                 setMessage("");
@@ -359,7 +376,9 @@ export default function Account() {
               </Button>
             ) : null}
             <Button onPress={() => router.push("/welcome?edit=1")}>
-              Personalizza il tuo percorso
+              {hasCompletedProfileType(state.preferences)
+                ? "Personalizza il tuo percorso"
+                : "Completa il tuo profilo"}
             </Button>
             <Button variant="secondary" onPress={() => router.push("/chat")}>
               Scrivi alla Dott.sa Gaia
@@ -399,6 +418,7 @@ export default function Account() {
               disabled={busy}
               variant="quiet"
               onPress={() => {
+                cancelAccountEntry();
                 setBusy(true);
                 void signOut()
                   .catch(() => setMessage("Uscita non riuscita."))
@@ -588,6 +608,7 @@ export default function Account() {
                   disabled={busy}
                   variant="quiet"
                   onPress={() => {
+                    cancelAccountEntry();
                     setCreate(!create);
                     setNicknameError("");
                     setMessage("");
@@ -622,6 +643,7 @@ export default function Account() {
                   variant="quiet"
                   disabled={busy}
                   onPress={() => {
+                    cancelAccountEntry();
                     setReset(true);
                     setNicknameError("");
                     setPassword("");
@@ -635,7 +657,10 @@ export default function Account() {
             <Button
               disabled={busy}
               variant="secondary"
-              onPress={() => router.replace("/welcome")}
+              onPress={() => {
+                cancelAccountEntry();
+                router.replace("/welcome");
+              }}
             >
               Continua come ospite
             </Button>

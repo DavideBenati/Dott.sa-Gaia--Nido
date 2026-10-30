@@ -104,7 +104,7 @@ export default function Privacy() {
     ],
     [
       "Condivisione di contenuti e badge",
-      "Il pulsante Condividi apre gli strumenti del dispositivo o propone di copiare il testo. Per una checklist, il messaggio può includere attività completate e mancanti: controlla il destinatario prima di inviarlo. Il badge viene mostrato quando tutte le attività sono spuntate e scompare se ne riapri una. Il sito non invia messaggi automaticamente e non aggiunge email, nickname o dati della scheda gravidanza al testo. Il riepilogo condiviso è una fotografia e non si aggiorna da solo; per una consultazione aggiornata serve il collegamento autorizzato tra gli account.",
+      "Il pulsante Condividi apre gli strumenti del dispositivo o propone di copiare il testo. Per una checklist, il messaggio può includere attività completate e mancanti: controlla il destinatario prima di inviarlo. I badge sono ricavati dal tuo accesso, dal completamento delle preferenze iniziali, dalle letture salvate e dalle attività delle checklist. Un badge di checklist compare quando tutte le attività sono spuntate e torna da completare se ne riapri una; il badge delle letture segue la presenza di preferiti. Il traguardo Prima selezione registra nell’account soltanto se hai scelto almeno un collegamento nei Consigli d’acquisto. Non memorizza quali prodotti hai scelto e non verifica né registra acquisti Amazon. Questo traguardo è conservato separatamente dalle preferenze, fino alla cancellazione dell’account. Il sito non invia messaggi automaticamente e non aggiunge email, nickname o dati della scheda gravidanza al testo. Il riepilogo condiviso è una fotografia e non si aggiorna da solo; per una consultazione aggiornata serve il collegamento autorizzato tra gli account.",
     ],
     [
       "Videochiamate concordate",
@@ -116,7 +116,7 @@ export default function Privacy() {
     ],
     [
       "12. Personalizzazione, minori e aggiornamenti",
-      "I suggerimenti sono selezionati in base alle preferenze e non prendono decisioni con effetti giuridici o analogamente significativi ai sensi dell’art. 22 GDPR. MAIA non è progettata per raccogliere account di bambini o dati identificativi del neonato. Per utenti minorenni, eventuali servizi sanitari e relativi consensi occorre verificare le regole applicabili prima dell’attivazione; non si presume una soglia di età unica per tutti i trattamenti. Versione del testo: 25 ottobre 2026. Il testo deve essere aggiornato se cambiano servizi, fornitori o finalità.",
+      "I suggerimenti sono selezionati in base alle preferenze e non prendono decisioni con effetti giuridici o analogamente significativi ai sensi dell’art. 22 GDPR. MAIA non è progettata per raccogliere account di bambini o dati identificativi del neonato. Per utenti minorenni, eventuali servizi sanitari e relativi consensi occorre verificare le regole applicabili prima dell’attivazione; non si presume una soglia di età unica per tutti i trattamenti. Versione del testo: 30 ottobre 2026. Il testo deve essere aggiornato se cambiano servizi, fornitori o finalità.",
     ],
   ];
   return (

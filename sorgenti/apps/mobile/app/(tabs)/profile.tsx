@@ -2,11 +2,15 @@ import { Text } from "../../src/typography";
 import React, { useState } from "react";
 import { View, Switch, Platform, Share } from "react-native";
 import { router } from "expo-router";
-import { calculateJourney, disclaimer } from "@nido/core";
+import {
+  calculateJourney,
+  disclaimer,
+  isProfileType,
+  profileTypeLabel,
+} from "@nido/core";
 import { useApp } from "../../src/state";
 import { Screen, Button, Notice, SectionHeader, ui } from "../../src/ui";
-import { checklistSummary, checklistShare } from "../../src/share-content";
-import { ShareContentButton } from "../../src/share-content-button";
+import { MemberAchievements } from "../../src/member-achievements";
 import { MemberProfileEditor } from "../../src/member-profile-editor";
 import { PregnancyProfileEditor } from "../../src/pregnancy-profile-editor";
 export default function Profile() {
@@ -16,7 +20,6 @@ export default function Profile() {
     email,
     memberProfile,
     pregnancyProfile,
-    checklists,
     updatePregnancyProfile,
     personalizedPreferences,
     updatePreferences,
@@ -80,6 +83,21 @@ export default function Profile() {
             ? "Ospite · DEMO MODE · dati su questo dispositivo"
             : "Ospite · dati su questo dispositivo")}
       </Notice>
+      {email && (
+        <View style={[ui.card, { gap: 10 }]}>
+          <Text style={ui.label}>
+            {isProfileType(state.preferences.profileType)
+              ? `Tipo di profilo: ${profileTypeLabel(state.preferences.profileType)}`
+              : "Tipo di profilo da scegliere"}
+          </Text>
+          <Button
+            variant="quiet"
+            onPress={() => router.push("/welcome?edit=1")}
+          >
+            Modifica tipo di profilo e percorso
+          </Button>
+        </View>
+      )}
       {email && <MemberProfileEditor key={email} />}
       {email &&
         ((!state.preferences.exploreOnly &&
@@ -91,26 +109,7 @@ export default function Profile() {
           />
         )}
       <SectionHeader title="I miei traguardi" />
-      {checklists
-        .filter((list) => checklistSummary(list, state.progress).complete)
-        .map((list) => (
-          <View key={list.id} style={[ui.card, { gap: 10 }]}>
-            <Text style={ui.heading}>{`🌷 ${list.title}`}</Text>
-            <Text style={ui.body}>Checklist completata, con i tuoi tempi.</Text>
-            <ShareContentButton
-              content={checklistShare(list, state.progress)}
-              label={`Condividi il badge: ${list.title}`}
-            />
-          </View>
-        ))}
-      {!checklists.some(
-        (list) => checklistSummary(list, state.progress).complete,
-      ) && (
-        <Text style={ui.body}>
-          Qui ritroverai il badge di ogni checklist completata. Un piccolo
-          traguardo, senza confronti o scadenze.
-        </Text>
-      )}
+      <MemberAchievements compact />
       <SectionHeader title="Il mio percorso" />
       <View style={[ui.card, { gap: 12 }]}>
         <Text style={ui.heading}>{journey.label}</Text>

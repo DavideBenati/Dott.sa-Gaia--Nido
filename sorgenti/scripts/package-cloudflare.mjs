@@ -24,6 +24,7 @@ await rm(resolve(output, ".nojekyll"), { force: true });
 // needs physical HTML entry points for known direct URLs under its default handling.
 for (const route of [
   "iscritti",
+  "traguardi",
   "condivisioni",
   "videochiamate",
   "documenti-studio",

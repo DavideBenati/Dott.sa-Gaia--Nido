@@ -71,6 +71,11 @@ export default function Home() {
             La mia scheda per Gaia
           </Button>
         )}
+        {email && (
+          <Button variant="quiet" onPress={() => router.push("/traguardi")}>
+            I miei traguardi
+          </Button>
+        )}
       </View>
       <View style={[ui.card, { gap: 12, backgroundColor: colors.peach }]}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>

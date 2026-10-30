@@ -1,5 +1,7 @@
 export type Stage = "pregnancy" | "postpartum" | "all";
 export type JourneyType = "pregnancy" | "partner" | "postpartum";
+export type ProfileType =
+  "parent" | "partner" | "relative" | "friend" | "exploring";
 export type PublicationStatus =
   "draft" | "in_review" | "published" | "archived";
 export interface Category {
@@ -54,6 +56,8 @@ export interface Checklist {
   items: ChecklistItem[];
 }
 export interface Preferences {
+  /** Explicit choice made after authentication; absent in legacy accounts. */
+  profileType?: ProfileType;
   journey: JourneyType;
   exploreOnly?: boolean;
   partnerStage?: "pregnancy" | "postpartum";
