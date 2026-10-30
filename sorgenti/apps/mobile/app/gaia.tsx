@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Image, Pressable } from "react-native";
+import { View, Image, Pressable, useWindowDimensions } from "react-native";
 import { router } from "expo-router";
 import { Text } from "../src/typography";
 import { Screen, Notice, Button, ui } from "../src/ui";
@@ -66,6 +66,8 @@ function More({ title, text }: { title: string; text: string }) {
 }
 export default function MetiMaia() {
   const { email } = useApp();
+  const { width } = useWindowDimensions();
+  const wide = width >= 700;
   const [profile, setProfile] = useState(() => publicProfile(defaultProfile));
   useEffect(() => {
     let active = true;
@@ -83,20 +85,30 @@ export default function MetiMaia() {
       eyebrow="IL PROGETTO"
       title="Crescere insieme."
       subtitle="Conoscenza, ascolto e piccoli passi per ogni famiglia."
+      style={{ maxWidth: 868 }}
     >
-      <View
-        style={{ maxWidth: 820, width: "100%", alignSelf: "center", gap: 22 }}
-      >
-        <View style={[ui.card, { backgroundColor: colors.sagePale, gap: 18 }]}>
-          <Image
-            source={logo}
-            accessibilityLabel="Il fiore di loto di MetiMaia"
-            resizeMode="contain"
-            style={{ width: 120, height: 92, alignSelf: "center" }}
-          />
-          <Text accessibilityRole="header" style={ui.heading}>
-            Benvenuti in MetiMaia
-          </Text>
+      <View style={{ width: "100%", gap: 18 }}>
+        <View style={[ui.card, { backgroundColor: colors.sagePale, gap: 16 }]}>
+          <View
+            style={{
+              flexDirection: wide ? "row" : "column",
+              alignItems: wide ? "center" : "flex-start",
+              gap: 12,
+            }}
+          >
+            <Image
+              source={logo}
+              accessibilityLabel="Il fiore di loto di MetiMaia"
+              resizeMode="contain"
+              style={{ width: 84, height: 64 }}
+            />
+            <Text
+              accessibilityRole="header"
+              style={[ui.heading, { flexShrink: 1 }]}
+            >
+              Benvenuti in MetiMaia
+            </Text>
+          </View>
           <Paragraphs text={introduction.slice(0, 3).join("\n\n")} />
           <Button
             onPress={() => router.push(email ? "/welcome?edit=1" : "/account")}

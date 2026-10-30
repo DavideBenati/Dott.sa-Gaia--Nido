@@ -33,8 +33,8 @@ export function Brand({ compact = false }: { compact?: boolean }) {
       accessibilityRole="image"
       resizeMode="contain"
       style={{
-        width: compact ? 102 : 200,
-        height: compact ? 76 : 200,
+        width: compact ? 92 : 200,
+        height: compact ? 68 : 200,
         alignSelf: "flex-start",
       }}
     />
@@ -269,7 +269,7 @@ export function Screen({
         ref={scroll}
         contentContainerStyle={[
           styles.scroll,
-          !desktop && { paddingHorizontal: 20, paddingTop: 24 },
+          !desktop && { paddingHorizontal: 20, paddingTop: 16 },
           style,
         ]}
         keyboardShouldPersistTaps="handled"
@@ -759,7 +759,7 @@ const styles = StyleSheet.create({
     maxWidth: 1176,
     alignSelf: "center",
     paddingHorizontal: 20,
-    height: 76,
+    minHeight: 68,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -773,6 +773,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 10,
     paddingVertical: 12,
+    minHeight: 44,
   },
   modeDot: {
     width: 5,
@@ -798,7 +799,7 @@ const styles = StyleSheet.create({
     maxWidth: 1176,
     alignSelf: "center",
     paddingHorizontal: 24,
-    paddingTop: 30,
+    paddingTop: 20,
     paddingBottom: 28,
   },
   eyebrow: {
@@ -807,7 +808,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 10,
     textTransform: "uppercase",
-    marginBottom: 12,
+    marginBottom: 8,
   },
   title: {
     fontFamily: serif,
@@ -823,7 +824,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 26,
     maxWidth: 680,
-    marginBottom: 26,
+    marginBottom: 18,
   },
   button: {
     minHeight: 52,
@@ -960,7 +961,7 @@ const styles = StyleSheet.create({
   },
   body: { color: colors.muted, fontSize: 16, lineHeight: 26, maxWidth: 430 },
   loading: { padding: 35, alignItems: "center", gap: 15 },
-  footer: { alignItems: "center", paddingTop: 42, paddingBottom: 16, gap: 7 },
+  footer: { alignItems: "center", paddingTop: 28, paddingBottom: 16, gap: 7 },
   footerLine: {
     height: 1,
     width: 36,
@@ -980,7 +981,7 @@ const styles = StyleSheet.create({
     gap: 9,
     minHeight: 44,
     alignSelf: "flex-start",
-    marginBottom: 16,
+    marginBottom: 8,
   },
   backText: { color: colors.sageDark, fontSize: 13 },
   error: {
