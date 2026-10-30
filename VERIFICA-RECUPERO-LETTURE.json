@@ -1,0 +1,34 @@
+{
+  "purpose": "Recover archived demo readings as private drafts for Studio review",
+  "date": "2026-10-30",
+  "readings": 14,
+  "user_document_derived_readings": 3,
+  "other_demo_templates": 11,
+  "status": "draft",
+  "approved": false,
+  "is_demo": true,
+  "publishedAt": null,
+  "reviewedAt": null,
+  "reviewerName": null,
+  "author_table_rows_created": 0,
+  "preserves_existing_articles": true,
+  "database_tests": {
+    "engine": "PGlite",
+    "real_schema": "202610210001_nido.sql and seed.sql",
+    "passed": 7,
+    "checks": [
+      "Exact content and attribution round-trip",
+      "14 private drafts and no public exposure or invented authors/reviews",
+      "Rerun preserves edits, references, categories and favorites",
+      "ID and slug collision protection",
+      "Editorial triggers and ordinary authorization remain active",
+      "Failed import rolls back all rows and trigger changes",
+      "Unexpected disabled triggers abort without state changes"
+    ]
+  },
+  "eslint": "passed",
+  "prettier": "passed",
+  "production_database_modified": false,
+  "cloudflare_update_needed": false,
+  "sql_sha256": "32ceb3f4812a6eab401ad8c37113eeda3b900e61444c743184478daed070af07"
+}
