@@ -1,0 +1,38 @@
+{
+  "release": "v11.3",
+  "date": "2026-10-31",
+  "changes": [
+    "Automatic individual document-sharing email with material title and warm Gaia message",
+    "Private persistent queue, deduplication and bounded retries",
+    "Staff email-state UI separate from committed document permissions",
+    "Minute scheduled queue drain via Vault-protected Edge call",
+    "Safe login and onboarding return to private documents",
+    "Privacy notice for title/email sent to Resend"
+  ],
+  "checks": {
+    "production_build": "passed",
+    "workspace_typescript": "passed",
+    "eslint": "passed",
+    "unit_tests": 251,
+    "unit_test_files": 38,
+    "new_document_browser_cases": 10,
+    "onboarding_regression_browser_cases": 14,
+    "browser_widths": [
+      390,
+      1280
+    ],
+    "javascript_errors": [],
+    "unexpected_requests": [],
+    "unchanged_html_metadata": 31,
+    "site_files": 100,
+    "site_zip_bytes": 2967562,
+    "site_sha256": "aa2aabe4c3412e68407dd97322a15405ca0d57c73beb8147e67f6b1e8b6c7f5c"
+  },
+  "limitations": [
+    "Services and managed Supabase extensions were simulated in isolated tests.",
+    "No real emails sent, production database updated or Cloudflare site deployed by the assistant.",
+    "Activation requires SQL017, document-notify deployment, existing Resend key, Vault job-token setup and Cloudflare upload.",
+    "Resend acceptance does not establish delivery or reading.",
+    "The queue does not retroactively notify existing grants."
+  ]
+}
