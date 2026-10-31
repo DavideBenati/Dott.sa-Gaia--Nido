@@ -1,0 +1,121 @@
+{
+  "release": "metiMaia v13.1",
+  "date": "2026-10-31",
+  "source_base": "d7467eabeb7cf0fa4fe03c23a40194ab2581ba4e",
+  "iterations": 4,
+  "improvements": [
+    "Live connection notice",
+    "Checklist remaining filter, busy state, duplicate submission guard and accurate loading/error/missing states",
+    "Public installation-link sharing with manual copy fallback",
+    "Bounded update activation and safe retry without automatic reload after timeout"
+  ],
+  "unit_tests": {
+    "passed": 302,
+    "files": 46
+  },
+  "browser_tests": {
+    "passed": 51,
+    "suites": {
+      "pwa": {
+        "passed": 15,
+        "checks": [
+          "Packaged pages share an installable manifest and iPhone/Android icons",
+          "Android installation prompt opens only after an explicit user click",
+          "iPhone shows Safari Home-screen instructions without inventing a native install prompt",
+          "390px: installed app uses five patient tabs, preserves shop access and hides redundant install prompts",
+          "1280px: installed app uses five patient tabs, preserves shop access and hides redundant install prompts",
+          "Ordinary browser retains the existing navigation and recommendations tab",
+          "Installation link sharing copies only the public link and offers manual copying when clipboard access is denied",
+          "Checklist remaining filter preserves progress, announces an in-flight save and prevents duplicate submissions",
+          "An already-open app explains connection loss and clears the connection notice after reconnecting",
+          "Checklist loading, a failed catalogue with retry, and genuinely missing content have distinct usable states",
+          "Returning to the app reloads another device’s checklist progress; failed writes never appear saved and failed reads warn before explicit retry",
+          "Real service worker caches only the generic offline page, never assigned document bytes or private navigation",
+          "Another account cannot discover the patient’s document in the installed app",
+          "An unresponsive update unlocks retry after twenty seconds; late activation does not reload an unsaved profile",
+          "A waiting update is explicit and declining the unsaved-change confirmation preserves the edited profile"
+        ],
+        "errors": [],
+        "unexpected": []
+      },
+      "v12": {
+        "passed": 12,
+        "checks": [
+          "390px: personal home puts the documents action above the bottom tabs and labels saved readings distinctly from all topics",
+          "390px: own-document search, format and reset retain recipient scope and private-page noindex",
+          "390px: Studio groups three daily tasks and keeps other tools visible without bypassing the editor workflow",
+          "390px: loading/error/cover fallback and missing-reading states are distinct, with accurate runtime page schema",
+          "390px: catalogue-empty differs from filter-empty and SPA navigation replaces structured page data",
+          "1280px: personal home puts the documents action above the bottom tabs and labels saved readings distinctly from all topics",
+          "1280px: own-document search, format and reset retain recipient scope and private-page noindex",
+          "1280px: Studio groups three daily tasks and keeps other tools visible without bypassing the editor workflow",
+          "1280px: loading/error/cover fallback and missing-reading states are distinct, with accurate runtime page schema",
+          "1280px: catalogue-empty differs from filter-empty and SPA navigation replaces structured page data",
+          "390px: another account cannot discover the patient's assigned materials through search",
+          "320px: patient shortcuts and document filters fit a narrow phone viewport"
+        ],
+        "errors": [],
+        "unexpected": []
+      },
+      "onboarding": {
+        "passed": 14,
+        "checks": [
+          "390: guest starts with account creation; no pre-authentication profile choice or preference write",
+          "390: signup waits for confirmation, then explicit parent choice and optional medical step precede the project",
+          "1280: direct login resumes explicit partner selection and saves the selected phase without health data",
+          "390: confirmed direct entry maps relative to a general path and skips medical questions",
+          "390: confirmed direct entry maps friend to a general path and skips medical questions",
+          "390: confirmed direct entry maps exploring to a general path and skips medical questions",
+          "390: an interrupted parent checkpoint resumes after reload and can finish without personalization",
+          "1280: an existing complete profile opens the project without resetting its date, consent or journey from URL parameters",
+          "390: confirmation waits for remote preferences before deciding whether onboarding is already complete",
+          "390: password recovery stays on password editing and never redirects into signup or project",
+          "390: failed remote preference loading blocks onboarding saves instead of overwriting an account with defaults",
+          "390: guests earn only a fully checked nonempty checklist badge; unchecking reverses it and writes stay local",
+          "1280: account, completed-profile and saved-reading badges count correctly; shares exclude private data and unsaving reverses its badge",
+          "390: an authenticated Amazon selection records its own milestone without changing preferences; denied persistence leaves the badge locked and no purchase is claimed"
+        ],
+        "errors": [],
+        "unexpected": []
+      },
+      "documents": {
+        "passed": 10,
+        "checks": [
+          "390px: assigning a new recipient automatically dispatches only its document ID and keeps provider acceptance distinct from delivery",
+          "390px: reopening a document reads persisted notification state and an unchanged recipient selection cannot resend",
+          "390px: revoking a recipient does not dispatch a new sharing email",
+          "390px: email failure preserves saved grants and pending work; retry processes the existing job",
+          "1280px: assigning a new recipient automatically dispatches only its document ID and keeps provider acceptance distinct from delivery",
+          "1280px: reopening a document reads persisted notification state and an unchanged recipient selection cannot resend",
+          "1280px: revoking a recipient does not dispatch a new sharing email",
+          "1280px: email failure preserves saved grants and pending work; retry processes the existing job",
+          "390px: the email's private-folder entry requires sign-in and returns a completed account to its own documents",
+          "390px: an unrelated authenticated patient sees no unassigned document or email controls"
+        ],
+        "errors": [],
+        "unexpected": []
+      }
+    }
+  },
+  "typecheck": "passed",
+  "eslint": "passed",
+  "production_web_build": "passed",
+  "package": {
+    "file": "MAIA-Sito-v13.1-Quattro-Miglioramenti.zip",
+    "bytes": 3272851,
+    "sha256": "7a7103593744446e2d47dd0e4da1e39ccdaca7efce2635719a57bfcec7e80f69",
+    "files": 109,
+    "google_verification_bytes": 53,
+    "private_materials_included": false
+  },
+  "live_changes": {
+    "cloudflare_deployed": false,
+    "supabase_written": false,
+    "real_messages_sent": false
+  },
+  "limitations": [
+    "Browser device emulation and mocked backend; physical iPhone/Android installation and production account tests remain after deployment.",
+    "Connection required for data and documents; no push notifications or offline personal-data writes."
+  ],
+  "source_commit": "c6b397ba54422e6cd0103f16949ef3fa9c950a54"
+}
