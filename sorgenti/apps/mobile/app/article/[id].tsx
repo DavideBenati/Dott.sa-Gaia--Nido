@@ -54,6 +54,11 @@ export default function Article() {
         <Text style={ui.body}>
           {article.authorRole} · {article.readingMinutes} min di lettura
         </Text>
+        {article.originalContent === true && (
+          <Text style={ui.body}>
+            Materiale originale di {article.authorName}
+          </Text>
+        )}
         <Text style={ui.body}>
           Pubblicazione:{" "}
           {article.publishedAt

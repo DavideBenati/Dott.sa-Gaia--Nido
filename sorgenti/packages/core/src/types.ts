@@ -37,6 +37,8 @@ export interface Article {
   approved: boolean;
   isDemo: boolean;
   sections: ArticleSection[];
+  /** Explicit editorial attribution; never inferred from an author name. */
+  originalContent?: boolean;
   references: Reference[];
   videoUrl: string | null;
 }

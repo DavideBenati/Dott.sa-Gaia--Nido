@@ -269,7 +269,8 @@ function articleShape(value: unknown): value is Article {
   if (
     typeof value.readingMinutes !== "number" ||
     typeof value.approved !== "boolean" ||
-    typeof value.isDemo !== "boolean"
+    typeof value.isDemo !== "boolean" ||
+    ("originalContent" in value && typeof value.originalContent !== "boolean")
   )
     return false;
   if (
@@ -382,8 +383,10 @@ export function validateArticle(
     const review = parseDate(article.reviewedAt);
     if (!review || dayNumber(review) > dayNumber(today))
       errors.push("Indica una data di revisione valida, non futura.");
-    if (!article.references.length)
-      errors.push("La pubblicazione richiede fonti verificabili.");
+    if (!article.references.length && article.originalContent !== true)
+      errors.push(
+        "Aggiungi una fonte oppure conferma che il testo è materiale originale dell’autrice o dell’autore.",
+      );
     if (
       !article.publishedAt ||
       Number.isNaN(Date.parse(article.publishedAt)) ||

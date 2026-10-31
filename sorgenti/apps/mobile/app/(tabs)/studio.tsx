@@ -5,7 +5,13 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { View, Platform, Image, useWindowDimensions } from "react-native";
+import {
+  View,
+  Platform,
+  Image,
+  Pressable,
+  useWindowDimensions,
+} from "react-native";
 import { router } from "expo-router";
 import {
   type Article,
@@ -31,6 +37,7 @@ const BusyForm = createContext(false);
 const fieldId = (label: string) =>
   "studio-field-" + label.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 const today = () => new Date().toISOString().slice(0, 10);
+const originalLabel = "Materiale originale dell’autrice o dell’autore";
 const statusLabel = (value: string) =>
   ({
     draft: "Bozza",
@@ -342,6 +349,23 @@ function Workspace({
                 fields[`Testo sezione ${i + 1}`] =
                   "Completa il testo della sezione.";
             });
+            if (
+              !document.references.length &&
+              document.originalContent !== true
+            )
+              fields[originalLabel] =
+                "Conferma questa opzione per un testo originale, oppure aggiungi una fonte.";
+            document.references.forEach((reference, i) => {
+              if (!reference.label.trim())
+                fields[`Nome fonte ${i + 1}`] = "Indica il nome della fonte.";
+              try {
+                if (new URL(reference.url).protocol !== "https:")
+                  throw new Error();
+              } catch {
+                fields[`Link fonte ${i + 1}`] =
+                  "Inserisci un collegamento HTTPS valido.";
+              }
+            });
             failFields(fields, issues.join(" "));
           }
         }
@@ -504,6 +528,7 @@ function Workspace({
         status: "draft",
         approved: false,
         isDemo: false,
+        originalContent: false,
         sections: [{ heading: "", paragraphs: [""] }],
         references: [],
         videoUrl: null,
@@ -879,7 +904,9 @@ function Workspace({
           {actions("top")}
           <Notice>
             “Approva e pubblica” conferma la revisione professionale. Per gli
-            articoli servono autore, copertina, testo e fonti HTTPS; il database
+            articoli servono autore, copertina e testo. Puoi indicare il
+            materiale originale dell’autrice o dell’autore; le fonti esterne,
+            quando presenti, devono avere collegamenti HTTPS. Il database
             verifica l’abilitazione del revisore.
           </Notice>
           <BusyForm.Provider value={busy}>
@@ -914,6 +941,11 @@ function Workspace({
                         </View>
                       ))}
                       <Text style={ui.label}>Fonti</Text>
+                      {article.originalContent === true && (
+                        <Text style={ui.body}>
+                          Materiale originale di {article.authorName}
+                        </Text>
+                      )}
                       {article.references.map((ref, i) => (
                         <Text key={i} style={ui.body}>
                           {ref.label} · {ref.url}
@@ -1092,6 +1124,59 @@ function Workspace({
                       >
                         Aggiungi sezione
                       </Button>
+                      <Text style={ui.label}>Origine del contenuto</Text>
+                      <Pressable
+                        nativeID={fieldId(originalLabel)}
+                        accessibilityRole="checkbox"
+                        accessibilityLabel={originalLabel}
+                        accessibilityState={{
+                          checked: article.originalContent === true,
+                          disabled: busy,
+                        }}
+                        aria-checked={article.originalContent === true}
+                        {...(Platform.OS === "web"
+                          ? {
+                              "aria-invalid": Boolean(invalid[originalLabel]),
+                              "aria-describedby": invalid[originalLabel]
+                                ? fieldId(originalLabel) + "-error"
+                                : undefined,
+                            }
+                          : {})}
+                        disabled={busy}
+                        onPress={() =>
+                          updateArticle({
+                            originalContent: article.originalContent !== true,
+                          })
+                        }
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "flex-start",
+                          gap: 10,
+                          minHeight: 44,
+                          paddingVertical: 10,
+                        }}
+                      >
+                        <Text style={ui.body}>
+                          {article.originalContent === true ? "☑" : "☐"}
+                        </Text>
+                        <Text style={[ui.body, { flex: 1 }]}>
+                          {originalLabel}
+                        </Text>
+                      </Pressable>
+                      <Text style={ui.body}>
+                        Spunta se il testo è originale dell’autrice o
+                        dell’autore indicato. In questo caso le fonti esterne
+                        sono facoltative: puoi aggiungerle come approfondimenti.
+                      </Text>
+                      {invalid[originalLabel] && (
+                        <Text
+                          nativeID={fieldId(originalLabel) + "-error"}
+                          accessibilityRole="alert"
+                          style={[ui.body, { color: "#9B3C2F" }]}
+                        >
+                          {invalid[originalLabel]}
+                        </Text>
+                      )}
                       <Text style={ui.label}>Fonti e riferimenti</Text>
                       {article.references.map((ref, i) => (
                         <View key={i} style={{ gap: 10 }}>
