@@ -1,0 +1,44 @@
+{
+  "release": "v11.2",
+  "date": "2026-10-31",
+  "purpose": "Allow explicit original-author attribution without mandatory external references",
+  "schema_update": "202610300016_original_editorial_content.sql",
+  "existing_articles_automatically_relabelled": false,
+  "review_or_qualification_automatically_granted": false,
+  "checks": {
+    "production_build": "passed",
+    "workspace_typescript": "passed",
+    "changed_files_eslint": "passed",
+    "prettier": "passed",
+    "core_tests_passed": 20,
+    "database_tests_passed": 8,
+    "browser_tests_passed": 8,
+    "browser_widths": [
+      390,
+      1280
+    ],
+    "browser_errors": [],
+    "unexpected_external_requests": [],
+    "browser_cases": [
+      "390px: an unchanged legacy article still requires a source declaration",
+      "390px: original material saves and publishes without invented external references",
+      "390px: the public original attribution survives a direct-URL reload",
+      "390px: removing original authorship or supplying an invalid reference blocks publication before a write",
+      "1280px: an unchanged legacy article still requires a source declaration",
+      "1280px: original material saves and publishes without invented external references",
+      "1280px: the public original attribution survives a direct-URL reload",
+      "1280px: removing original authorship or supplying an invalid reference blocks publication before a write"
+    ],
+    "package": {
+      "html_metadata_unchanged": 31,
+      "files": 100,
+      "zip_bytes": 2966062,
+      "sha256": "a63c34f87de684826351550afedee6bcdf5656c723e667cf320b148f74c93068"
+    }
+  },
+  "limitations": [
+    "Production database and Cloudflare deployment still require manual steps.",
+    "Database tests use a separate local PGlite instance and browser services are simulated.",
+    "Only an explicit originalContent:true declaration permits missing external references; author identity and existing professional review permissions still apply."
+  ]
+}
