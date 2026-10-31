@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, Pressable } from "react-native";
-import { router } from "expo-router";
+import { router, useIsFocused } from "expo-router";
 import { useApp } from "../src/state";
 import { Text, TextInput } from "../src/typography";
 import { Screen, StageHeading, Button, Notice, ui } from "../src/ui";
@@ -12,6 +12,7 @@ import {
   type DocumentFilter,
 } from "../src/session-documents";
 import { useDocumentDownload } from "../src/document-download";
+import { useResumeRefresh } from "../src/use-resume-refresh";
 export default function MyDocuments() {
   const { email } = useApp();
   return email ? (
@@ -35,6 +36,8 @@ export default function MyDocuments() {
 }
 
 function DocumentList() {
+  const focused = useIsFocused();
+  const requestVersion = useRef(0);
   const [documents, setDocuments] = useState<SessionDocument[]>([]);
   const [page, setPage] = useState(0);
   const [version, setVersion] = useState(0);
@@ -54,17 +57,31 @@ function DocumentList() {
   }
   const { downloading, downloadMessage, downloadDocumentId, download } =
     useDocumentDownload();
+  useResumeRefresh(() => setVersion((value) => value + 1), {
+    enabled: focused,
+    background: () => {
+      requestVersion.current++;
+      setDocuments([]);
+      setLoading(true);
+    },
+  });
   useEffect(() => {
     let active = true;
+    const request = ++requestVersion.current;
+    if (!focused) {
+      setDocuments([]);
+      setLoading(true);
+      return;
+    }
     setLoading(true);
     setError("");
     void listDocuments(page, false, { term, format })
       .then(
         (rows) => {
-          if (active) setDocuments(rows);
+          if (active && request === requestVersion.current) setDocuments(rows);
         },
         (e) => {
-          if (active) {
+          if (active && request === requestVersion.current) {
             setDocuments([]);
             setError(
               e instanceof Error ? e.message : "Documenti non disponibili.",
@@ -73,12 +90,12 @@ function DocumentList() {
         },
       )
       .finally(() => {
-        if (active) setLoading(false);
+        if (active && request === requestVersion.current) setLoading(false);
       });
     return () => {
       active = false;
     };
-  }, [page, version, term, format]);
+  }, [page, version, term, format, focused]);
   return (
     <Screen
       back

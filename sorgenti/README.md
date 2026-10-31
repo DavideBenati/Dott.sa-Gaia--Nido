@@ -1,8 +1,8 @@
 # Nido — Insieme, passo dopo passo.
 
-## Sito metiMaia su Cloudflare — Studio v8
+## Sito metiMaia su Cloudflare — app installabile v13
 
-Per aggiornare il sito corrente, usare [la guida Studio v8](../release-v8/LEGGIMI.md): applicare soltanto la migrazione Supabase 008 dopo la 007 già installata, poi caricare lo ZIP completo del sito su Cloudflare. Istruzioni e prove della release distinguono la verifica dell’interfaccia con servizi simulati dal collaudo del progetto produttivo. I comandi e le indicazioni della demo originale riportati sotto descrivono anche gli ambienti separati di sviluppo.
+Per aggiornare il sito corrente, usare [la guida v13](../release-v13/LEGGIMI.md): caricare lo ZIP completo su Cloudflare e aprire `/installa` dal telefono. La v13 non richiede nuove migrazioni Supabase o chiavi; usa gli account e i materiali già presenti nel progetto configurato. Comprende manifest, icone, installazione guidata e aggiornamento dei dati al rientro. Il service worker conserva soltanto la pagina generica di riconnessione, senza contenuti privati. Push e utilizzo offline dei dati non sono ancora attivi. Le prove browser sono simulate; l’installazione va verificata su iPhone e Android reali dopo il deploy.
 
 MVP in italiano: app Expo/React Native, dashboard Next.js e integrazione Supabase. In assenza di URL e chiave pubblica parte in **DEMO MODE**. Gli articoli sono esempi non revisionati clinicamente; le checklist sono suggerimenti adattabili, non requisiti medici.
 
@@ -43,7 +43,7 @@ L'assenza di configurazione abilita la demo. Una configurazione parziale o un ba
 
 ## Struttura e comandi
 
-- `apps/mobile`: onboarding facoltativo, quattro tab, letture, filtri, preferiti, checklist, profilo, consenso, esportazione e cancellazione.
+- `apps/mobile`: onboarding facoltativo, navigazione per letture, checklist, documenti e profilo, consenso, esportazione e cancellazione.
 - `apps/admin`: dashboard, editor, anteprima, stati editoriali, categorie e checklist; API protette da autorizzazione verificata sul server.
 - `packages/core`: tipi, 14 articoli demo, 6 checklist, filtri, calcoli approssimativi e regole editoriali.
 - `packages/data`, `supabase`: persistenza reale, migrazione PostgreSQL, RLS e storage privato.

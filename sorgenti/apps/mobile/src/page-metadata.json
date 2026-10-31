@@ -149,5 +149,16 @@
     "title": "I miei traguardi | MetiMaia",
     "description": "Badge personali per iscrizione, profilo, letture, prima selezione e checklist.",
     "index": false
+  },
+  "/installa": {
+    "title": "Installa metiMaia sul telefono | metiMaia",
+    "description": "Aggiungi metiMaia alla schermata Home di iPhone o Android e accedi alle letture, alle checklist e ai materiali condivisi con il tuo account.",
+    "index": true
+  },
+  "/documenti": {
+    "title": "I miei documenti | metiMaia",
+    "description": "Materiali condivisi con il tuo account.",
+    "canonical": "/miei-documenti",
+    "index": false
   }
 }

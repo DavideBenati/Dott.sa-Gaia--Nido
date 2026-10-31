@@ -47,6 +47,8 @@ import {
 } from "@nido/data";
 
 import { loadMyPregnancyProfile } from "./pregnancy-profile";
+import { enqueueOwnedRefresh, readOwnedSnapshot } from "./account-refresh";
+import { useResumeRefresh } from "./use-resume-refresh";
 
 const LOCAL_KEY = "nido:user-state:v1";
 const authStorage =
@@ -118,6 +120,9 @@ interface AppContextValue {
   contentError: string | null;
   mutationError: string | null;
   refreshContent: () => Promise<void>;
+  refreshAccountState: () => Promise<void>;
+  accountRefreshing: boolean;
+  accountRefreshError: string | null;
   clearError: () => void;
   updatePreferences: (value: Preferences) => Promise<void>;
   toggleFavorite: (id: string) => Promise<void>;
@@ -161,6 +166,13 @@ const errorMessage = (error: unknown) =>
     ? error.message
     : "Operazione non riuscita. Riprova tra poco.";
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const [state, setState] = useState<UserState>(freshState);
   const stateRef = useRef(state);
   const [ready, setReady] = useState(false);
@@ -201,6 +213,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [contentLoading, setContentLoading] = useState(configured);
   const [contentError, setContentError] = useState<string | null>(null);
   const [mutationError, setMutationError] = useState<string | null>(null);
+  const [accountRefreshing, setAccountRefreshing] = useState(false);
+  const [accountRefreshError, setAccountRefreshError] = useState<string | null>(
+    null,
+  );
+  const accountRefresh = useRef<{
+    owner: string;
+    epoch: number;
+    promise: Promise<void>;
+  } | null>(null);
   const queue = useRef(Promise.resolve());
   const replaceState = useCallback((next: UserState) => {
     stateRef.current = next;
@@ -236,6 +257,66 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setContentLoading(false);
     }
   }, []);
+  const refreshAccountState = useCallback(() => {
+    const owner = userIdRef.current;
+    const epoch = sessionEpoch.current;
+    if (!client || !owner || !signedInRef.current || authTransitionRef.current)
+      return Promise.resolve();
+    const pending = accountRefresh.current;
+    if (pending?.owner === owner && pending.epoch === epoch)
+      return pending.promise;
+    const current = () =>
+      mounted.current &&
+      owner === userIdRef.current &&
+      epoch === sessionEpoch.current &&
+      signedInRef.current;
+    const job = enqueueOwnedRefresh({
+      queue,
+      current,
+      start: () => {
+        setAccountRefreshing(true);
+        setAccountRefreshError(null);
+      },
+      load: () => {
+        // Recheck actual auth identity around the read, including account
+        // changes that have not reached the React auth callback yet.
+        return readOwnedSnapshot(
+          owner,
+          async () => {
+            const result = await client.auth.getUser();
+            if (result.error) throw result.error;
+            return result.data.user?.id ?? null;
+          },
+          () => loadUserState(client),
+        );
+      },
+      apply: (next) => {
+        const wasHydrated = hydratedRef.current;
+        replaceState(next);
+        hydratedRef.current = true;
+        if (!wasHydrated) setMutationError(null);
+      },
+      failed: () => {
+        setAccountRefreshError(
+          "Non riusciamo ad aggiornare i tuoi dati. Le informazioni mostrate potrebbero non includere le ultime modifiche. Controlla la connessione e riprova.",
+        );
+      },
+      finish: () => setAccountRefreshing(false),
+    });
+    const promise = job.finally(() => {
+      if (accountRefresh.current?.promise === promise)
+        accountRefresh.current = null;
+    });
+    accountRefresh.current = { owner, epoch, promise };
+    return promise;
+  }, [replaceState]);
+  useResumeRefresh(
+    () => {
+      void refreshAccountState().catch(() => {});
+      void refreshContent();
+    },
+    { enabled: ready },
+  );
   useEffect(() => {
     let alive = true;
     let authRevision = 0;
@@ -260,6 +341,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setMemberProfileError(null);
         setMemberProfileLoading(Boolean(user));
         setEmail(user?.email ?? null);
+        setAccountRefreshing(false);
+        setAccountRefreshError(null);
         setReady(false);
       }
       const revision = ++authRevision;
@@ -821,6 +904,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         contentError,
         mutationError,
         refreshContent,
+        refreshAccountState,
+        accountRefreshing,
+        accountRefreshError,
         clearError: () => setMutationError(null),
         updatePreferences,
         toggleFavorite,

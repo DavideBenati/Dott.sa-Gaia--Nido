@@ -22,6 +22,8 @@ test("private routes are noindex and are never advertised in the sitemap", () =>
     "/profile",
     "/saved",
     "/newsletter",
+    "/miei-documenti",
+    "/documenti",
   ]) {
     expect(metadata[path].index).toBe(false);
     expect(pageHTML(html, path)).toContain('content="noindex,nofollow"');

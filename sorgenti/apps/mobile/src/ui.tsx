@@ -23,7 +23,7 @@ import { colors, serif, shadow } from "./theme";
 import { useApp } from "./state";
 import { usePageMetadata } from "./seo";
 import { ArticleCover } from "./art";
-import { guardedNavigation } from "./unsaved-changes";
+import { confirmPendingNavigation, guardedNavigation } from "./unsaved-changes";
 
 export function Brand({ compact = false }: { compact?: boolean }) {
   return (
@@ -65,7 +65,15 @@ export function Screen({
 }) {
   usePageMetadata();
   const pathname = usePathname();
-  const { demo, email, mutationError, clearError } = useApp();
+  const {
+    demo,
+    email,
+    mutationError,
+    clearError,
+    accountRefreshError,
+    accountRefreshing,
+    refreshAccountState,
+  } = useApp();
   const { width } = useWindowDimensions();
   const desktop = width >= 900;
   const scroll = useRef<React.ComponentRef<typeof ScrollView>>(null);
@@ -302,6 +310,23 @@ export function Screen({
             >
               <Icon name="close" size={18} />
             </Pressable>
+          </View>
+        )}
+        {email && accountRefreshError && (
+          <View accessibilityRole="alert" style={{ gap: 10, marginBottom: 18 }}>
+            <Notice>{accountRefreshError}</Notice>
+            <Button
+              variant="secondary"
+              disabled={accountRefreshing}
+              onPress={() => {
+                if (confirmPendingNavigation())
+                  void refreshAccountState().catch(() => {});
+              }}
+            >
+              {accountRefreshing
+                ? "Aggiornamento in corso…"
+                : "Riprova aggiornamento dati"}
+            </Button>
           </View>
         )}
         {eyebrow && <Text style={styles.eyebrow}>{eyebrow}</Text>}

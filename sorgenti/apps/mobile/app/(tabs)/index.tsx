@@ -16,6 +16,7 @@ import {
 } from "../../src/ui";
 import { Icon } from "../../src/icons";
 import { colors } from "../../src/theme";
+import { usePwa } from "../../src/pwa";
 export default function Home() {
   const {
     state,
@@ -26,6 +27,7 @@ export default function Home() {
     personalizedPreferences,
     pregnancyProfile,
   } = useApp();
+  const { standalone } = usePwa();
   const journey = calculateJourney(personalizedPreferences);
   const next =
     checklists.find((c) => c.stage === journey.stage) ?? checklists[0];
@@ -55,6 +57,11 @@ export default function Home() {
             Apri i miei documenti
           </Button>
         </View>
+      )}
+      {!standalone && (
+        <Button variant="quiet" onPress={() => router.push("/installa")}>
+          MAIA sul tuo telefono
+        </Button>
       )}
       <View
         style={[

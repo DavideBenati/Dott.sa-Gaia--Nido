@@ -13,6 +13,8 @@ import { Screen, Button, Notice, SectionHeader, ui } from "../../src/ui";
 import { MemberAchievements } from "../../src/member-achievements";
 import { MemberProfileEditor } from "../../src/member-profile-editor";
 import { PregnancyProfileEditor } from "../../src/pregnancy-profile-editor";
+import { usePwa } from "../../src/pwa";
+import { confirmPendingNavigation } from "../../src/unsaved-changes";
 export default function Profile() {
   const {
     state,
@@ -26,7 +28,10 @@ export default function Profile() {
     exportData,
     eraseData,
     signOut,
+    refreshAccountState,
+    accountRefreshing,
   } = useApp();
+  const { standalone } = usePwa();
   const [confirm, setConfirm] = useState(false);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
@@ -83,6 +88,22 @@ export default function Profile() {
             ? "Ospite · DEMO MODE · dati su questo dispositivo"
             : "Ospite · dati su questo dispositivo")}
       </Notice>
+      {email && (
+        <>
+          <Button
+            variant="quiet"
+            disabled={accountRefreshing}
+            onPress={() => {
+              if (confirmPendingNavigation())
+                void refreshAccountState().catch(() => {});
+            }}
+          >
+            {accountRefreshing
+              ? "Aggiornamento dei tuoi dati…"
+              : "Aggiorna i miei dati"}
+          </Button>
+        </>
+      )}
       {email && (
         <View style={[ui.card, { gap: 10 }]}>
           <Text style={ui.label}>
@@ -188,6 +209,9 @@ export default function Profile() {
         </Button>
       )}
       <SectionHeader title="Conosci metiMaia" />
+      <Button variant="secondary" onPress={() => router.push("/installa")}>
+        {standalone ? "MAIA sul tuo telefono" : "Installa MAIA sul telefono"}
+      </Button>
       <Button variant="secondary" onPress={() => router.push("/gaia")}>
         Il progetto MetiMaia
       </Button>

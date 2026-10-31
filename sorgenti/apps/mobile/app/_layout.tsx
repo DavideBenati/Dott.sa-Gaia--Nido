@@ -16,11 +16,15 @@ import {
   consumeAccountEntry,
 } from "../src/entry-navigation";
 import { UnsavedNavigationGuard } from "../src/unsaved-changes";
+import { hasCompletedProfileType } from "@nido/core";
+import { keepInstalledHome } from "../src/pwa-platform";
+import { PwaProvider, PwaUpdateNotice, usePwa } from "../src/pwa";
 function Navigation() {
   const { ready, email, userId, preferencesLoaded, passwordRecovery, state } =
     useApp();
   const pathname = usePathname();
   const { returnTo } = useGlobalSearchParams<{ returnTo?: string }>();
+  const { standalone } = usePwa();
   const handledUser = useRef<string | null>(null);
   useEffect(() => {
     if (!ready) return;
@@ -36,6 +40,19 @@ function Navigation() {
     }
     if (!preferencesLoaded) return;
     const entry = consumeAccountEntry(email);
+    if (
+      keepInstalledHome({
+        standalone,
+        pathname,
+        hasEntry: Boolean(entry),
+        completeProfile: hasCompletedProfileType(state.preferences),
+        passwordRecovery,
+        returnTo,
+      })
+    ) {
+      handledUser.current = userId;
+      return;
+    }
     if (initialAuthLinkError && !entry) {
       handledUser.current = userId;
       return;
@@ -58,10 +75,12 @@ function Navigation() {
     pathname,
     state.preferences,
     returnTo,
+    standalone,
   ]);
   return ready ? (
     <>
       <UnsavedNavigationGuard />
+      <PwaUpdateNotice />
       <Stack
         screenOptions={{
           headerShown: false,
@@ -102,9 +121,11 @@ export default function Layout() {
   // A font download failure must not block access; use the system fallback.
   return (
     <SafeAreaProvider>
-      <AppProvider>
-        <Navigation />
-      </AppProvider>
+      <PwaProvider>
+        <AppProvider>
+          <Navigation />
+        </AppProvider>
+      </PwaProvider>
     </SafeAreaProvider>
   );
 }

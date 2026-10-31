@@ -1,5 +1,6 @@
 import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { metadata, pageHTML, sitemap, site } from "./web-seo.mjs";
+import { pwaHTML, pwaAssets, pwaHeaders } from "./web-pwa.mjs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 const destination = process.argv[2];
@@ -16,6 +17,7 @@ if (html.includes("/Dott.sa-Gaia--Nido/"))
   throw new Error(
     "Rebuild for the root domain: NIDO_WEB_BASE_PATH= npm run build:web",
   );
+const appHTML = pwaHTML(html);
 await mkdir(output); // Refuse to overwrite an existing deployment package.
 await cp(source, output, { recursive: true });
 await rm(resolve(output, "404.html"), { force: true });
@@ -29,6 +31,8 @@ for (const route of [
   "videochiamate",
   "documenti-studio",
   "miei-documenti",
+  "documenti",
+  "installa",
   "contatti",
   "verifiche",
   "newsletter-admin",
@@ -55,9 +59,16 @@ for (const route of [
 ])
   await writeFile(
     resolve(output, `${route}.html`),
-    pageHTML(html, `/${route}`),
+    pageHTML(appHTML, `/${route}`),
   );
-await writeFile(resolve(output, "index.html"), pageHTML(html, "/"));
+await writeFile(resolve(output, "index.html"), pageHTML(appHTML, "/"));
+for (const [path, content] of Object.entries(pwaAssets(html)))
+  await writeFile(resolve(output, path), content);
+await cp(
+  fileURLToPath(new URL("../assets/pwa/", import.meta.url)),
+  resolve(output, "icons"),
+  { recursive: true },
+);
 await cp(
   fileURLToPath(
     new URL("../apps/mobile/assets/brand/maia-logo.png", import.meta.url),
@@ -72,6 +83,15 @@ await writeFile(
 await writeFile(
   resolve(output, "_headers"),
   "/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n  X-Frame-Options: DENY\n  Permissions-Policy: camera=(), microphone=(), geolocation=()\n/newsletter*\n  Referrer-Policy: no-referrer\n" +
+    "/\n  Cache-Control: no-store\n/*.html\n  Cache-Control: no-store\n" +
+    Object.keys(metadata)
+      .filter((path) => path !== "/")
+      .map((path) => `${path}*\n  Cache-Control: no-store\n`)
+      .join("") +
+    // This standalone-app tab alias is private even if an older metadata
+    // snapshot is used by a packaging caller.
+    "/documenti*\n  Cache-Control: no-store\n  X-Robots-Tag: noindex, nofollow\n" +
+    pwaHeaders +
     Object.entries(metadata)
       .filter(([, page]) => !page.index)
       .map(([path]) => `${path}*\n  X-Robots-Tag: noindex, nofollow\n`)
