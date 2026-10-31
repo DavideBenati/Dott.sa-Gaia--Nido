@@ -24,7 +24,9 @@ export default function MyDocuments() {
       <Notice>
         Accedi con l’email a cui sono stati assegnati i materiali.
       </Notice>
-      <Button onPress={() => router.push("/account?mode=login")}>
+      <Button
+        onPress={() => router.push("/account?mode=login&returnTo=documents")}
+      >
         Accedi ai miei documenti
       </Button>
     </Screen>

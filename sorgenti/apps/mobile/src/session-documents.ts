@@ -26,6 +26,58 @@ export type DocumentAccess = {
   can_manage: boolean;
   mfa_satisfied: boolean;
 };
+export type DocumentNotificationStatus = {
+  pending: number;
+  sending: number;
+  accepted: number;
+  failed: number;
+  cancelled: number;
+  uncertain: number;
+};
+export async function loadDocumentNotificationStatus(
+  id: string,
+): Promise<DocumentNotificationStatus> {
+  const owner = await identity();
+  const { data, error } = await client!.rpc("document_notification_status", {
+    p_document_id: id,
+  });
+  if ((await identity()) !== owner)
+    throw new Error("Sessione cambiata: ripeti l’accesso.");
+  if (
+    error ||
+    !data ||
+    ["pending", "sending", "accepted", "failed", "cancelled", "uncertain"].some(
+      (key) => !Number.isSafeInteger(data[key]) || data[key] < 0,
+    )
+  )
+    throw new Error(
+      "Stato email non disponibile. Verifica la configurazione degli avvisi documenti.",
+    );
+  return data as DocumentNotificationStatus;
+}
+export async function dispatchDocumentNotifications(
+  id: string,
+  action: "dispatch" | "retry" = "dispatch",
+): Promise<void> {
+  const owner = await identity();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 65000);
+  try {
+    const { error } = await client!.functions.invoke("document-notify", {
+      body: { action, document_id: id },
+      signal: controller.signal,
+    });
+    if ((await identity()) !== owner)
+      throw new Error("Sessione cambiata: ripeti l’accesso.");
+    if (error) throw error;
+  } catch {
+    throw new Error(
+      "Gli accessi sono salvati. L’invio email non è ancora confermato: controlla lo stato degli avvisi.",
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 export const documentTypes: Record<string, string> = {
   pdf: "application/pdf",
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",

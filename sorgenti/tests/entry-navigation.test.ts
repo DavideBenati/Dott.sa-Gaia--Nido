@@ -60,6 +60,89 @@ describe("account entry resumes navigation without importing personal preference
     );
   });
 
+  it("preserves only the document-area token through refresh and for the same account", async () => {
+    const entry = await import("../apps/mobile/src/entry-navigation");
+    entry.prepareAccountEntry("PATIENT@example.invalid", "documents");
+    expect(JSON.parse([...memory.values()][0])).toEqual({
+      email: "patient@example.invalid",
+      returnTo: "documents",
+    });
+    vi.resetModules();
+    const refreshed = await import("../apps/mobile/src/entry-navigation");
+    expect(refreshed.consumeAccountEntry("patient@example.invalid")).toEqual({
+      email: "patient@example.invalid",
+      returnTo: "documents",
+    });
+    refreshed.prepareAccountEntry("patient@example.invalid", "documents");
+    expect(refreshed.consumeAccountEntry("other@example.invalid")).toBeNull();
+    expect(refreshed.consumeAccountEntry("patient@example.invalid")).toBeNull();
+  });
+
+  it("rejects arbitrary return URLs and malformed persisted destinations", async () => {
+    const entry = await import("../apps/mobile/src/entry-navigation");
+    for (const target of [
+      "https://example.invalid",
+      "//example.invalid",
+      "/miei-documenti?document_id=private-id",
+      ["documents"],
+      { returnTo: "documents" },
+    ]) {
+      entry.prepareAccountEntry("patient@example.invalid", target);
+      expect(
+        entry.consumeAccountEntry("patient@example.invalid")?.returnTo,
+      ).toBe("project");
+    }
+    memory.set(
+      "maia:account-entry:v2",
+      JSON.stringify({
+        email: "patient@example.invalid",
+        returnTo: "https://example.invalid",
+      }),
+    );
+    vi.resetModules();
+    const refreshed = await import("../apps/mobile/src/entry-navigation");
+    expect(refreshed.consumeAccountEntry("patient@example.invalid")).toBeNull();
+  });
+
+  it("returns completed profiles to documents and preserves the role step for incomplete profiles", async () => {
+    const { accountEntryDestination } =
+      await import("../apps/mobile/src/entry-navigation");
+    const request = {
+      preferences: {
+        ...defaultPreferences,
+        profileType: "parent" as const,
+        onboarded: true,
+      },
+      pathname: "/account",
+      hasEntry: true,
+      passwordRecovery: false,
+      returnTo: "documents",
+    };
+    expect(accountEntryDestination(request)).toBe("/miei-documenti");
+    expect(accountEntryDestination({ ...request, hasEntry: false })).toBe(
+      "/miei-documenti",
+    );
+    expect(
+      accountEntryDestination({ ...request, preferences: defaultPreferences }),
+    ).toBe("/welcome?onboarding=1&returnTo=documents");
+    expect(
+      accountEntryDestination({ ...request, passwordRecovery: true }),
+    ).toBeNull();
+    expect(
+      accountEntryDestination({
+        ...request,
+        pathname: "/article/a",
+        hasEntry: false,
+      }),
+    ).toBeNull();
+    expect(
+      accountEntryDestination({
+        ...request,
+        returnTo: "https://example.invalid",
+      }),
+    ).toBe("/gaia?start=1");
+  });
+
   it("asks new or legacy accounts for an explicit role after authentication", async () => {
     const { accountEntryDestination } =
       await import("../apps/mobile/src/entry-navigation");

@@ -31,7 +31,7 @@ export default function Account() {
     requestPasswordReset,
     changePassword,
   } = useApp();
-  const params = useLocalSearchParams<{ mode?: string }>();
+  const params = useLocalSearchParams<{ mode?: string; returnTo?: string }>();
   const { allowed: editorAllowed } = useEditorAccess();
   const [pendingEmail, setPendingEmail] = useState("");
   const [resendUntil, setResendUntil] = useState(0);
@@ -41,6 +41,7 @@ export default function Account() {
   const [nickname, setNickname] = useState("");
   const [nicknameError, setNicknameError] = useState("");
   const nicknameInput = useRef<React.ComponentRef<typeof TextInput>>(null);
+  const submittedEntry = useRef(false);
   const [password, setPassword] = useState("");
   const [create, setCreate] = useState(params.mode !== "login");
   const [showPassword, setShowPassword] = useState(false);
@@ -55,7 +56,15 @@ export default function Account() {
         ? "Il collegamento email non è valido. Accedi o richiedi una nuova conferma."
         : "",
   );
-  useEffect(() => () => cancelAccountEntry(), []);
+  useEffect(
+    () => () => {
+      // Authentication temporarily unmounts the stack while this account's
+      // preferences load. Keep its own-email-bound destination for Navigation
+      // to consume; cancellation and failed requests clear it explicitly.
+      if (!submittedEntry.current) cancelAccountEntry();
+    },
+    [],
+  );
   useEffect(() => {
     if (!resendUntil) return;
     const update = () =>
@@ -135,7 +144,8 @@ export default function Account() {
     setBusy(true);
     setMessage("");
     try {
-      prepareAccountEntry(email);
+      submittedEntry.current = true;
+      prepareAccountEntry(email, params.returnTo);
       const result = await signIn(
         email.trim(),
         password,
@@ -161,6 +171,7 @@ export default function Account() {
       } else setMessage(result);
       // Navigation resumes the profile choice after this account is hydrated.
     } catch (error) {
+      submittedEntry.current = false;
       cancelAccountEntry();
       const detail = error instanceof Error ? error.message.toLowerCase() : "";
       if (detail.includes("email not confirmed")) setPendingEmail(email.trim());
@@ -179,6 +190,7 @@ export default function Account() {
   }
   async function resetPassword() {
     if (busy || demo) return;
+    submittedEntry.current = false;
     cancelAccountEntry();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       setMessage("Inserisci una email valida.");

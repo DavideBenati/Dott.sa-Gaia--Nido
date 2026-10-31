@@ -113,7 +113,13 @@ function WelcomeFlow() {
         date: skipPersonalization || general ? null : draft.date,
       });
       if (mounted.current)
-        router.replace(returnTo === "project" ? "/gaia?start=1" : "/(tabs)");
+        router.replace(
+          returnTo === "documents"
+            ? "/miei-documenti"
+            : returnTo === "project"
+              ? "/gaia?start=1"
+              : "/(tabs)",
+        );
     } catch {
       if (mounted.current)
         setError("Non abbiamo salvato le preferenze. Riprova.");

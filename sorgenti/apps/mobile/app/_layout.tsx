@@ -6,7 +6,7 @@ import NidoSansSemibold from "../assets/fonts/DMSans_600SemiBold.ttf";
 import NidoSansBold from "../assets/fonts/DMSans_700Bold.ttf";
 import React, { useEffect, useRef } from "react";
 import { useFonts } from "expo-font";
-import { Stack, router, usePathname } from "expo-router";
+import { Stack, router, useGlobalSearchParams, usePathname } from "expo-router";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AppProvider, initialAuthLinkError, useApp } from "../src/state";
@@ -20,6 +20,7 @@ function Navigation() {
   const { ready, email, userId, preferencesLoaded, passwordRecovery, state } =
     useApp();
   const pathname = usePathname();
+  const { returnTo } = useGlobalSearchParams<{ returnTo?: string }>();
   const handledUser = useRef<string | null>(null);
   useEffect(() => {
     if (!ready) return;
@@ -44,6 +45,7 @@ function Navigation() {
       pathname,
       passwordRecovery,
       hasEntry: Boolean(entry),
+      returnTo: entry?.returnTo ?? returnTo,
     });
     handledUser.current = userId;
     if (destination) router.replace(destination);
@@ -55,6 +57,7 @@ function Navigation() {
     passwordRecovery,
     pathname,
     state.preferences,
+    returnTo,
   ]);
   return ready ? (
     <>

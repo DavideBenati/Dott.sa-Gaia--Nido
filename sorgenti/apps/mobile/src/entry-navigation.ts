@@ -1,7 +1,13 @@
 import { hasCompletedProfileType, type Preferences } from "@nido/core";
 
-type Entry = { email: string; returnTo: "project" };
+type AccountReturnTarget = "project" | "documents";
+type Entry = { email: string; returnTo: AccountReturnTarget };
 const STORAGE_KEY = "maia:account-entry:v2";
+
+// Accept a destination token, never a caller-supplied URL or document identity.
+export function accountReturnTarget(value: unknown): AccountReturnTarget {
+  return value === "documents" ? "documents" : "project";
+}
 
 function storage(): Storage | null {
   try {
@@ -22,9 +28,9 @@ function readEntry(): Entry | null {
         "email" in value &&
         typeof value.email === "string" &&
         "returnTo" in value &&
-        value.returnTo === "project"
+        (value.returnTo === "project" || value.returnTo === "documents")
       )
-        return { email: value.email, returnTo: "project" };
+        return { email: value.email, returnTo: value.returnTo };
     }
   } catch {
     // Navigation still works when browser storage is unavailable.
@@ -35,8 +41,14 @@ function readEntry(): Entry | null {
 let pending = readEntry();
 
 /** Only a navigation intention: no journey, dates, consent or clinical data. */
-export function prepareAccountEntry(email: string) {
-  pending = { email: email.trim().toLowerCase(), returnTo: "project" };
+export function prepareAccountEntry(
+  email: string,
+  returnTo: unknown = "project",
+) {
+  pending = {
+    email: email.trim().toLowerCase(),
+    returnTo: accountReturnTarget(returnTo),
+  };
   try {
     storage()?.setItem(STORAGE_KEY, JSON.stringify(pending));
   } catch {
@@ -65,16 +77,28 @@ export function accountEntryDestination({
   pathname,
   passwordRecovery,
   hasEntry,
+  returnTo,
 }: {
   preferences: Preferences;
   pathname: string;
   passwordRecovery: boolean;
   hasEntry: boolean;
-}): "/welcome?onboarding=1&returnTo=project" | "/gaia?start=1" | null {
+  returnTo?: unknown;
+}):
+  | "/welcome?onboarding=1&returnTo=project"
+  | "/welcome?onboarding=1&returnTo=documents"
+  | "/gaia?start=1"
+  | "/miei-documenti"
+  | null {
   if (passwordRecovery) return null;
   const accountRoute = pathname === "/account" || pathname === "/";
   if (!hasEntry && !accountRoute) return null;
+  const documents = accountReturnTarget(returnTo) === "documents";
   return hasCompletedProfileType(preferences)
-    ? "/gaia?start=1"
-    : "/welcome?onboarding=1&returnTo=project";
+    ? documents
+      ? "/miei-documenti"
+      : "/gaia?start=1"
+    : documents
+      ? "/welcome?onboarding=1&returnTo=documents"
+      : "/welcome?onboarding=1&returnTo=project";
 }

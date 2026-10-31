@@ -13,12 +13,15 @@ import {
   saveDocumentRecipients,
   setDocumentActive,
   saveDocumentDetails,
+  loadDocumentNotificationStatus,
+  dispatchDocumentNotifications,
   type DocumentFilter,
   documentFormat,
   documentSize,
   type SessionDocument,
   type DocumentRecipient,
   type DocumentAccess,
+  type DocumentNotificationStatus,
 } from "../src/session-documents";
 import { useDocumentDownload } from "../src/document-download";
 import { useUnsavedChanges } from "../src/unsaved-changes";
@@ -76,6 +79,15 @@ function Workspace() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [selected, setSelected] = useState<SessionDocument | null>(null);
+  const selectedId = useRef<string | null>(null);
+  selectedId.current = selected?.id ?? null;
+  const [notificationStatus, setNotificationStatus] =
+    useState<DocumentNotificationStatus | null>(null);
+  const [notificationError, setNotificationError] = useState("");
+  const [notificationLoading, setNotificationLoading] = useState(false);
+  const [notificationBusy, setNotificationBusy] = useState(false);
+  const notificationSequence = useRef(0);
+  const notificationRuns = useRef(new Set<string>());
   const [recipientsReady, setRecipientsReady] = useState(false);
   const [recipientError, setRecipientError] = useState("");
   const [recipientsVersion, setRecipientsVersion] = useState(0);
@@ -276,6 +288,95 @@ function Workspace() {
       active = false;
     };
   }, [selected?.id, recipientsVersion]);
+  useEffect(() => {
+    let active = true;
+    const sequence = ++notificationSequence.current;
+    setNotificationStatus(null);
+    setNotificationError("");
+    setNotificationBusy(false);
+    if (!selected || selected.state !== "ready") return;
+    setNotificationLoading(true);
+    void loadDocumentNotificationStatus(selected.id)
+      .then(
+        (status) =>
+          active &&
+          sequence === notificationSequence.current &&
+          setNotificationStatus(status),
+        (error: unknown) =>
+          active &&
+          sequence === notificationSequence.current &&
+          setNotificationError(
+            error instanceof Error
+              ? error.message
+              : "Stato email non disponibile.",
+          ),
+      )
+      .finally(
+        () =>
+          active &&
+          sequence === notificationSequence.current &&
+          setNotificationLoading(false),
+      );
+    return () => {
+      active = false;
+    };
+  }, [selected?.id]);
+  async function refreshNotificationStatus(id: string) {
+    const sequence = ++notificationSequence.current;
+    setNotificationLoading(true);
+    try {
+      const status = await loadDocumentNotificationStatus(id);
+      if (
+        mounted.current &&
+        selectedId.current === id &&
+        sequence === notificationSequence.current
+      ) {
+        setNotificationStatus(status);
+        setNotificationError("");
+      }
+    } catch (error) {
+      if (
+        mounted.current &&
+        selectedId.current === id &&
+        sequence === notificationSequence.current
+      )
+        setNotificationError(
+          error instanceof Error
+            ? error.message
+            : "Stato email non disponibile.",
+        );
+    } finally {
+      if (
+        mounted.current &&
+        selectedId.current === id &&
+        sequence === notificationSequence.current
+      )
+        setNotificationLoading(false);
+    }
+  }
+  async function runNotificationDispatch(
+    id: string,
+    action: "dispatch" | "retry",
+  ) {
+    if (notificationRuns.current.has(id)) return;
+    notificationRuns.current.add(id);
+    setNotificationBusy(true);
+    setNotificationError("");
+    let failure = "";
+    try {
+      await dispatchDocumentNotifications(id, action);
+    } catch (error) {
+      failure =
+        error instanceof Error ? error.message : "Invio email da verificare.";
+    }
+    notificationRuns.current.delete(id);
+    if (!mounted.current || selectedId.current !== id) return;
+    await refreshNotificationStatus(id);
+    if (mounted.current && selectedId.current === id) {
+      setNotificationBusy(false);
+      if (failure) setNotificationError(failure);
+    }
+  }
   function chooseFile() {
     if (Platform.OS !== "web" || locked) return;
     const input = document.createElement("input");
@@ -359,10 +460,14 @@ function Workspace() {
     setBusy(true);
     setAccessMessage("");
     try {
+      const previousIds = JSON.parse(baseline) as string[];
+      const addedRecipients = selectedIds.some(
+        (id) => !previousIds.includes(id),
+      );
       const latest = await saveDocumentRecipients(
         selected.id,
         selectedIds,
-        JSON.parse(baseline) as string[],
+        previousIds,
       );
       if (!mounted.current) return;
       if (
@@ -377,6 +482,11 @@ function Workspace() {
         `Accessi salvati per ${selectedIds.length} account. Solo questi utenti possono scaricare il file.`,
       );
       setRecipientsVersion((v) => v + 1);
+      // Grants commit first. Email failure must never be shown as a failed
+      // recipient save; the private server queue also retries independently.
+      if (addedRecipients)
+        void runNotificationDispatch(selected.id, "dispatch");
+      else void refreshNotificationStatus(selected.id);
     } catch (e) {
       if (mounted.current)
         setAccessMessage(
@@ -901,6 +1011,91 @@ function Workspace() {
                             </Button>
                           </>
                         )}
+                        <View style={[ui.card, { gap: 12 }]}>
+                          <Text accessibilityRole="header" style={ui.heading}>
+                            Avvisi email
+                          </Text>
+                          <Text style={ui.body}>
+                            Quando aggiungi nuovi destinatari, prepariamo
+                            un’email con il titolo del materiale e il
+                            collegamento alla loro area riservata. I tentativi
+                            temporaneamente non riusciti vengono riprovati
+                            automaticamente.
+                          </Text>
+                          {notificationLoading && (
+                            <Text style={ui.body}>
+                              Aggiornamento stato email…
+                            </Text>
+                          )}
+                          {notificationBusy && (
+                            <Text
+                              accessibilityLiveRegion="polite"
+                              style={ui.body}
+                            >
+                              Invio avvisi in corso… Gli accessi al documento
+                              sono già salvati.
+                            </Text>
+                          )}
+                          {notificationStatus && (
+                            <View style={{ gap: 6 }}>
+                              <Text style={ui.body}>
+                                Accettati dal servizio email:{" "}
+                                {notificationStatus.accepted}
+                              </Text>
+                              <Text style={ui.body}>
+                                In attesa:{" "}
+                                {notificationStatus.pending +
+                                  notificationStatus.sending}
+                              </Text>
+                              <Text style={ui.body}>
+                                Da verificare: {notificationStatus.failed}
+                              </Text>
+                              <Text style={ui.body}>
+                                L’accettazione del servizio non conferma la
+                                consegna o la lettura da parte del destinatario.
+                              </Text>
+                              {notificationStatus.uncertain > 0 && (
+                                <Notice>
+                                  Alcuni invii hanno un esito non confermato.
+                                  Controlla Resend prima di una nuova
+                                  condivisione.
+                                </Notice>
+                              )}
+                            </View>
+                          )}
+                          {notificationError !== "" && (
+                            <View accessibilityRole="alert">
+                              <Notice>{notificationError}</Notice>
+                            </View>
+                          )}
+                          <Button
+                            variant="quiet"
+                            disabled={notificationLoading || notificationBusy}
+                            onPress={() =>
+                              void refreshNotificationStatus(selected.id)
+                            }
+                          >
+                            Aggiorna stato email
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            disabled={
+                              notificationLoading ||
+                              notificationBusy ||
+                              !notificationStatus?.pending
+                            }
+                            onPress={() =>
+                              void runNotificationDispatch(selected.id, "retry")
+                            }
+                          >
+                            Riprova invio avvisi
+                          </Button>
+                          <Text style={ui.body}>
+                            Le riprove rispettano una breve attesa tra i
+                            tentativi. Salvare gli stessi destinatari non invia
+                            una seconda notifica.
+                          </Text>
+                        </View>
                         {archiveConfirm ? (
                           <>
                             <Notice>
