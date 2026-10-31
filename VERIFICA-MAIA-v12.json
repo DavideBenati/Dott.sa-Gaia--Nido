@@ -1,0 +1,34 @@
+{
+  "release": "v12",
+  "date": "2026-10-31",
+  "iterations": 5,
+  "checks": {
+    "unit_tests_passed": 275,
+    "unit_test_files": 42,
+    "workspace_typescript": "passed",
+    "eslint": "passed",
+    "production_build": "passed",
+    "new_browser_cases_final_candidate": 12,
+    "prior_auth_and_notification_regression_cases": 24,
+    "regression_scope": "Regression24 ran before a final Home card order-only refinement; all12newcases reran afterward with explicit above-fold document-button assertions.",
+    "browser_widths": [
+      320,
+      390,
+      1280
+    ],
+    "javascript_errors": [],
+    "unexpected_external_requests": [],
+    "generated_page_metadata_checked": 30,
+    "google_verification_file_bytes": 53,
+    "site_files": 100,
+    "site_zip_bytes": 2970799,
+    "site_sha256": "214d1087a6eaf6747378b740b1884d2d4071f58e0e6b4d8e3f648e5e5f6bbdb8"
+  },
+  "database_update": "018 adds2privatechecklistdrafts and17items withoutpublication orclinicalreview",
+  "limitations": [
+    "Browser services and managed backend are simulated; no real email sent or production deployment performed.",
+    "Gaia must review and explicitly publish the two checklist drafts.",
+    "No actual Gaia files were attached in this task, so no private materials were uploaded.",
+    "Item-level article sitemap/prerender still depends on the verified published catalogue; no indexing or Google ranking is promised."
+  ]
+}
