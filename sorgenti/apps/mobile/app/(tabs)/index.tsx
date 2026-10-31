@@ -36,11 +36,26 @@ export default function Home() {
         email
           ? memberProfile?.nickname
             ? `Ciao, ${memberProfile.nickname}.`
-            : "Bentornata nel tuo spazio."
+            : "Il tuo spazio, con Gaia."
           : "Ogni nuovo inizio, insieme."
       }
       subtitle="Ciao! Oggi facciamo un altro passo insieme."
     >
+      {email && (
+        <View style={[ui.card, { gap: 12, marginBottom: 18 }]}>
+          <View style={[ui.row, { alignItems: "flex-start" }]}>
+            <Icon name="lock" size={28} />
+            <Text style={[ui.heading, { flex: 1 }]}>I miei documenti</Text>
+          </View>
+          <Text style={ui.body}>
+            I materiali e le indicazioni che Gaia ha condiviso con te, raccolti
+            nella tua area riservata.
+          </Text>
+          <Button onPress={() => router.push("/miei-documenti")}>
+            Apri i miei documenti
+          </Button>
+        </View>
+      )}
       <View
         style={[
           ui.card,
@@ -60,6 +75,9 @@ export default function Home() {
           <Icon name="leaf" size={32} />
         </View>
         <Text style={ui.body}>{journey.description}</Text>
+        <Button onPress={() => router.navigate("/discover")}>
+          Esplora gli Argomenti
+        </Button>
         <Button
           variant="secondary"
           onPress={() => router.push("/welcome?edit=1")}
@@ -101,7 +119,7 @@ export default function Home() {
       >
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Le tue letture"
+          accessibilityLabel="Letture salvate"
           onPress={() => router.push("/saved")}
           style={({ pressed }) => [
             ui.card,
@@ -116,7 +134,7 @@ export default function Home() {
         >
           <Icon name="bookmark" />
           <Text style={{ color: colors.ink, fontWeight: "600", fontSize: 16 }}>
-            Le tue letture
+            Letture salvate
           </Text>
           <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 20 }}>
             I tuoi contenuti preferiti, sempre con te.

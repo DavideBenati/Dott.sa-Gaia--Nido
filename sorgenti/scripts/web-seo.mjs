@@ -7,6 +7,80 @@ export const metadata = JSON.parse(
   ),
 );
 export const site = "https://metimaia.com";
+export function pageSchema({ title, description, canonical, index }) {
+  const url = site + canonical;
+  const pageType = {
+    "/discover": "CollectionPage",
+    "/checklists": "CollectionPage",
+    "/gaia": "AboutPage",
+    "/contatti": "ContactPage",
+    "/prenota": "ContactPage",
+  }[canonical];
+  const home = site + "/welcome";
+  const breadcrumb = index && url !== home;
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": site + "/#website",
+        url: site,
+        name: "metiMaia",
+        inLanguage: "it-IT",
+        publisher: { "@id": site + "/#gaia" },
+      },
+      {
+        "@type": "Person",
+        "@id": site + "/#gaia",
+        name: "Dott.sa Gaia",
+        jobTitle: "Ostetrica",
+        email: "ostetricamaia@gmail.com",
+        url: home,
+      },
+      ...(index
+        ? [
+            {
+              "@type": pageType ?? "WebPage",
+              "@id": url + "#webpage",
+              url,
+              name: publicProfessionalText(title),
+              description: publicProfessionalText(description),
+              inLanguage: "it-IT",
+              isPartOf: { "@id": site + "/#website" },
+              ...(breadcrumb
+                ? { breadcrumb: { "@id": url + "#breadcrumb" } }
+                : {}),
+            },
+          ]
+        : []),
+      ...(breadcrumb
+        ? [
+            {
+              "@type": "BreadcrumbList",
+              "@id": url + "#breadcrumb",
+              itemListElement: [
+                {
+                  "@type": "ListItem",
+                  position: 1,
+                  name: "metiMaia",
+                  item: home,
+                },
+                {
+                  "@type": "ListItem",
+                  position: 2,
+                  name: publicProfessionalText(title).replace(
+                    /\s*\|\s*metiMaia$/i,
+                    "",
+                  ),
+                  item: url,
+                },
+              ],
+            },
+          ]
+        : []),
+    ],
+  };
+}
 const escape = (value) =>
   String(value)
     .replaceAll("&", "&amp;")
@@ -25,35 +99,19 @@ export function pageHTML(html, path) {
     description: publicProfessionalText(source.description),
   };
   const canonical = site + (page.canonical ?? path);
-  const schema = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "WebSite",
-        "@id": site + "/#website",
-        url: site,
-        name: "metiMaia",
-        inLanguage: "it-IT",
-        publisher: { "@id": site + "/#gaia" },
-      },
-      {
-        "@type": "Person",
-        "@id": site + "/#gaia",
-        name: "Dott.sa Gaia",
-        jobTitle: "Ostetrica",
-        email: "ostetricamaia@gmail.com",
-        url: site + "/welcome",
-      },
-    ],
-  };
-  const head = `<title>${escape(page.title)}</title><meta name="description" content="${escape(page.description)}"><meta name="robots" content="${page.index ? "index,follow" : "noindex,nofollow"}"><link rel="canonical" href="${escape(canonical)}"><meta property="og:type" content="website"><meta property="og:locale" content="it_IT"><meta property="og:site_name" content="metiMaia"><meta property="og:title" content="${escape(page.title)}"><meta property="og:description" content="${escape(page.description)}"><meta property="og:url" content="${escape(canonical)}"><meta property="og:image" content="${site}/social-preview.png"><meta property="og:image:alt" content="Logo metiMaia"><meta name="twitter:card" content="summary"><meta name="twitter:title" content="${escape(page.title)}"><meta name="twitter:description" content="${escape(page.description)}"><meta name="twitter:image" content="${site}/social-preview.png"><script type="application/ld+json">${JSON.stringify(schema).replaceAll("<", "\\u003c")}</script>`;
+  const schema = pageSchema({ ...page, canonical: page.canonical ?? path });
+  const head = `<title>${escape(page.title)}</title><meta name="description" content="${escape(page.description)}"><meta name="robots" content="${page.index ? "index,follow" : "noindex,nofollow"}"><link rel="canonical" href="${escape(canonical)}"><meta property="og:type" content="website"><meta property="og:locale" content="it_IT"><meta property="og:site_name" content="metiMaia"><meta property="og:title" content="${escape(page.title)}"><meta property="og:description" content="${escape(page.description)}"><meta property="og:url" content="${escape(canonical)}"><meta property="og:image" content="${site}/social-preview.png"><meta property="og:image:alt" content="Logo metiMaia"><meta name="twitter:card" content="summary"><meta name="twitter:title" content="${escape(page.title)}"><meta name="twitter:description" content="${escape(page.description)}"><meta name="twitter:image" content="${site}/social-preview.png"><script id="metimaia-page-schema" type="application/ld+json">${JSON.stringify(schema).replaceAll("<", "\\u003c")}</script>`;
   let output = html
     .replace(/<title>[\s\S]*?<\/title>/gi, "")
     .replace(
       /<meta\b[^>]*(?:name=["'](?:description|robots|twitter:[^"']*)["']|property=["']og:[^"']*["'])[^>]*>/gi,
       "",
     )
-    .replace(/<link\b[^>]*rel=["']canonical["'][^>]*>/gi, "");
+    .replace(/<link\b[^>]*rel=["']canonical["'][^>]*>/gi, "")
+    .replace(
+      /<script\b[^>]*id=["']metimaia-page-schema["'][^>]*>[\s\S]*?<\/script>/gi,
+      "",
+    );
   output = output
     .replace(/<html\b[^>]*>/i, '<html lang="it">')
     .replace(/<\/head>/i, head + "</head>");

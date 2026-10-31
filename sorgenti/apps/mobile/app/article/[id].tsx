@@ -2,17 +2,34 @@ import { usePageMetadata } from "../../src/seo";
 import { Text } from "../../src/typography";
 import React from "react";
 import { View, Linking } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { disclaimer } from "@nido/core";
 import { useApp } from "../../src/state";
-import { Screen, Notice, Button, EmptyState, ui } from "../../src/ui";
+import {
+  Screen,
+  Notice,
+  Button,
+  ContentStatus,
+  EmptyState,
+  ui,
+} from "../../src/ui";
 import { ArticleCover } from "../../src/art";
 import { contentLink } from "../../src/share-content";
 import { ShareContentButton } from "../../src/share-content-button";
 export default function Article() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { articles, categories, state, toggleFavorite } = useApp();
-  const article = articles.find((a) => a.id === id);
+  const {
+    articles,
+    categories,
+    state,
+    toggleFavorite,
+    contentLoading,
+    contentError,
+  } = useApp();
+  const article =
+    !contentLoading && !contentError
+      ? articles.find((a) => a.id === id)
+      : undefined;
   usePageMetadata(
     article
       ? {
@@ -26,12 +43,20 @@ export default function Article() {
         }
       : undefined,
   );
+  if (contentLoading || contentError)
+    return (
+      <Screen back title="Letture">
+        <ContentStatus />
+      </Screen>
+    );
   if (!article)
     return (
       <Screen back>
         <EmptyState
           title="Lettura non disponibile"
-          text="Questo articolo potrebbe non essere più pubblicato."
+          text="Non troviamo questa lettura tra i contenuti attualmente disponibili."
+          action="Vai agli Argomenti"
+          onPress={() => router.navigate("/discover")}
         />
       </Screen>
     );

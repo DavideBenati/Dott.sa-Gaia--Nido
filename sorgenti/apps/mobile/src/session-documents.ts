@@ -87,7 +87,7 @@ export const maxDocumentBytes = 20 * 1024 * 1024;
 const oneDocument = (value: unknown): SessionDocument =>
   (Array.isArray(value) ? value[0] : value) as SessionDocument;
 const unavailable =
-  "Documenti non disponibili. Verifica la connessione e la configurazione Supabase v7.";
+  "Non riusciamo a caricare i documenti. Controlla la connessione e riprova.";
 async function identity() {
   if (!client) throw new Error(unavailable);
   const { data, error } = await client.auth.getUser();
@@ -105,6 +105,7 @@ export async function loadDocumentAccess(): Promise<DocumentAccess> {
 export type DocumentFilter = {
   term?: string;
   state?: "all" | "active" | "archived" | "incomplete";
+  format?: "all" | "pdf" | "docx" | "pptx";
 };
 export async function listDocuments(
   page: number,
@@ -129,21 +130,28 @@ export async function listDocuments(
     else if (filter.state === "archived")
       query = query.eq("state", "ready").eq("active", false);
     else if (filter.state === "incomplete") query = query.neq("state", "ready");
-    const term = filter.term?.trim().slice(0, 180);
-    if (term) {
-      // PostgREST quoted filter values preserve commas and parentheses; escape
-      // SQL wildcard characters as literals, keeping the search predictable.
-      const pattern = term.replace(/[\\%_]/g, "\\$&").replace(/"/g, '\\"');
-      query = query.or(
-        `title.ilike."%${pattern}%",file_name.ilike."%${pattern}%"`,
-      );
-    }
+  }
+  const term = filter.term?.trim().slice(0, 180);
+  if (term) {
+    // Apply the search after the patient's own-grant constraints. A filename or
+    // format filter never grants access to another person's documents.
+    const pattern = term.replace(/[\\%_]/g, "\\$&").replace(/"/g, '\\"');
+    query = query.or(
+      `title.ilike."%${pattern}%",file_name.ilike."%${pattern}%"`,
+    );
+  }
+  if (filter.format && filter.format !== "all") {
+    const mime = documentTypes[filter.format];
+    if (!mime) throw new Error("Scegli un formato di documento valido.");
+    query = query.eq("mime_type", mime);
   }
   const { data, error } = await query
     .order("created_at", { ascending: false })
     .order("id")
     .range(page * 20, page * 20 + 19)
     .returns<SessionDocument[]>();
+  if ((await identity()) !== user)
+    throw new Error("Sessione cambiata: ripeti l’accesso.");
   if (error) throw new Error(unavailable);
   return data ?? [];
 }

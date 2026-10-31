@@ -10,6 +10,86 @@ type Metadata = {
   index: boolean;
   canonical?: string;
 };
+export function pageSchema({
+  title,
+  description,
+  canonical,
+  index,
+}: Metadata & { canonical: string }) {
+  const url = site + canonical;
+  const pageTypes: Record<string, string> = {
+    "/discover": "CollectionPage",
+    "/checklists": "CollectionPage",
+    "/gaia": "AboutPage",
+    "/contatti": "ContactPage",
+    "/prenota": "ContactPage",
+  };
+  const pageType = pageTypes[canonical];
+  const home = site + "/welcome";
+  const breadcrumb = index && url !== home;
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": site + "/#website",
+        url: site,
+        name: "metiMaia",
+        inLanguage: "it-IT",
+        publisher: { "@id": site + "/#gaia" },
+      },
+      {
+        "@type": "Person",
+        "@id": site + "/#gaia",
+        name: "Dott.sa Gaia",
+        jobTitle: "Ostetrica",
+        email: "ostetricamaia@gmail.com",
+        url: home,
+      },
+      ...(index
+        ? [
+            {
+              "@type": pageType ?? "WebPage",
+              "@id": url + "#webpage",
+              url,
+              name: publicProfessionalText(title),
+              description: publicProfessionalText(description),
+              inLanguage: "it-IT",
+              isPartOf: { "@id": site + "/#website" },
+              ...(breadcrumb
+                ? { breadcrumb: { "@id": url + "#breadcrumb" } }
+                : {}),
+            },
+          ]
+        : []),
+      ...(breadcrumb
+        ? [
+            {
+              "@type": "BreadcrumbList",
+              "@id": url + "#breadcrumb",
+              itemListElement: [
+                {
+                  "@type": "ListItem",
+                  position: 1,
+                  name: "metiMaia",
+                  item: home,
+                },
+                {
+                  "@type": "ListItem",
+                  position: 2,
+                  name: publicProfessionalText(title).replace(
+                    /\s*\|\s*metiMaia$/i,
+                    "",
+                  ),
+                  item: url,
+                },
+              ],
+            },
+          ]
+        : []),
+    ],
+  };
+}
 export function usePageMetadata(article?: {
   id: string;
   title: string;
@@ -69,6 +149,18 @@ export function usePageMetadata(article?: {
       document.head.appendChild(link);
     }
     link.href = site + canonical;
+    let structuredData = document.head.querySelector<HTMLScriptElement>(
+      "script#metimaia-page-schema",
+    );
+    if (!structuredData) {
+      structuredData = document.createElement("script");
+      structuredData.id = "metimaia-page-schema";
+      structuredData.type = "application/ld+json";
+      document.head.appendChild(structuredData);
+    }
+    structuredData.textContent = JSON.stringify(
+      pageSchema({ title, description, canonical, index }),
+    ).replaceAll("<", "\\u003c");
     document.documentElement.lang = "it";
   }, [title, description, index, canonical]);
 }

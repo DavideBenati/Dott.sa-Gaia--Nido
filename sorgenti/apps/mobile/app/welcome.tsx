@@ -86,7 +86,7 @@ function WelcomeFlow() {
   function browse() {
     if (!confirmPendingNavigation()) return;
     cancelAccountEntry();
-    router.replace("/(tabs)");
+    router.replace("/discover");
   }
   async function finish(skipPersonalization = false) {
     if (busy || !confirmPendingNavigation()) return;

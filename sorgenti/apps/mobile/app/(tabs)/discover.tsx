@@ -14,7 +14,7 @@ import {
 } from "../../src/ui";
 import { Icon } from "../../src/icons";
 import { colors } from "../../src/theme";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { readTopicFilters, topicShare } from "../../src/share-content";
 import { ShareContentButton } from "../../src/share-content-button";
 export default function Discover() {
@@ -55,11 +55,7 @@ export default function Discover() {
           (Date.parse(a.reviewedAt || a.publishedAt || "") || 0),
   );
   const filtered = Boolean(
-    query ||
-    categoryId !== "all" ||
-    stage !== "all" ||
-    shortOnly ||
-    sort !== "recent",
+    query.trim() || categoryId !== "all" || stage !== "all" || shortOnly,
   );
   function resetFilters() {
     setQuery("");
@@ -241,24 +237,32 @@ export default function Discover() {
               ? "lettura disponibile"
               : "letture disponibili"}
           </Text>
-          {filtered && (
+          {(filtered || sort !== "recent") && (
             <Button variant="quiet" onPress={resetFilters}>
-              Azzera filtri
+              {filtered ? "Azzera filtri" : "Ripristina ordine"}
             </Button>
           )}
         </View>
       )}
-      <ArticleGrid items={result} />
-      {!result.length && !contentLoading && !contentError && (
-        <EmptyState
-          title="Una lettura ti aspetta"
-          text="Nessuna lettura corrisponde alla ricerca. Prova con un’altra parola o esplora tutti gli argomenti."
-          action="Mostra tutto"
-          onPress={() => {
-            resetFilters();
-          }}
-        />
-      )}
+      {!contentLoading && !contentError && <ArticleGrid items={result} />}
+      {!result.length &&
+        !contentLoading &&
+        !contentError &&
+        (articles.length ? (
+          <EmptyState
+            title="Nessuna lettura trovata"
+            text="Nessuna lettura corrisponde alla ricerca. Prova con un’altra parola o azzera i filtri."
+            action="Mostra tutte le letture"
+            onPress={resetFilters}
+          />
+        ) : (
+          <EmptyState
+            title="Nessuna lettura pubblicata"
+            text="Le letture saranno disponibili dopo la pubblicazione. Per informazioni puoi scrivere a Gaia."
+            action="Contatta Gaia"
+            onPress={() => router.push("/contatti")}
+          />
+        ))}
       {demo && (
         <Notice warm>
           Le letture di questa demo sono esempi editoriali, non ancora

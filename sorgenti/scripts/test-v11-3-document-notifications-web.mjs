@@ -522,9 +522,12 @@ try {
     .poll(() => new URL(guest.page.url()).pathname)
     .toBe("/miei-documenti");
   await expect(
-    guest.page.getByText("Nessun documento condiviso in questa pagina.", {
-      exact: true,
-    }),
+    guest.page.getByText(
+      "Gaia non ha ancora condiviso materiali con questo account. Quando lo farà, li ritroverai qui.",
+      {
+        exact: true,
+      },
+    ),
   ).toBeVisible();
   passed(
     "390px: the email's private-folder entry requires sign-in and returns a completed account to its own documents",
@@ -533,9 +536,12 @@ try {
   const unrelated = await fixture(390, outsider);
   await unrelated.page.goto(origin + "/miei-documenti");
   await expect(
-    unrelated.page.getByText("Nessun documento condiviso in questa pagina.", {
-      exact: true,
-    }),
+    unrelated.page.getByText(
+      "Gaia non ha ancora condiviso materiali con questo account. Quando lo farà, li ritroverai qui.",
+      {
+        exact: true,
+      },
+    ),
   ).toBeVisible();
   await expect(
     unrelated.page.getByText(document.title, { exact: true }),

@@ -57,7 +57,7 @@ test("all indexable HTML pages preserve Gaia-only identities and expose coherent
     expect(rendered.match(/name="description"/g)).toHaveLength(1);
     const graph = JSON.parse(
       rendered.match(
-        /<script type="application\/ld\+json">([\s\S]*?)<\/script>/,
+        /<script\b[^>]*type="application\/ld\+json"[^>]*>([\s\S]*?)<\/script>/,
       )[1],
     );
     expect(

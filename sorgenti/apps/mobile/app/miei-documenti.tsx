@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { View } from "react-native";
+import { View, Pressable } from "react-native";
 import { router } from "expo-router";
 import { useApp } from "../src/state";
-import { Text } from "../src/typography";
+import { Text, TextInput } from "../src/typography";
 import { Screen, StageHeading, Button, Notice, ui } from "../src/ui";
 import {
   documentFormat,
   documentSize,
   listDocuments,
   type SessionDocument,
+  type DocumentFilter,
 } from "../src/session-documents";
 import { useDocumentDownload } from "../src/document-download";
 export default function MyDocuments() {
@@ -39,13 +40,25 @@ function DocumentList() {
   const [version, setVersion] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+  const [term, setTerm] = useState("");
+  const [format, setFormat] =
+    useState<NonNullable<DocumentFilter["format"]>>("all");
+  const filtered = term !== "" || format !== "all";
+  function resetSearch() {
+    setQuery("");
+    setTerm("");
+    setFormat("all");
+    setPage(0);
+    setVersion((value) => value + 1);
+  }
   const { downloading, downloadMessage, downloadDocumentId, download } =
     useDocumentDownload();
   useEffect(() => {
     let active = true;
     setLoading(true);
     setError("");
-    void listDocuments(page)
+    void listDocuments(page, false, { term, format })
       .then(
         (rows) => {
           if (active) setDocuments(rows);
@@ -65,13 +78,13 @@ function DocumentList() {
     return () => {
       active = false;
     };
-  }, [page, version]);
+  }, [page, version, term, format]);
   return (
     <Screen
       back
       title="I miei documenti"
       subtitle="I materiali che la professionista ha condiviso con il tuo account."
-      stageKey={page}
+      stageKey={`${page}:${term}:${format}`}
       focusTargetId="my-documents-heading"
       stageScroll="heading"
     >
@@ -86,6 +99,71 @@ function DocumentList() {
           compare, chiedi alla professionista di verificare l’email
           destinataria. Conserva i file scaricati con attenzione.
         </Notice>
+        <View style={[ui.card, { gap: 12, padding: 16 }]}>
+          <Text style={ui.label}>Trova un materiale</Text>
+          <TextInput
+            accessibilityLabel="Cerca nei miei documenti"
+            placeholder="Titolo o nome del file"
+            value={query}
+            onChangeText={setQuery}
+            maxLength={180}
+            returnKeyType="search"
+            style={ui.input}
+            onSubmitEditing={() => {
+              setPage(0);
+              setTerm(query.trim());
+              setVersion((value) => value + 1);
+            }}
+          />
+          <Button
+            variant="secondary"
+            disabled={loading || Boolean(downloading)}
+            onPress={() => {
+              setPage(0);
+              setTerm(query.trim());
+              setVersion((value) => value + 1);
+            }}
+          >
+            Cerca documenti
+          </Button>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {(
+              [
+                ["all", "Tutti"],
+                ["pdf", "PDF"],
+                ["docx", "Word"],
+                ["pptx", "PowerPoint"],
+              ] as const
+            ).map(([value, label]) => (
+              <Pressable
+                key={value}
+                accessibilityRole="button"
+                aria-pressed={format === value}
+                disabled={Boolean(downloading)}
+                onPress={() => {
+                  setPage(0);
+                  setFormat(value);
+                }}
+                style={[ui.pill, format === value && ui.pillActive]}
+              >
+                <Text
+                  style={[ui.pillText, format === value && ui.pillTextActive]}
+                >
+                  {label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+          {filtered && (
+            <Button
+              variant="quiet"
+              disabled={Boolean(downloading)}
+              onPress={resetSearch}
+            >
+              Mostra tutti i materiali
+            </Button>
+          )}
+        </View>
         <Button
           variant="quiet"
           disabled={loading || Boolean(downloading)}
@@ -100,7 +178,15 @@ function DocumentList() {
             <Notice>{error}</Notice>
           </View>
         ) : documents.length === 0 ? (
-          <Notice>Nessun documento condiviso in questa pagina.</Notice>
+          <View style={{ gap: 12 }}>
+            <Notice>
+              {filtered
+                ? "Nessun materiale corrisponde alla ricerca. Prova un’altra parola o mostra tutti i materiali."
+                : page > 0
+                  ? "Hai raggiunto la fine dei materiali. Puoi tornare alla pagina precedente."
+                  : "Gaia non ha ancora condiviso materiali con questo account. Quando lo farà, li ritroverai qui."}
+            </Notice>
+          </View>
         ) : (
           documents.map((doc) => (
             <View style={[ui.card, { gap: 12 }]} key={doc.id}>

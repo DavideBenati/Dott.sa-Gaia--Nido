@@ -89,14 +89,25 @@ function storagePath(url: string): string | null {
 async function resolveArticle(
   client: SupabaseClient,
   article: Article,
+  preserveImageReference = false,
 ): Promise<Article> {
-  const path = storagePath(article.imageUrl);
-  if (!path) return article;
-  const { data, error } = await client.storage
-    .from(bucket)
-    .createSignedUrl(path, 3600);
-  check(error);
-  return { ...article, imageUrl: data!.signedUrl };
+  // A cover is optional for reading. Its temporary unavailability must not
+  // hide an otherwise available library. Editors retain the stored reference
+  // so saving another field cannot silently erase an unavailable cover.
+  try {
+    const path = storagePath(article.imageUrl);
+    if (!path) return article;
+    const { data, error } = await client.storage
+      .from(bucket)
+      .createSignedUrl(path, 3600);
+    if (error || !data?.signedUrl) throw new Error("Cover unavailable");
+    return { ...article, imageUrl: data.signedUrl };
+  } catch {
+    return {
+      ...article,
+      imageUrl: preserveImageReference ? article.imageUrl : "",
+    };
+  }
 }
 
 async function readContent(
@@ -126,7 +137,7 @@ async function readContent(
   return {
     articles: await Promise.all(
       (ar.data ?? []).map((row) =>
-        resolveArticle(client, row.payload as Article),
+        resolveArticle(client, row.payload as Article, editorial),
       ),
     ),
     checklists: (cl.data ?? []).map((row) => row.payload as Checklist),
@@ -260,7 +271,7 @@ export async function saveArticle(
     document: payload,
   });
   check(error);
-  return resolveArticle(client, data as Article);
+  return resolveArticle(client, data as Article, true);
 }
 export async function saveChecklist(
   client: SupabaseClient,

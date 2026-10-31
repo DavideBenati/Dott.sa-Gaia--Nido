@@ -647,6 +647,10 @@ function Workspace({
       )}
       {!editing && area === "overview" ? (
         <>
+          <Text style={ui.body}>
+            Scegli l’attività da svolgere. I materiali riservati e le letture
+            pubbliche hanno spazi separati.
+          </Text>
           <View
             style={{
               flexDirection: wide ? "row" : "column",
@@ -654,10 +658,35 @@ function Workspace({
               gap: 16,
             }}
           >
-            <View style={[ui.card, { gap: 12, width: wide ? "48%" : "100%" }]}>
-              <Text style={ui.heading}>Contenuti del sito</Text>
+            <View
+              style={[ui.card, { gap: 12, width: wide ? "31.5%" : "100%" }]}
+            >
+              <Text accessibilityRole="header" style={ui.heading}>
+                Documenti e allegati
+              </Text>
               <Text style={ui.body}>
-                Scrivi, rivedi e pubblica articoli e checklist.
+                Carica un file, scegli le persone e salva i destinatari. Qui
+                controlli anche gli avvisi email della condivisione.
+              </Text>
+              <Button
+                variant="secondary"
+                onPress={() => router.push("/documenti-studio")}
+              >
+                Documenti e allegati riservati
+              </Button>
+              <Text style={[ui.body, { fontSize: 14, lineHeight: 22 }]}>
+                Per gestire i file è richiesto il codice a due fattori.
+              </Text>
+            </View>
+            <View
+              style={[ui.card, { gap: 12, width: wide ? "31.5%" : "100%" }]}
+            >
+              <Text accessibilityRole="header" style={ui.heading}>
+                Contenuti del sito
+              </Text>
+              <Text style={ui.body}>
+                Prepara una lettura o ritrova articoli e checklist da rivedere.
+                Le bozze restano private fino alla pubblicazione.
               </Text>
               <Button
                 disabled={!content || loading}
@@ -669,31 +698,45 @@ function Workspace({
                 Apri articoli e checklist
               </Button>
             </View>
+            <View
+              style={[ui.card, { gap: 12, width: wide ? "31.5%" : "100%" }]}
+            >
+              <Text accessibilityRole="header" style={ui.heading}>
+                Iscritti e percorsi
+              </Text>
+              <Text style={ui.body}>
+                Cerca una persona per nickname o email e consulta le schede che
+                ha scelto di condividere con te.
+              </Text>
+              <Button
+                variant="secondary"
+                onPress={() => router.push("/iscritti")}
+              >
+                Iscritti e percorsi
+              </Button>
+              <Text style={[ui.body, { fontSize: 14, lineHeight: 22 }]}>
+                Le informazioni disponibili dipendono dai consensi e dai
+                permessi del tuo account.
+              </Text>
+            </View>
+          </View>
+          <View style={[ui.card, { gap: 16 }]}>
+            <Text accessibilityRole="header" style={ui.heading}>
+              Altri strumenti
+            </Text>
             {(
               [
                 [
-                  "Iscritti e percorsi",
-                  "Riconosci gli iscritti per nickname e consulta le schede condivise con te.",
-                  "Iscritti e percorsi",
-                  "/iscritti",
-                ],
-                [
-                  "Documenti e allegati",
-                  "Carica materiali e scegli chi può consultarli.",
-                  "Documenti e allegati riservati",
-                  "/documenti-studio",
+                  "Conversazioni",
+                  "Ritrova i messaggi riservati e prepara le risposte.",
+                  "Conversazioni riservate",
+                  "/messaggi",
                 ],
                 [
                   "Videochiamate",
-                  "Condividi un invito privato a una videochiamata con la persona scelta.",
+                  "Prepara o gestisci gli inviti agli incontri concordati.",
                   "Gestisci videochiamate",
                   "/videochiamate?manage=1",
-                ],
-                [
-                  "Conversazioni",
-                  "Apri le conversazioni riservate e prepara le risposte.",
-                  "Conversazioni riservate",
-                  "/messaggi",
                 ],
                 [
                   "Richieste d’incontro",
@@ -703,27 +746,40 @@ function Workspace({
                 ],
                 [
                   "Consigli d’acquisto",
-                  "Scegli i prodotti Amazon e inserisci i tuoi collegamenti affiliati.",
+                  "Scegli i prodotti Amazon e i collegamenti affiliati da mostrare.",
                   "Gestisci i consigli d’acquisto",
                   "/shop?manage=1",
                 ],
                 [
                   "Newsletter",
-                  "Sincronizza iscritti e revoche ed esporta i confermati.",
+                  "Controlla iscritti e revoche e prepara l’elenco dei confermati.",
                   "Gestisci newsletter e revoche",
                   "/newsletter-admin",
                 ],
               ] as const
-            ).map(([title, description, label, href]) => (
+            ).map(([title, description, label, href], index) => (
               <View
                 key={href}
-                style={[ui.card, { gap: 12, width: wide ? "48%" : "100%" }]}
+                style={{
+                  flexDirection: wide ? "row" : "column",
+                  alignItems: wide ? "center" : "stretch",
+                  gap: 10,
+                  paddingTop: index ? 14 : 0,
+                  borderTopWidth: index ? 1 : 0,
+                  borderTopColor: ui.card.borderColor,
+                }}
               >
-                <Text style={ui.heading}>{title}</Text>
-                <Text style={ui.body}>{description}</Text>
-                <Button variant="secondary" onPress={() => router.push(href)}>
-                  {label}
-                </Button>
+                <View style={{ flex: 1, gap: 4 }}>
+                  <Text style={[ui.label, { marginBottom: 0 }]}>{title}</Text>
+                  <Text style={[ui.body, { fontSize: 14, lineHeight: 22 }]}>
+                    {description}
+                  </Text>
+                </View>
+                <View style={wide ? { width: 280 } : undefined}>
+                  <Button variant="quiet" onPress={() => router.push(href)}>
+                    {label}
+                  </Button>
+                </View>
               </View>
             ))}
           </View>
