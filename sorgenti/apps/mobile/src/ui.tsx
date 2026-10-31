@@ -23,6 +23,7 @@ import { colors, serif, shadow } from "./theme";
 import { useApp } from "./state";
 import { usePageMetadata } from "./seo";
 import { ArticleCover } from "./art";
+import { useConnection } from "./use-connection";
 import { confirmPendingNavigation, guardedNavigation } from "./unsaved-changes";
 
 export function Brand({ compact = false }: { compact?: boolean }) {
@@ -65,6 +66,7 @@ export function Screen({
 }) {
   usePageMetadata();
   const pathname = usePathname();
+  const online = useConnection();
   const {
     demo,
     email,
@@ -299,6 +301,19 @@ export function Screen({
             <Icon name="back" size={20} />
             <Text style={styles.backText}>Indietro</Text>
           </Pressable>
+        )}
+        {!online && (
+          <View
+            accessibilityRole="status"
+            accessibilityLiveRegion="polite"
+            style={{ marginBottom: 18 }}
+          >
+            <Notice>
+              Sei senza connessione. Puoi leggere ciò che è già aperto. Per
+              salvare le attività o aprire altri materiali, riconnettiti a
+              Internet.
+            </Notice>
+          </View>
         )}
         {mutationError && (
           <View accessibilityRole="alert" style={styles.error}>

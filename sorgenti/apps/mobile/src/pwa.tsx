@@ -9,6 +9,7 @@ import React, {
 import { Platform, Pressable, View } from "react-native";
 import { Text } from "./typography";
 import { confirmPendingNavigation } from "./unsaved-changes";
+import { createUpdateWatchdog } from "./pwa-update-watchdog";
 import {
   installPlatform,
   serviceWorkerOriginAllowed,
@@ -76,7 +77,17 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
   const [updating, setUpdating] = useState(false);
   const [updateMessage, setUpdateMessage] = useState("");
   const deferred = useRef<InstallPromptEvent | null>(null);
-  const pendingUpdate = useRef(false);
+  const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
+  const updateWatchdog = useRef<ReturnType<typeof createUpdateWatchdog> | null>(
+    null,
+  );
+  if (!updateWatchdog.current)
+    updateWatchdog.current = createUpdateWatchdog(() => {
+      setUpdating(false);
+      setUpdateMessage(
+        "L’aggiornamento sta impiegando più del previsto. Puoi riprovare: le modifiche non salvate restano qui.",
+      );
+    });
   const reloadOnce = useRef(false);
 
   const reloadWithPermission = useCallback(() => {
@@ -132,13 +143,12 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
     ) {
       const controllerChanged = () => {
         if (!alive) return;
+        const requested = updateWatchdog.current?.complete();
         setWaiting(null);
         setReloadReady(true);
         setUpdating(false);
-        if (pendingUpdate.current) {
-          pendingUpdate.current = false;
-          reloadWithPermission();
-        }
+        setUpdateMessage("");
+        if (requested) reloadWithPermission();
       };
       navigator.serviceWorker.addEventListener(
         "controllerchange",
@@ -155,6 +165,7 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
         .then((value) => {
           if (!alive) return;
           registration = value;
+          registrationRef.current = value;
           if (value.waiting) setWaiting(value.waiting);
           const observeInstalling = () => {
             const worker = value.installing;
@@ -168,7 +179,7 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
               )
                 setWaiting(value.waiting);
               if (alive && worker.state === "redundant") {
-                pendingUpdate.current = false;
+                updateWatchdog.current?.cancel();
                 setUpdating(false);
                 setUpdateMessage(
                   "Aggiornamento non riuscito. Riprova più tardi.",
@@ -210,6 +221,8 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
     }
     return () => {
       alive = false;
+      updateWatchdog.current?.cancel();
+      registrationRef.current = null;
       window.removeEventListener("beforeinstallprompt", beforeInstall);
       window.removeEventListener("appinstalled", installed);
       media?.removeEventListener?.("change", displayChanged);
@@ -246,14 +259,29 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
       reloadWithPermission();
       return;
     }
-    if (!waiting) return;
+    const worker = registrationRef.current?.waiting ?? waiting;
+    if (!worker) return;
+    if (worker.state === "redundant") {
+      updateWatchdog.current?.cancel();
+      setUpdateMessage(
+        "Questa versione non è più disponibile. Controllo gli aggiornamenti: riprova tra qualche istante.",
+      );
+      void registrationRef.current?.update().catch(() => {});
+      return;
+    }
+    if (worker.state === "activated") {
+      updateWatchdog.current?.cancel();
+      setReloadReady(true);
+      reloadWithPermission();
+      return;
+    }
     setUpdateMessage("");
-    pendingUpdate.current = true;
     setUpdating(true);
+    updateWatchdog.current?.start();
     try {
-      waiting.postMessage({ type: "SKIP_WAITING" });
+      worker.postMessage({ type: "SKIP_WAITING" });
     } catch {
-      pendingUpdate.current = false;
+      updateWatchdog.current?.cancel();
       setUpdating(false);
       setUpdateMessage("Aggiornamento non riuscito. Riprova più tardi.");
     }

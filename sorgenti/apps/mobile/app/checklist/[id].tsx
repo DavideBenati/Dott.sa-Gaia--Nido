@@ -1,18 +1,52 @@
 import { Text } from "../../src/typography";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { View, Pressable } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useApp } from "../../src/state";
-import { Button, Screen, Notice, EmptyState, Progress, ui } from "../../src/ui";
+import {
+  Button,
+  Screen,
+  Notice,
+  EmptyState,
+  Progress,
+  ContentStatus,
+  ui,
+} from "../../src/ui";
 import { Icon } from "../../src/icons";
 import { colors } from "../../src/theme";
 import { checklistShare, checklistSummary } from "../../src/share-content";
 import { ShareContentButton } from "../../src/share-content-button";
 export default function Checklist() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { checklists, state, toggleProgress } = useApp();
+  const {
+    checklists,
+    state,
+    toggleProgress,
+    contentLoading,
+    contentError,
+    refreshContent,
+  } = useApp();
   const [saving, setSaving] = useState<string[]>([]);
+  const inFlight = useRef(new Set<string>());
+  const [remainingOnly, setRemainingOnly] = useState(false);
   const checklist = checklists.find((c) => c.id === id);
+  if (!checklist && contentLoading)
+    return (
+      <Screen back title="La tua checklist">
+        <Notice>Caricamento checklist…</Notice>
+      </Screen>
+    );
+  if (!checklist && contentError)
+    return (
+      <Screen back title="La tua checklist">
+        <View accessibilityRole="alert">
+          <Notice>{contentError}</Notice>
+        </View>
+        <Button onPress={() => void refreshContent()}>
+          Riprova caricamento checklist
+        </Button>
+      </Screen>
+    );
   if (!checklist)
     return (
       <Screen back>
@@ -20,9 +54,17 @@ export default function Checklist() {
           title="Checklist non disponibile"
           text="Questo contenuto potrebbe non essere più pubblicato."
         />
+        <Button onPress={() => router.navigate("/checklists")}>
+          Vai alle checklist
+        </Button>
       </Screen>
     );
   const summary = checklistSummary(checklist, state.progress);
+  const items = remainingOnly
+    ? checklist.items.filter(
+        (item) => !state.progress[item.id] || saving.includes(item.id),
+      )
+    : checklist.items;
   return (
     <Screen
       back
@@ -39,6 +81,7 @@ export default function Checklist() {
           ? " Esempio dimostrativo, non ancora revisionato."
           : ""}
       </Notice>
+      <ContentStatus />
       <View style={{ gap: 12, marginVertical: 25 }}>
         <Progress completed={summary.completed} total={summary.total} />
         {summary.complete && saving.length === 0 && (
@@ -72,26 +115,72 @@ export default function Checklist() {
           Condivisioni familiari
         </Button>
       </View>
+      <View
+        style={{
+          flexDirection: "row",
+          flexWrap: "wrap",
+          gap: 8,
+          marginBottom: 14,
+        }}
+      >
+        {(
+          [
+            [false, "Tutte le attività"],
+            [true, "Da fare"],
+          ] as const
+        ).map(([value, label]) => (
+          <Pressable
+            key={label}
+            accessibilityRole="button"
+            aria-pressed={remainingOnly === value}
+            onPress={() => setRemainingOnly(value)}
+            style={[ui.pill, remainingOnly === value && ui.pillActive]}
+          >
+            <Text
+              style={[
+                ui.pillText,
+                remainingOnly === value && ui.pillTextActive,
+              ]}
+            >
+              {label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+      {remainingOnly && items.length === 0 && (
+        <Notice>
+          {summary.complete
+            ? "Non restano attività da fare. Puoi rivederle da Tutte le attività."
+            : "Questa checklist non contiene ancora attività."}
+        </Notice>
+      )}
       <View style={[ui.card, { padding: 0, overflow: "hidden" }]}>
-        {checklist.items.map((item) => {
+        {items.map((item) => {
           const checked = Boolean(state.progress[item.id]);
           return (
             <Pressable
               key={item.id}
               accessibilityRole="checkbox"
               accessibilityLabel={item.label}
-              accessibilityState={{ checked }}
+              accessibilityState={{
+                checked,
+                busy: saving.includes(item.id),
+                disabled: saving.includes(item.id),
+              }}
               aria-checked={checked}
               disabled={saving.includes(item.id)}
               onPress={() => {
+                if (inFlight.current.has(item.id)) return;
+                inFlight.current.add(item.id);
                 setSaving((current) => [...current, item.id]);
                 void toggleProgress(item.id)
                   .catch(() => {})
-                  .finally(() =>
+                  .finally(() => {
+                    inFlight.current.delete(item.id);
                     setSaving((current) =>
                       current.filter((id) => id !== item.id),
-                    ),
-                  );
+                    );
+                  });
               }}
               style={{
                 flexDirection: "row",
@@ -127,6 +216,11 @@ export default function Checklist() {
                   {item.label}
                 </Text>
                 {item.note && <Text style={ui.body}>{item.note}</Text>}
+                {saving.includes(item.id) && (
+                  <Text accessibilityLiveRegion="polite" style={ui.label}>
+                    Salvataggio…
+                  </Text>
+                )}
               </View>
             </Pressable>
           );

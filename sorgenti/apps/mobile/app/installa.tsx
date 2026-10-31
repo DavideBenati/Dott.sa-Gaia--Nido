@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { Screen, Button, Notice, SectionHeader, ui } from "../src/ui";
 import { Text } from "../src/typography";
 import { usePwa } from "../src/pwa";
+import { ShareContentButton } from "../src/share-content-button";
 
 export default function Install() {
   const pwa = usePwa();
@@ -62,6 +63,14 @@ export default function Install() {
           checklist. La prima volta potrebbe essere necessario accedere di nuovo
           dall’icona.
         </Notice>
+        <ShareContentButton
+          label="Condividi il link per installare MAIA"
+          content={{
+            title: "MAIA sul tuo telefono",
+            text: "Aggiungi MAIA alla schermata Home e ritrova letture, checklist e i materiali condivisi con il tuo account. Le istruzioni per iPhone e Android sono qui:",
+            url: "https://metimaia.com/installa",
+          }}
+        />
         {!pwa.standalone && (
           <>
             <Text style={ui.body}>

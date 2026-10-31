@@ -1,6 +1,6 @@
 // Production-package PWA checks. The service worker is real; every backend
 // request is a disposable fixture. No live account, document or email is used.
-/* global navigator, Event, caches, innerWidth */
+/* global EventTarget, navigator, Event, caches, innerWidth */
 import { createServer } from "node:http";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { extname, resolve } from "node:path";
@@ -218,6 +218,10 @@ async function fixture({
     offline: false,
     failProgress: false,
     failProgressRead: false,
+    progressWriteGate: null,
+    catalogGate: null,
+    failCatalog: false,
+    emptyCatalog: false,
     assigned: true,
   };
   await context.route("**/*", async (route) => {
@@ -315,13 +319,18 @@ async function fixture({
     if (url.pathname.endsWith("/articles")) return json([]);
     if (url.pathname.endsWith("/article_categories"))
       return json([{ id: "home", name: "Primi giorni a casa", icon: "home" }]);
-    if (url.pathname.endsWith("/checklists"))
-      return json([{ payload: copy(checklist) }]);
+    if (url.pathname.endsWith("/checklists")) {
+      if (state.catalogGate) await state.catalogGate;
+      if (state.failCatalog)
+        return json({ message: "Catalogue unavailable" }, 500);
+      return json(state.emptyCatalog ? [] : [{ payload: copy(checklist) }]);
+    }
     if (url.pathname.endsWith("/checklist_progress")) {
       if (request.method() !== "GET") {
         if (body?.user_id !== viewer?.id)
           return json({ message: "Wrong account" }, 403);
         if (state.failProgress) return json({ message: "Save denied" }, 503);
+        if (state.progressWriteGate) await state.progressWriteGate;
         state.progress[body.item_id] = body.completed;
         return json(null);
       }
@@ -568,6 +577,165 @@ try {
     "Ordinary browser retains the existing navigation and recommendations tab",
   );
 
+  const shareInstall = await fixture();
+  await shareInstall.page.addInitScript(() => {
+    Object.defineProperty(navigator, "share", {
+      configurable: true,
+      value: undefined,
+    });
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async (text) => {
+          window.__installCopied = text;
+        },
+      },
+    });
+  });
+  await shareInstall.page.goto(origin + "/installa");
+  await button(
+    shareInstall.page,
+    "Condividi il link per installare MAIA",
+  ).click();
+  await expect(
+    shareInstall.page.getByText(/Testo e link copiati/),
+  ).toBeVisible();
+  const copiedInstall = await shareInstall.page.evaluate(
+    () => window.__installCopied,
+  );
+  expect(copiedInstall).toContain("https://metimaia.com/installa");
+  expect(copiedInstall).not.toContain(patient.email);
+  expect(copiedInstall).not.toContain(patient.id);
+  expect(copiedInstall).not.toContain("access_token");
+  await shareInstall.page.evaluate(() => {
+    navigator.clipboard.writeText = async () => {
+      throw new Error("Denied");
+    };
+  });
+  await button(
+    shareInstall.page,
+    "Condividi il link per installare MAIA",
+  ).click();
+  await expect(
+    shareInstall.page.getByText(/Seleziona e copia il testo qui sotto/),
+  ).toBeVisible();
+  await expect(
+    shareInstall.page.getByText(/https:\/\/metimaia.com\/installa/),
+  ).toBeVisible();
+  await shareInstall.context.close();
+  passed(
+    "Installation link sharing copies only the public link and offers manual copying when clipboard access is denied",
+  );
+
+  const focusedChecklist = await fixture({ viewer: patient, standalone: true });
+  focusedChecklist.state.progress[itemId] = true;
+  await focusedChecklist.page.goto(`${origin}/checklist?id=${checklist.id}`);
+  await expect(
+    focusedChecklist.page.getByRole("checkbox").first(),
+  ).toBeChecked();
+  await button(focusedChecklist.page, "Da fare").click();
+  await expect(focusedChecklist.page.getByRole("checkbox")).toHaveCount(1);
+  let finishWrite;
+  focusedChecklist.state.progressWriteGate = new Promise((done) => {
+    finishWrite = done;
+  });
+  const remainingItem = focusedChecklist.page.getByRole("checkbox");
+  const writesBefore = focusedChecklist.state.calls.filter(
+    (c) => c.path.endsWith("/checklist_progress") && c.method !== "GET",
+  ).length;
+  await remainingItem.evaluate((element) => {
+    element.click();
+    element.click();
+  });
+  await expect(
+    focusedChecklist.page.getByText("Salvataggio…", { exact: true }),
+  ).toBeVisible();
+  await expect(remainingItem).toBeDisabled();
+  await expect
+    .poll(
+      () =>
+        focusedChecklist.state.calls.filter(
+          (c) => c.path.endsWith("/checklist_progress") && c.method !== "GET",
+        ).length,
+    )
+    .toBe(writesBefore + 1);
+  finishWrite();
+  await expect(focusedChecklist.page.getByRole("checkbox")).toHaveCount(0);
+  await expect(
+    focusedChecklist.page.getByText(/Non restano attività da fare/),
+  ).toBeVisible();
+  await button(focusedChecklist.page, "Tutte le attività").click();
+  await expect(focusedChecklist.page.getByRole("checkbox")).toHaveCount(2);
+  for (const checkbox of await focusedChecklist.page
+    .getByRole("checkbox")
+    .all())
+    await expect(checkbox).toBeChecked();
+  passed(
+    "Checklist remaining filter preserves progress, announces an in-flight save and prevents duplicate submissions",
+  );
+
+  await focusedChecklist.context.setOffline(true);
+  await expect(
+    focusedChecklist.page.getByText(/Sei senza connessione/),
+  ).toBeVisible();
+  await expect(focusedChecklist.page.getByRole("checkbox")).toHaveCount(2);
+  await focusedChecklist.context.setOffline(false);
+  await expect(
+    focusedChecklist.page.getByText(/Sei senza connessione/),
+  ).toHaveCount(0);
+  await focusedChecklist.context.close();
+  passed(
+    "An already-open app explains connection loss and clears the connection notice after reconnecting",
+  );
+
+  const catalogStates = await fixture({ viewer: patient });
+  let finishCatalog;
+  catalogStates.state.catalogGate = new Promise((done) => {
+    finishCatalog = done;
+  });
+  let catalogPage = await catalogStates.context.newPage();
+  catalogPage.on("pageerror", (error) => errors.push(error.message));
+  await catalogPage.goto(`${origin}/checklist?id=${checklist.id}`);
+  await expect(
+    catalogPage.getByText("Caricamento checklist…", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    catalogPage.getByText("Checklist non disponibile", { exact: true }),
+  ).toHaveCount(0);
+  finishCatalog();
+  catalogStates.state.catalogGate = null;
+  await expect(catalogPage.getByRole("checkbox")).toHaveCount(2);
+  await catalogPage.close();
+  catalogStates.state.failCatalog = true;
+  catalogPage = await catalogStates.context.newPage();
+  catalogPage.on("pageerror", (error) => errors.push(error.message));
+  await catalogPage.goto(`${origin}/checklist?id=${checklist.id}`);
+  await expect(
+    button(catalogPage, "Riprova caricamento checklist"),
+  ).toBeVisible();
+  await expect(
+    catalogPage.getByText("Checklist non disponibile", { exact: true }),
+  ).toHaveCount(0);
+  catalogStates.state.failCatalog = false;
+  await button(catalogPage, "Riprova caricamento checklist").click();
+  await expect(catalogPage.getByRole("checkbox")).toHaveCount(2);
+  await catalogPage.close();
+  catalogStates.state.emptyCatalog = true;
+  catalogPage = await catalogStates.context.newPage();
+  catalogPage.on("pageerror", (error) => errors.push(error.message));
+  await catalogPage.goto(`${origin}/checklist?id=${checklist.id}`);
+  await expect(
+    catalogPage.getByText("Checklist non disponibile", { exact: true }),
+  ).toBeVisible();
+  await button(catalogPage, "Vai alle checklist").click();
+  await expect(
+    heading(catalogPage, "Un piccolo passo alla volta."),
+  ).toBeVisible();
+  await catalogStates.context.close();
+  passed(
+    "Checklist loading, a failed catalogue with retry, and genuinely missing content have distinct usable states",
+  );
+
   const sync = await fixture({ viewer: patient, standalone: true });
   await sync.page.goto(`${origin}/checklist?id=${checklist.id}`);
   const firstItem = sync.page.getByRole("checkbox", {
@@ -663,6 +831,57 @@ try {
   await unrelated.context.close();
   passed(
     "Another account cannot discover the patient’s document in the installed app",
+  );
+
+  const stuckUpdate = await fixture({ viewer: patient, standalone: true });
+  await stuckUpdate.page.addInitScript(() => {
+    const target = new EventTarget();
+    const worker = {
+      state: "installed",
+      postMessage: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    };
+    const registration = {
+      waiting: worker,
+      installing: null,
+      update: async () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    };
+    Object.defineProperty(navigator, "serviceWorker", {
+      configurable: true,
+      value: Object.assign(target, {
+        controller: {},
+        register: async () => registration,
+        ready: Promise.resolve(registration),
+      }),
+    });
+    window.__lateWorkerActivation = () =>
+      target.dispatchEvent(new Event("controllerchange"));
+  });
+  await stuckUpdate.page.clock.install();
+  await stuckUpdate.page.goto(origin + "/profile");
+  const pendingNickname = stuckUpdate.page.getByLabel("Nickname del profilo", {
+    exact: true,
+  });
+  await expect(pendingNickname).toHaveValue("Account PWA");
+  await pendingNickname.fill("Bozza in attesa");
+  await button(stuckUpdate.page, "Aggiorna MAIA").click();
+  await expect(button(stuckUpdate.page, "Aggiorna MAIA")).toBeDisabled();
+  await stuckUpdate.page.clock.fastForward(20_100);
+  await expect(button(stuckUpdate.page, "Aggiorna MAIA")).toBeEnabled();
+  await expect(
+    stuckUpdate.page.getByText(/sta impiegando più del previsto/),
+  ).toBeVisible();
+  await expect(pendingNickname).toHaveValue("Bozza in attesa");
+  await stuckUpdate.page.evaluate(() => window.__lateWorkerActivation());
+  await expect(pendingNickname).toHaveValue("Bozza in attesa");
+  await button(stuckUpdate.page, "Aggiorna MAIA").click();
+  await expect(pendingNickname).toHaveValue("Bozza in attesa");
+  await stuckUpdate.context.close();
+  passed(
+    "An unresponsive update unlocks retry after twenty seconds; late activation does not reload an unsaved profile",
   );
 
   const update = await fixture({ viewer: patient, standalone: true });
