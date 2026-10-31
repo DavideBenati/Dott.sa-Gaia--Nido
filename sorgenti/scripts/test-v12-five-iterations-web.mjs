@@ -412,6 +412,7 @@ try {
     await personal.page.goto(origin + "/miei-documenti");
     await expect(heading(personal.page, documents[0].title)).toBeVisible();
     await expect(heading(personal.page, documents[1].title)).toBeVisible();
+    await button(personal.page, "Cerca o filtra i materiali").click();
     await personal.page
       .getByLabel("Cerca nei miei documenti", { exact: true })
       .fill("beta");
@@ -599,6 +600,7 @@ try {
   ).toBeVisible();
   for (const item of documents)
     await expect(heading(unrelated.page, item.title)).toHaveCount(0);
+  await button(unrelated.page, "Cerca o filtra i materiali").click();
   await unrelated.page
     .getByLabel("Cerca nei miei documenti", { exact: true })
     .fill("alfa");
@@ -615,6 +617,7 @@ try {
   await noOverflow(narrow.page);
   await button(narrow.page, "Apri i miei documenti").click();
   await expect(heading(narrow.page, documents[0].title)).toBeVisible();
+  await button(narrow.page, "Cerca o filtra i materiali").click();
   await noOverflow(narrow.page);
   await narrow.context.close();
   passed(

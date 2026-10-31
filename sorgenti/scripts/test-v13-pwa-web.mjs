@@ -507,6 +507,7 @@ try {
 
   for (const width of [390, 1280]) {
     const app = await fixture({ width, viewer: patient, standalone: true });
+    app.state.progress[itemId] = true;
     // A new page keeps only the persisted account. Its navigation provider
     // starts fresh, like opening the installed icon after closing the app.
     const launch = await app.context.newPage();
@@ -533,6 +534,47 @@ try {
       throw error;
     }
     await expect(heading(app.page, "Crescere insieme.")).toHaveCount(0);
+    await expect(
+      app.page.getByText("RIPRENDI DA QUI", { exact: true }),
+    ).toBeVisible();
+    const resume = button(app.page, checklist.title);
+    const resumeBounds = await resume.boundingBox();
+    const shoppingBounds = await button(
+      app.page,
+      "Scopri i consigli d’acquisto",
+    ).boundingBox();
+    expect(resumeBounds.y + resumeBounds.height).toBeLessThanOrEqual(
+      app.page.viewportSize().height - 84,
+    );
+    expect(resumeBounds.y).toBeLessThan(shoppingBounds.y);
+    await resume.click();
+    const firstActivity = app.page.getByRole("checkbox").first();
+    await expect(firstActivity).toBeVisible();
+    const firstActivityBounds = await firstActivity.boundingBox();
+    expect(
+      firstActivityBounds.y + firstActivityBounds.height,
+    ).toBeLessThanOrEqual(app.page.viewportSize().height);
+    await expect(
+      button(app.page, "Condividi lo stato della checklist"),
+    ).toHaveCount(0);
+    const sharing = button(app.page, "Condividi e organizza insieme");
+    await expect(sharing).toHaveAttribute("aria-expanded", "false");
+    await sharing.click();
+    await expect(
+      button(app.page, "Condividi lo stato della checklist"),
+    ).toBeVisible();
+    await expect(sharing).toHaveAttribute("aria-expanded", "true");
+    await sharing.click();
+    await expect(
+      button(app.page, "Condividi lo stato della checklist"),
+    ).toHaveCount(0);
+    await app.page.screenshot({
+      path: resolve(artifacts, `usability-checklist-${width}.png`),
+    });
+    await button(app.page, "Indietro").click();
+    passed(
+      `${width}px: resume appears before shopping and above the tabs; checklist activities precede optional sharing`,
+    );
     const tabs = app.page.getByRole("tab");
     await expect(tabs).toHaveCount(5);
     for (const label of [
@@ -547,6 +589,31 @@ try {
       ).toBeVisible();
     await app.page.getByRole("tab", { name: /Documenti/ }).click();
     await expect(heading(app.page, document.title)).toBeVisible();
+    await expect(
+      app.page.getByLabel("Cerca nei miei documenti", { exact: true }),
+    ).toHaveCount(0);
+    const firstDownloadBounds = await button(
+      app.page,
+      "Scarica PDF",
+    ).boundingBox();
+    expect(
+      firstDownloadBounds.y + firstDownloadBounds.height,
+    ).toBeLessThanOrEqual(app.page.viewportSize().height - 84);
+    await button(app.page, "Cerca o filtra i materiali").click();
+    await app.page
+      .getByLabel("Cerca nei miei documenti", { exact: true })
+      .fill("Materiale");
+    await button(app.page, "Cerca documenti").click();
+    await button(app.page, "Chiudi ricerca e filtri").click();
+    await expect(
+      app.page.getByText("Ricerca o filtro attivo", { exact: true }),
+    ).toBeVisible();
+    await button(app.page, "Mostra tutti i materiali").click();
+    await expect(heading(app.page, document.title)).toBeVisible();
+    await expect(button(app.page, "Mostra tutti i materiali")).toHaveCount(0);
+    await app.page.screenshot({
+      path: resolve(artifacts, `usability-documents-${width}.png`),
+    });
     await app.page
       .getByRole("link", { name: "Apri i consigli d’acquisto", exact: true })
       .click();

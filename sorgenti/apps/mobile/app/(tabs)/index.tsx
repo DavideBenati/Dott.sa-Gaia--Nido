@@ -17,6 +17,8 @@ import {
 import { Icon } from "../../src/icons";
 import { colors } from "../../src/theme";
 import { usePwa } from "../../src/pwa";
+import { selectHomeChecklist } from "../../src/home-checklist";
+import { checklistSummary } from "../../src/share-content";
 export default function Home() {
   const {
     state,
@@ -29,8 +31,8 @@ export default function Home() {
   } = useApp();
   const { standalone } = usePwa();
   const journey = calculateJourney(personalizedPreferences);
-  const next =
-    checklists.find((c) => c.stage === journey.stage) ?? checklists[0];
+  const next = selectHomeChecklist(checklists, state.progress, journey.stage);
+  const nextSummary = next ? checklistSummary(next, state.progress) : null;
   return (
     <Screen
       eyebrow="IL MIO PERCORSO"
@@ -44,78 +46,52 @@ export default function Home() {
       subtitle="Ciao! Oggi facciamo un altro passo insieme."
     >
       {email && (
-        <View style={[ui.card, { gap: 12, marginBottom: 18 }]}>
+        <View style={[ui.card, { padding: 18, gap: 10, marginBottom: 14 }]}>
           <View style={[ui.row, { alignItems: "flex-start" }]}>
             <Icon name="lock" size={28} />
             <Text style={[ui.heading, { flex: 1 }]}>I miei documenti</Text>
           </View>
-          <Text style={ui.body}>
-            I materiali e le indicazioni che Gaia ha condiviso con te, raccolti
-            nella tua area riservata.
-          </Text>
+          <Text style={ui.body}>I materiali che Gaia ha condiviso con te.</Text>
           <Button onPress={() => router.push("/miei-documenti")}>
             Apri i miei documenti
           </Button>
         </View>
       )}
-      {!standalone && (
-        <Button variant="quiet" onPress={() => router.push("/installa")}>
-          MAIA sul tuo telefono
-        </Button>
+      {next && nextSummary && (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={next.title}
+          onPress={() =>
+            router.push({ pathname: "/checklist", params: { id: next.id } })
+          }
+          style={[ui.card, { padding: 18, gap: 9, marginBottom: 14 }]}
+        >
+          <Text style={ui.label}>
+            {nextSummary.complete
+              ? "IL TUO TRAGUARDO"
+              : nextSummary.completed > 0
+                ? "RIPRENDI DA QUI"
+                : "UNA CHECKLIST PER TE"}
+          </Text>
+          <Text style={[ui.heading, { fontSize: 24, lineHeight: 30 }]}>
+            {next.title}
+          </Text>
+          <Progress
+            completed={nextSummary.completed}
+            total={nextSummary.total}
+          />
+          <View style={[ui.row, { justifyContent: "space-between" }]}>
+            <Text style={{ color: colors.sageDark, fontWeight: "600" }}>
+              {nextSummary.complete
+                ? "Rivedi checklist"
+                : nextSummary.completed > 0
+                  ? "Riprendi checklist"
+                  : "Apri checklist"}
+            </Text>
+            <Icon name="arrow" />
+          </View>
+        </Pressable>
       )}
-      <View
-        style={[
-          ui.card,
-          { gap: 12, backgroundColor: colors.sagePale, marginBottom: 18 },
-        ]}
-      >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 12,
-          }}
-        >
-          <Text style={ui.heading}>{journey.label}</Text>
-          <Icon name="leaf" size={32} />
-        </View>
-        <Text style={ui.body}>{journey.description}</Text>
-        <Button onPress={() => router.navigate("/discover")}>
-          Esplora gli Argomenti
-        </Button>
-        <Button
-          variant="secondary"
-          onPress={() => router.push("/welcome?edit=1")}
-        >
-          Personalizza il tuo percorso
-        </Button>
-        {email && (
-          <Button variant="quiet" onPress={() => router.push("/profile")}>
-            La mia scheda per Gaia
-          </Button>
-        )}
-        {email && (
-          <Button variant="quiet" onPress={() => router.push("/traguardi")}>
-            I miei traguardi
-          </Button>
-        )}
-      </View>
-      <View style={[ui.card, { gap: 12, backgroundColor: colors.peach }]}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-          <Icon name="shop" size={28} />
-          <Text style={ui.heading}>Consigli d’acquisto</Text>
-        </View>
-        <Text style={ui.body}>
-          Una selezione di prodotti su Amazon per la quotidianità in famiglia.
-          Prezzi, disponibilità e condizioni di acquisto sono indicati su
-          Amazon.
-        </Text>
-        <Button variant="secondary" onPress={() => router.navigate("/shop")}>
-          Scopri i consigli d’acquisto
-        </Button>
-      </View>
       <View
         style={{
           flexDirection: "row",
@@ -176,6 +152,50 @@ export default function Home() {
           )}
         </Pressable>
       </View>
+      {!standalone && (
+        <Button variant="quiet" onPress={() => router.push("/installa")}>
+          MAIA sul tuo telefono
+        </Button>
+      )}
+      <View
+        style={[
+          ui.card,
+          { gap: 12, backgroundColor: colors.sagePale, marginBottom: 18 },
+        ]}
+      >
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 12,
+          }}
+        >
+          <Text style={ui.heading}>{journey.label}</Text>
+          <Icon name="leaf" size={32} />
+        </View>
+        <Text style={ui.body}>{journey.description}</Text>
+        <Button onPress={() => router.navigate("/discover")}>
+          Esplora gli Argomenti
+        </Button>
+        <Button
+          variant="secondary"
+          onPress={() => router.push("/welcome?edit=1")}
+        >
+          Personalizza il tuo percorso
+        </Button>
+        {email && (
+          <Button variant="quiet" onPress={() => router.push("/profile")}>
+            La mia scheda per Gaia
+          </Button>
+        )}
+        {email && (
+          <Button variant="quiet" onPress={() => router.push("/traguardi")}>
+            I miei traguardi
+          </Button>
+        )}
+      </View>
       <View style={[ui.card, { gap: 14, borderColor: colors.sage }]}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
           <Icon name="mail" size={28} />
@@ -223,37 +243,20 @@ export default function Home() {
           pregnancyProfile,
         ).slice(0, 3)}
       />
-      {next && (
-        <>
-          <SectionHeader title="Un pensiero in meno" />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={next.title}
-            style={[ui.card, { gap: 12 }]}
-            onPress={() =>
-              router.push({
-                pathname: "/checklist",
-                params: { id: next.id },
-              })
-            }
-          >
-            <Text style={ui.heading}>{next.title}</Text>
-            <Text style={ui.body}>
-              Suggerimenti da adattare alla tua famiglia.
-            </Text>
-            <Progress
-              completed={next.items.filter((i) => state.progress[i.id]).length}
-              total={next.items.length}
-            />
-            <View style={[ui.row, { justifyContent: "space-between" }]}>
-              <Text style={{ color: colors.sageDark, fontWeight: "600" }}>
-                Apri checklist
-              </Text>
-              <Icon name="arrow" />
-            </View>
-          </Pressable>
-        </>
-      )}
+      <View style={[ui.card, { gap: 12, backgroundColor: colors.peach }]}>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <Icon name="shop" size={28} />
+          <Text style={ui.heading}>Consigli d’acquisto</Text>
+        </View>
+        <Text style={ui.body}>
+          Una selezione di prodotti su Amazon per la quotidianità in famiglia.
+          Prezzi, disponibilità e condizioni di acquisto sono indicati su
+          Amazon.
+        </Text>
+        <Button variant="secondary" onPress={() => router.navigate("/shop")}>
+          Scopri i consigli d’acquisto
+        </Button>
+      </View>
       <View style={{ marginTop: 24 }}>
         <Notice>{disclaimer}</Notice>
       </View>

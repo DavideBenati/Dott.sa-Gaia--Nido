@@ -1,8 +1,8 @@
 # Nido — Insieme, passo dopo passo.
 
-## Sito metiMaia su Cloudflare — app installabile v13.1
+## Sito metiMaia su Cloudflare — app installabile v13.2
 
-Per aggiornare il sito corrente, usare [la guida v13.1](../release-v13.1/LEGGIMI.md): caricare lo ZIP completo su Cloudflare e aprire `/installa` dal telefono. La v13.1 non richiede nuove migrazioni Supabase o chiavi; usa gli account e i materiali già presenti nel progetto configurato. Comprende manifest, icone, installazione guidata e aggiornamento dei dati al rientro. Il service worker conserva soltanto la pagina generica di riconnessione, senza contenuti privati. La v13.1 aggiunge filtro delle attività da fare, stato di connessione, condivisione dell’installazione e recupero degli aggiornamenti bloccati. Push e utilizzo offline dei dati non sono ancora attivi. Le prove browser sono simulate; l’installazione va verificata su iPhone e Android reali dopo il deploy.
+Per aggiornare il sito corrente, usare [la guida v13.2](../release-v13.2/LEGGIMI.md): caricare lo ZIP completo su Cloudflare e aprire `/installa` dal telefono. La v13.2 non richiede nuove migrazioni Supabase o chiavi; usa gli account e i materiali già presenti nel progetto configurato. Comprende manifest, icone, installazione guidata e aggiornamento dei dati al rientro. Il service worker conserva soltanto la pagina generica di riconnessione, senza contenuti privati. La v13.2 mette in primo piano checklist da riprendere, attività e download; ricerca dei materiali e condivisione delle liste si aprono quando servono. Conserva filtro delle attività da fare, stato di connessione e recupero degli aggiornamenti bloccati. Push e utilizzo offline dei dati non sono ancora attivi. Le prove browser sono simulate; l’installazione va verificata su iPhone e Android reali dopo il deploy.
 
 MVP in italiano: app Expo/React Native, dashboard Next.js e integrazione Supabase. In assenza di URL e chiave pubblica parte in **DEMO MODE**. Gli articoli sono esempi non revisionati clinicamente; le checklist sono suggerimenti adattabili, non requisiti medici.
 

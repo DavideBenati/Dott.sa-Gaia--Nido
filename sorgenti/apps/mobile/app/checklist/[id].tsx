@@ -29,6 +29,7 @@ export default function Checklist() {
   const [saving, setSaving] = useState<string[]>([]);
   const inFlight = useRef(new Set<string>());
   const [remainingOnly, setRemainingOnly] = useState(false);
+  const [sharingOpen, setSharingOpen] = useState(false);
   const checklist = checklists.find((c) => c.id === id);
   if (!checklist && contentLoading)
     return (
@@ -73,16 +74,14 @@ export default function Checklist() {
       subtitle={checklist.description}
     >
       <Notice>
-        Usa questa lista per decidere cosa preparare e trasformare i pensieri in
-        piccoli gesti concreti. Spunta ogni attività quando l’hai completata o
-        hai deciso che non ti serve. Sono suggerimenti adattabili, non requisiti
-        medici: consulta la lista della tua struttura e la tua ostetrica.
+        Spunta ciò che hai preparato o deciso che non ti serve. Adatta la lista
+        alle indicazioni della tua struttura e di Gaia.
         {checklist.isDemo
           ? " Esempio dimostrativo, non ancora revisionato."
           : ""}
       </Notice>
       <ContentStatus />
-      <View style={{ gap: 12, marginVertical: 25 }}>
+      <View style={{ gap: 12, marginVertical: 12 }}>
         <Progress completed={summary.completed} total={summary.total} />
         {summary.complete && saving.length === 0 && (
           <View style={[ui.card, { backgroundColor: colors.sagePale, gap: 8 }]}>
@@ -95,25 +94,6 @@ export default function Checklist() {
             </Text>
           </View>
         )}
-        {saving.length === 0 && (
-          <ShareContentButton
-            content={checklistShare(checklist, state.progress)}
-            label={
-              summary.complete
-                ? "Condividi il traguardo"
-                : "Condividi lo stato della checklist"
-            }
-          />
-        )}
-        <Text style={ui.body}>
-          La condivisione invia una fotografia dei progressi e delle attività
-          ancora da fare. Non si aggiorna automaticamente. Per seguire insieme
-          gli aggiornamenti, puoi autorizzare una persona nelle Condivisioni
-          familiari.
-        </Text>
-        <Button variant="quiet" onPress={() => router.push("/condivisioni")}>
-          Condivisioni familiari
-        </Button>
       </View>
       <View
         style={{
@@ -225,6 +205,53 @@ export default function Checklist() {
             </Pressable>
           );
         })}
+      </View>
+      <View style={[ui.card, { gap: 12, marginTop: 16 }]}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Condividi e organizza insieme"
+          accessibilityState={{ expanded: sharingOpen }}
+          aria-expanded={sharingOpen}
+          aria-controls={sharingOpen ? "checklist-sharing-options" : undefined}
+          onPress={() => setSharingOpen((open) => !open)}
+          style={{
+            minHeight: 44,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          <Text style={[ui.label, { flex: 1 }]}>
+            Condividi e organizza insieme
+          </Text>
+          <Text style={ui.body}>{sharingOpen ? "−" : "+"}</Text>
+        </Pressable>
+        {sharingOpen && (
+          <View nativeID="checklist-sharing-options" style={{ gap: 12 }}>
+            {saving.length === 0 && (
+              <ShareContentButton
+                content={checklistShare(checklist, state.progress)}
+                label={
+                  summary.complete
+                    ? "Condividi il traguardo"
+                    : "Condividi lo stato della checklist"
+                }
+              />
+            )}
+            <Text style={ui.body}>
+              La condivisione invia una fotografia dei progressi e delle
+              attività ancora da fare. Non si aggiorna automaticamente. Per
+              seguire insieme gli aggiornamenti, puoi autorizzare una persona
+              nelle Condivisioni familiari.
+            </Text>
+            <Button
+              variant="quiet"
+              onPress={() => router.push("/condivisioni")}
+            >
+              Condivisioni familiari
+            </Button>
+          </View>
+        )}
       </View>
     </Screen>
   );
