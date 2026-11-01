@@ -25,6 +25,10 @@ enable_signup = true
 enable_signup = true
 enable_confirmations = true
 
+[auth.email.template.confirmation]
+subject = "Conferma il tuo account metiMaia 🌿"
+content_path = "./supabase/templates/confirmation.html"
+
 [functions.newsletter]
 verify_jwt = false
 

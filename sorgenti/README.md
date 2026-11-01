@@ -4,6 +4,8 @@
 
 Per aggiornare il sito corrente, usare [la guida v13.3](../release-v13.3/LEGGIMI.md): caricare lo ZIP completo su Cloudflare e aprire `/installa` dal computer per mostrare il QR, oppure dal telefono per seguire i passaggi diretti. La v13.3 non richiede nuove migrazioni Supabase o chiavi; usa gli account e i materiali già presenti nel progetto configurato. Comprende manifest, icone, installazione guidata e aggiornamento dei dati al rientro. Il service worker conserva soltanto la pagina generica di riconnessione, senza contenuti privati. La v13.3 aggiunge un percorso pubblico con QR code per aprire le istruzioni sul telefono e installare l’app. Conserva la Home con checklist da riprendere e i download in primo piano. Conserva filtro delle attività da fare, stato di connessione e recupero degli aggiornamenti bloccati. Push e utilizzo offline dei dati non sono ancora attivi. Le prove browser sono simulate; l’installazione va verificata su iPhone e Android reali dopo il deploy.
 
+Il modello della mail automatica di registrazione, con benvenuto, conferma account e QR per installare l’app, è descritto nella [guida email con QR](../release-email-qr/LEGGIMI.md). La configurazione del progetto remoto va salvata nel pannello Authentication di Supabase.
+
 MVP in italiano: app Expo/React Native, dashboard Next.js e integrazione Supabase. In assenza di URL e chiave pubblica parte in **DEMO MODE**. Gli articoli sono esempi non revisionati clinicamente; le checklist sono suggerimenti adattabili, non requisiti medici.
 
 ## Avvio locale
