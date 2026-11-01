@@ -36,7 +36,10 @@ try {
     });
     try {
       await context.route("**/*", async (route) => {
-        if (route.request().url() === "https://metimaia.com/maia-app-qr.png") {
+        if (
+          route.request().url() ===
+          "https://raw.githubusercontent.com/DavideBenati/Dott.sa-Gaia--Nido/refs/heads/cloudflare-package/QR-App-MAIA.png"
+        ) {
           if (images)
             return route.fulfill({
               status: 200,

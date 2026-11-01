@@ -4,14 +4,15 @@ Il modello personalizza l’email automatica di conferma registrazione inviata d
 
 La mail contiene sia **Installa MAIA sul telefono**, comodo per chi la legge dallo smartphone, sia il PNG del QR visibile nel corpo della mail per chi la legge dal computer. Se il programma di posta nasconde le immagini, restano disponibili il pulsante e il collegamento scritto.
 
-## 1. Pubblica prima il QR sul sito
+## 1. Verifica le istruzioni sul sito
 
-Carica su Cloudflare **MAIA-Sito-v13.3-Installazione-QR.zip**, se non l’hai ancora fatto. Poi apri questi due indirizzi nel browser:
+Apri **https://metimaia.com/installa**: deve mostrare le istruzioni e l’app deve essere pubblicata sul sito. La versione completa v13.3 contiene questo percorso.
 
-- **https://metimaia.com/installa** deve mostrare le istruzioni.
-- **https://metimaia.com/maia-app-qr.png** deve mostrare il QR.
+L’immagine nella mail usa il collegamento pubblico già verificato:
 
-Il modello email carica l’immagine da questo secondo indirizzo pubblico. Il codice contiene soltanto il collegamento alle istruzioni: l’accesso avverrà con le proprie credenziali.
+**https://raw.githubusercontent.com/DavideBenati/Dott.sa-Gaia--Nido/refs/heads/cloudflare-package/QR-App-MAIA.png**
+
+Il PNG contiene soltanto il collegamento a **https://metimaia.com/installa**. Il file dell’immagine è servito da GitHub, senza dipendere dal caricamento del PNG sul dominio del sito. Il codice resta generato dal progetto, senza servizi esterni di generazione QR.
 
 ## 2. Applica il modello in Supabase
 

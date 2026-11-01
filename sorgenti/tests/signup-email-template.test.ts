@@ -16,7 +16,9 @@ test("signup confirmation remains the first action with the unchanged per-user S
 });
 test("install and QR URLs are public, with a readable link when remote images are blocked", async () => {
   const html = await readFile(template, "utf8");
-  expect(html).toContain('src="https://metimaia.com/maia-app-qr.png"');
+  expect(html).toContain(
+    'src="https://raw.githubusercontent.com/DavideBenati/Dott.sa-Gaia--Nido/refs/heads/cloudflare-package/QR-App-MAIA.png"',
+  );
   expect(html).toContain(
     'alt="QR code per aprire le istruzioni di installazione di MAIA"',
   );
