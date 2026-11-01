@@ -1,0 +1,61 @@
+{
+  "feature": "Signup welcome and confirmation email with inline public installation QR",
+  "date": "2026-11-01",
+  "source_base": "a3e857f98d326777f08b9ef0e99b4cc94b92ce66",
+  "unit_tests": {
+    "passed": 3,
+    "scope": "Confirmation placeholder priority, public QR and installation URLs, local Supabase template mapping"
+  },
+  "browser_rendering_checks": {
+    "checks": [
+      {
+        "width": 320,
+        "images": true,
+        "confirmation_first": true,
+        "public_install_link": true,
+        "no_horizontal_overflow": true
+      },
+      {
+        "width": 390,
+        "images": true,
+        "confirmation_first": true,
+        "public_install_link": true,
+        "no_horizontal_overflow": true
+      },
+      {
+        "width": 1280,
+        "images": true,
+        "confirmation_first": true,
+        "public_install_link": true,
+        "no_horizontal_overflow": true
+      },
+      {
+        "width": 390,
+        "images": false,
+        "confirmation_first": true,
+        "public_install_link": true,
+        "no_horizontal_overflow": true
+      }
+    ],
+    "errors": [],
+    "unexpected": [],
+    "actual_emails_sent": 0
+  },
+  "local_toml_parse": "passed",
+  "eslint_targeted": "passed",
+  "package": {
+    "file": "MAIA-Mail-Benvenuto-QR.zip",
+    "bytes": 7296,
+    "sha256": "9a7b61b227ef8662b7fca06a1027eb3f838071bc8d83b8ebbf7ede509f000ccf",
+    "files": 5
+  },
+  "remote_configuration_applied": false,
+  "actual_emails_sent": 0,
+  "requires_site_asset": "https://metimaia.com/maia-app-qr.png (included in website v13.3)",
+  "limitations": [
+    "HTML browser rendering verified at320/390/1280px, including blocked remote images; actual email-client and signup/confirmation flow tests remain after saving the template in Supabase.",
+    "This personalizes the existing automatic signup confirmation email. No separate post-confirmation welcome-mail service or resend to existing members is introduced.",
+    "Image is displayed inline from the public site; image-blocking email clients can still use the install button and visible URL."
+  ],
+  "source_commit": "2f3052dce7ad3100cd7d3b6067c1ff0c28689cf4"
+}
