@@ -10,18 +10,11 @@ import {
 } from "@nido/core";
 import { PregnancyProfileEditor } from "../src/pregnancy-profile-editor";
 import { useApp } from "../src/state";
-import {
-  Brand,
-  Button,
-  Notice,
-  Screen,
-  StageHeading,
-  Tag,
-  ui,
-} from "../src/ui";
+import { Button, Notice, Screen, StageHeading, Tag, ui } from "../src/ui";
 import { colors, serif } from "../src/theme";
 import { cancelAccountEntry } from "../src/entry-navigation";
 import { confirmPendingNavigation } from "../src/unsaved-changes";
+import { usePwa } from "../src/pwa";
 
 export default function Welcome() {
   const { userId, email, preferencesLoaded } = useApp();
@@ -41,6 +34,7 @@ export default function Welcome() {
 }
 
 function WelcomeFlow() {
+  const { standalone } = usePwa();
   const { edit, returnTo, stage } = useLocalSearchParams<{
     edit?: string;
     returnTo?: string;
@@ -186,7 +180,6 @@ function WelcomeFlow() {
         <View
           style={{ width: "100%", maxWidth: 680, alignSelf: "center", gap: 20 }}
         >
-          <Brand compact />
           <Tag>IL TUO SPAZIO, FIN DALL’INIZIO</Tag>
           <StageHeading
             id="welcome-step-0"
@@ -200,27 +193,39 @@ function WelcomeFlow() {
             Da dove iniziamo?
           </StageHeading>
           <Text style={ui.body}>
-            Crea il tuo account per ritrovare checklist, articoli preferiti e le
-            persone con cui vuoi condividere il percorso. Dopo l’accesso
-            sceglierai il tipo di profilo e ciò che desideri approfondire.
+            Checklist, letture e materiali condivisi da Gaia, in un unico
+            spazio. Se usi già il sito, accedi con la stessa email e password.
           </Text>
-          <Button onPress={() => router.push("/account")}>
-            Iscriviti e iniziamo
-          </Button>
           {!email && (
-            <Button
-              variant="secondary"
-              onPress={() => router.push("/account?mode=login")}
-            >
+            <Button onPress={() => router.push("/account?mode=login")}>
               Hai già un account? Accedi
             </Button>
           )}
+          <Button variant="secondary" onPress={() => router.push("/account")}>
+            Crea un account
+          </Button>
           <Button variant="quiet" disabled={busy} onPress={browse}>
             Esplora come ospite
           </Button>
-          <Button variant="secondary" onPress={() => router.push("/installa")}>
-            MAIA sul telefono: installa l’app
-          </Button>
+          {!standalone && (
+            <View
+              style={{
+                borderTopWidth: 1,
+                borderTopColor: colors.border,
+                paddingTop: 12,
+                gap: 4,
+              }}
+            >
+              <Text
+                style={{ color: colors.muted, fontSize: 14, lineHeight: 21 }}
+              >
+                Puoi usare MAIA anche dall’icona sul telefono.
+              </Text>
+              <Button variant="quiet" onPress={() => router.push("/installa")}>
+                Come aggiungere MAIA al telefono
+              </Button>
+            </View>
+          )}
           <Text style={ui.body}>
             Puoi leggere anche senza account. Le informazioni personali restano
             facoltative.

@@ -1,25 +1,30 @@
 import React, { useState } from "react";
-import { Image, Platform, Pressable, View } from "react-native";
+import {
+  Image,
+  Platform,
+  Pressable,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { router } from "expo-router";
 import { Screen, Button, Notice, ui } from "../src/ui";
 import { Text } from "../src/typography";
 import { usePwa } from "../src/pwa";
+import { useApp } from "../src/state";
+import { colors } from "../src/theme";
+import { InstallationGuide } from "../src/installation-guide";
 import { ShareContentButton } from "../src/share-content-button";
 import installation from "../src/app-installation.json";
 import installationQr from "../assets/brand/maia-app-qr.png";
 
-function InstallationQr({ otherPhone = false }: { otherPhone?: boolean }) {
+function InstallationQr() {
   return (
-    <View style={[ui.card, { gap: 14 }]}>
-      <Text accessibilityRole="header" style={ui.heading}>
-        {otherPhone
-          ? "Inquadra con l’altro telefono"
-          : "1. Inquadra il QR code"}
-      </Text>
-      <Text style={ui.body}>
-        Apri la fotocamera del telefono, inquadra il codice e tocca il
-        collegamento che compare. Troverai i passaggi per aggiungere MAIA alla
-        schermata Home.
+    <View style={[ui.card, { gap: 12, padding: 20 }]}>
+      <Text
+        accessibilityRole="header"
+        style={[ui.heading, { fontSize: 23, lineHeight: 29 }]}
+      >
+        Inquadra con la fotocamera del telefono
       </Text>
       <Image
         source={installationQr}
@@ -33,18 +38,19 @@ function InstallationQr({ otherPhone = false }: { otherPhone?: boolean }) {
           backgroundColor: "#FFFFFF",
         }}
       />
-      <Text selectable style={[ui.body, { textAlign: "center", fontSize: 16 }]}>
+      <Text selectable style={[ui.body, { textAlign: "center", fontSize: 15 }]}>
         {installation.url}
       </Text>
       <Text style={ui.body}>
-        Il QR apre le istruzioni. Confermerai l’installazione sul telefono.
+        Tocca il collegamento che compare: sul telefono vedrai i passaggi per
+        aggiungere l’icona MAIA.
       </Text>
       {Platform.OS === "web" && (
         <a
           href="/maia-app-qr.png"
           download="QR-App-MAIA.png"
           style={{
-            color: "#42624B",
+            color: colors.sageDark,
             minHeight: 44,
             display: "inline-flex",
             alignItems: "center",
@@ -61,157 +67,177 @@ function InstallationQr({ otherPhone = false }: { otherPhone?: boolean }) {
 
 export default function Install() {
   const pwa = usePwa();
-  const desktop = pwa.platform === "desktop";
+  const { email, state } = useApp();
+  const { width } = useWindowDimensions();
+  // A narrow browser with an unrecognised user agent still needs phone steps.
+  const desktop = pwa.platform === "desktop" && width >= 900;
   const [phone, setPhone] = useState<"ios" | "android">(
     pwa.platform === "android" ? "android" : "ios",
   );
+  const [showDesktopGuide, setShowDesktopGuide] = useState(false);
+  const [showSending, setShowSending] = useState(false);
   const [showQr, setShowQr] = useState(false);
-  const instructions = {
-    ios: [
-      "Apri questa pagina in Safari.",
-      "Tocca Condividi, poi Aggiungi alla schermata Home.",
-      "Lascia attivo Apri come app web, se compare, e conferma con Aggiungi.",
-    ],
-    android: [
-      "Apri questa pagina in Chrome.",
-      "Tocca il menu con i tre puntini e scegli Installa app oppure Aggiungi alla schermata Home.",
-      "Conferma l’installazione.",
-    ],
-  };
+  const continueToAccount = () =>
+    router.navigate(
+      email
+        ? state.preferences.onboarded
+          ? "/(tabs)"
+          : "/welcome"
+        : "/account?mode=login",
+    );
   return (
     <Screen
-      back
-      eyebrow="DAL SITO AL TUO TELEFONO"
-      title="MAIA sul tuo telefono"
+      focused
+      style={{ maxWidth: 708 }}
+      title={pwa.standalone ? "Sei già nell’app MAIA" : "MAIA sul tuo telefono"}
       subtitle={
-        desktop
-          ? "Inquadra il codice e continua dal telefono."
-          : "Aggiungi l’icona e ritrova il tuo spazio, con un tocco."
+        pwa.standalone
+          ? "Il tuo spazio è pronto."
+          : desktop
+            ? "Dal computer al telefono, con il QR code."
+            : "La stessa MAIA, a portata di mano."
       }
     >
       <View
-        style={{ maxWidth: 800, alignSelf: "center", width: "100%", gap: 20 }}
+        style={{ maxWidth: 660, alignSelf: "center", width: "100%", gap: 18 }}
       >
-        {desktop && <InstallationQr />}
         {pwa.standalone ? (
-          <Notice>MAIA è già sul tuo telefono.</Notice>
-        ) : (
-          <View style={[ui.card, { gap: 14 }]}>
-            <Text accessibilityRole="header" style={ui.heading}>
-              {desktop
-                ? "2. Aggiungi l’icona sul telefono"
-                : "1. Aggiungi l’icona al telefono"}
-            </Text>
+          <View style={[ui.card, { padding: 20, gap: 14 }]}>
             <Text style={ui.body}>
-              Scegli il tuo telefono e segui questi passaggi. L’installazione si
-              apre solo quando la confermi tu.
+              Hai aperto MAIA dall’icona. Qui ritrovi checklist, letture salvate
+              e i materiali che Gaia condivide con te.
             </Text>
-            {pwa.canInstall && (
+            <Button onPress={continueToAccount}>
+              {email ? "Continua nel mio percorso" : "Accedi al mio account"}
+            </Button>
+            {!email && (
               <Button
-                disabled={pwa.installing}
-                onPress={() => void pwa.install()}
+                variant="secondary"
+                onPress={() => router.push("/account")}
               >
-                {pwa.installing ? "Apertura installazione…" : "Installa MAIA"}
+                Crea un account
               </Button>
             )}
-            {pwa.installMessage !== "" && (
-              <View accessibilityLiveRegion="polite">
-                <Notice>{pwa.installMessage}</Notice>
-              </View>
-            )}
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-              {(
-                [
-                  ["ios", "iPhone / iPad"],
-                  ["android", "Android"],
-                ] as const
-              ).map(([value, label]) => (
-                <Pressable
-                  key={value}
-                  accessibilityRole="button"
-                  aria-pressed={phone === value}
-                  onPress={() => setPhone(value)}
-                  style={[
-                    ui.pill,
-                    phone === value && ui.pillActive,
-                    { minHeight: 44, justifyContent: "center" },
-                  ]}
+          </View>
+        ) : (
+          <>
+            {desktop && <InstallationQr />}
+            {desktop && (
+              <Pressable
+                accessibilityRole="button"
+                aria-expanded={showDesktopGuide}
+                onPress={() => setShowDesktopGuide((value) => !value)}
+                style={{ minHeight: 44, justifyContent: "center" }}
+              >
+                <Text
+                  style={{
+                    color: colors.sageDark,
+                    fontSize: 16,
+                    fontWeight: "600",
+                  }}
                 >
-                  <Text
-                    style={[ui.pillText, phone === value && ui.pillTextActive]}
-                  >
-                    {label}
+                  {showDesktopGuide
+                    ? "Chiudi i passaggi per il telefono"
+                    : "Vedi anche i passaggi per iPhone e Android"}
+                </Text>
+              </Pressable>
+            )}
+            {(!desktop || showDesktopGuide) && (
+              <InstallationGuide phone={phone} onPhoneChange={setPhone} />
+            )}
+            <View style={[ui.card, { padding: 20, gap: 10 }]}>
+              <Text
+                accessibilityRole="header"
+                style={[ui.heading, { fontSize: 23, lineHeight: 29 }]}
+              >
+                Dopo aver aggiunto l’icona
+              </Text>
+              <Text style={ui.body}>
+                Torna alla schermata Home del telefono e tocca MAIA. Hai già un
+                account? Usa la stessa email e password del sito.
+              </Text>
+              <Text style={ui.body}>
+                Ritroverai i tuoi documenti, le letture salvate e le checklist.
+                Se è la prima volta, puoi creare l’account da lì.
+              </Text>
+            </View>
+            <Button variant="secondary" onPress={continueToAccount}>
+              {email ? "Continua sul sito" : "Accedi dal sito"}
+            </Button>
+          </>
+        )}
+        <Pressable
+          accessibilityRole="button"
+          aria-expanded={showSending}
+          onPress={() => setShowSending((value) => !value)}
+          style={{
+            minHeight: 48,
+            justifyContent: "center",
+            borderTopWidth: 1,
+            borderTopColor: colors.border,
+            paddingTop: 12,
+          }}
+        >
+          <Text
+            style={{
+              color: colors.sageDark,
+              fontSize: 16,
+              lineHeight: 23,
+              fontWeight: "600",
+            }}
+          >
+            {showSending
+              ? "Chiudi l’invio delle istruzioni"
+              : "Vuoi aiutare un’altra persona a installare MAIA?"}
+          </Text>
+        </Pressable>
+        {showSending && (
+          <View style={{ gap: 12 }}>
+            <Text style={ui.body}>
+              {pwa.standalone
+                ? "Invia questa guida a un’altra persona: potrà seguire i passaggi dal proprio telefono."
+                : "Invia questa guida a un’altra persona. Per aggiungere MAIA sul tuo telefono, segui invece i passaggi del browser qui sopra."}
+            </Text>
+            <ShareContentButton
+              label="Invia le istruzioni a un’altra persona"
+              content={{
+                title: "MAIA sul tuo telefono",
+                text: "La guida per aggiungere MAIA al telefono e ritrovare checklist, letture e i materiali condivisi con il proprio account:",
+                url: installation.url,
+              }}
+            />
+            {!desktop && (
+              <>
+                <Pressable
+                  accessibilityRole="button"
+                  aria-expanded={showQr}
+                  onPress={() => setShowQr((value) => !value)}
+                  style={{ minHeight: 44, justifyContent: "center" }}
+                >
+                  <Text style={{ color: colors.sageDark, fontSize: 16 }}>
+                    {showQr
+                      ? "Nascondi il QR code"
+                      : "Mostra il QR per un altro telefono"}
                   </Text>
                 </Pressable>
-              ))}
-            </View>
-            <Text style={ui.body}>
-              {phone === "ios"
-                ? "Da WhatsApp o Instagram, apri prima questa pagina in Safari."
-                : "Da WhatsApp o Instagram, apri prima questa pagina in Chrome."}
-            </Text>
-            {instructions[phone].map((step, index) => (
-              <Text key={step} style={ui.body}>
-                {index + 1}. {step}
-              </Text>
-            ))}
+                {showQr && <InstallationQr />}
+              </>
+            )}
           </View>
         )}
-        <View style={[ui.card, { gap: 12 }]}>
-          <Text accessibilityRole="header" style={ui.heading}>
-            {pwa.standalone
-              ? "Il tuo account, anche qui"
-              : desktop
-                ? "3. Apri MAIA e accedi"
-                : "2. Apri MAIA e accedi"}
-          </Text>
-          <Text style={ui.body}>
-            Apri la nuova icona MAIA. Usa la stessa email e password del sito:
-            ritroverai i materiali assegnati al tuo account, le letture salvate
-            e i progressi delle checklist.
-          </Text>
-          <Text style={ui.body}>
-            Se è il tuo primo accesso, crea l’account dall’app. Se lo usi già,
-            la prima volta potrebbe essere necessario accedere di nuovo.
-          </Text>
-        </View>
-        <ShareContentButton
-          label="Condividi il link per installare MAIA"
-          content={{
-            title: "MAIA sul tuo telefono",
-            text: "Aggiungi MAIA alla schermata Home e ritrova letture, checklist e i materiali condivisi con il tuo account. Le istruzioni per iPhone e Android sono qui:",
-            url: installation.url,
-          }}
-        />
-        {!desktop && (
-          <View style={{ gap: 14 }}>
-            <Button
-              variant="quiet"
-              onPress={() => setShowQr((value) => !value)}
-            >
-              {showQr
-                ? "Nascondi il QR code"
-                : "Mostra il QR per un altro telefono"}
-            </Button>
-            {showQr && <InstallationQr otherPhone />}
-          </View>
-        )}
-        <Text style={ui.body}>
-          Serve Internet per consultare e aggiornare i dati e aprire i
-          documenti. Le notifiche push non sono ancora attive.
+        <Text style={{ color: colors.muted, fontSize: 14, lineHeight: 21 }}>
+          Serve una connessione Internet per aprire i materiali e salvare i
+          progressi.
         </Text>
         {pwa.updateAvailable && !pwa.standalone && (
-          <View style={[ui.card, { gap: 12 }]}>
-            <Text style={ui.heading}>È pronta una nuova versione di MAIA.</Text>
+          <View style={{ gap: 10 }}>
+            <Text style={ui.body}>È pronta una nuova versione di MAIA.</Text>
             <Button disabled={pwa.updating} onPress={pwa.applyUpdate}>
               Aggiorna MAIA
             </Button>
-            {pwa.updateMessage !== "" && <Notice>{pwa.updateMessage}</Notice>}
+            {!!pwa.updateMessage && <Notice>{pwa.updateMessage}</Notice>}
           </View>
         )}
-        <Button variant="secondary" onPress={() => router.navigate("/(tabs)")}>
-          Vai al mio percorso
-        </Button>
       </View>
     </Screen>
   );

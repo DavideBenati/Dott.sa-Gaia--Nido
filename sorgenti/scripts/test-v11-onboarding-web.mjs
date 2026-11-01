@@ -387,7 +387,7 @@ try {
     await page.goto(origin + "/welcome");
     await expect(heading(page, "Da dove iniziamo?")).toBeVisible();
     await expect(page.getByRole("radio")).toHaveCount(0);
-    await button(page, "Iscriviti e iniziamo").click();
+    await button(page, "Crea un account").click();
     await expect(heading(page, "Il tuo spazio MAIA")).toBeVisible();
     expect(saves(state)).toHaveLength(0);
     await noOverflow(page);

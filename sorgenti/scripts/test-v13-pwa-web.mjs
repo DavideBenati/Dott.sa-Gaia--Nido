@@ -157,19 +157,20 @@ function authUser(viewer) {
 }
 async function fixture({
   width = 390,
+  height = 900,
   viewer = null,
   standalone = false,
   ios = false,
+  iosVersion = 18,
   android = false,
 } = {}) {
   const context = await browser.newContext({
-    viewport: { width, height: 900 },
+    viewport: { width, height },
     serviceWorkers: "allow",
     acceptDownloads: true,
     ...(ios
       ? {
-          userAgent:
-            "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
+          userAgent: `Mozilla/5.0 (iPhone; CPU iPhone OS ${iosVersion}_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/${iosVersion}.0 Mobile/15E148 Safari/604.1`,
           isMobile: true,
           hasTouch: true,
         }
@@ -491,11 +492,9 @@ try {
   expect(qrBounds.y + qrBounds.height).toBeLessThanOrEqual(
     qrDesktop.page.viewportSize().height,
   );
-  const publicNavigationBounds = await qrDesktop.page
-    .getByRole("navigation")
-    .boundingBox();
-  expect(qrBounds.y).toBeGreaterThanOrEqual(
-    publicNavigationBounds.y + publicNavigationBounds.height,
+  await expect(qrDesktop.page.getByRole("navigation")).toHaveCount(0);
+  await expect(heading(qrDesktop.page, "Apri il menu di Safari")).toHaveCount(
+    0,
   );
   await qrDesktop.page.screenshot({
     path: resolve(artifacts, "install-qr-first-screen-1280.png"),
@@ -525,23 +524,26 @@ try {
       await readFile(resolve(artifacts, "qr-downloaded-from-site.png")),
     ).width,
   ).toBe(png.width);
+  await button(
+    qrDesktop.page,
+    "Vedi anche i passaggi per iPhone e Android",
+  ).click();
+  await expect(heading(qrDesktop.page, "Apri il menu di Safari")).toBeVisible();
   await qrDesktop.page
     .getByRole("button", { name: "Android", exact: true })
     .click();
-  await expect(
-    qrDesktop.page.getByText("1. Apri questa pagina in Chrome.", {
-      exact: true,
-    }),
-  ).toBeVisible();
-  await expect(
-    qrDesktop.page.getByText("1. Apri questa pagina in Safari.", {
-      exact: true,
-    }),
-  ).toHaveCount(0);
+  await expect(heading(qrDesktop.page, "Apri il menu di Chrome")).toBeVisible();
+  await expect(heading(qrDesktop.page, "Apri il menu di Safari")).toHaveCount(
+    0,
+  );
   await qrDesktop.page.screenshot({
     path: resolve(artifacts, "install-qr-desktop-1280.png"),
     fullPage: true,
   });
+  await button(qrDesktop.page, "Chiudi i passaggi per il telefono").click();
+  await expect(heading(qrDesktop.page, "Apri il menu di Chrome")).toHaveCount(
+    0,
+  );
   await qrDesktop.context.close();
   passed(
     "Public site navigation reaches a visible QR that independently decodes to the public install URL, downloads and offers device-specific steps",
@@ -549,14 +551,12 @@ try {
 
   const welcomePhone = await fixture({ ios: true });
   await welcomePhone.page.goto(origin + "/welcome");
-  await button(welcomePhone.page, "MAIA sul telefono: installa l’app").click();
+  await button(welcomePhone.page, "Come aggiungere MAIA al telefono").click();
   await expect(
     heading(welcomePhone.page, "MAIA sul tuo telefono"),
   ).toBeVisible();
   await expect(
-    welcomePhone.page.getByText("1. Apri questa pagina in Safari.", {
-      exact: true,
-    }),
+    heading(welcomePhone.page, "Apri il menu di Safari"),
   ).toBeVisible();
   await expect(
     welcomePhone.page.getByRole("img", {
@@ -565,6 +565,13 @@ try {
     }),
   ).toHaveCount(0);
   await expect(button(welcomePhone.page, "Installa MAIA")).toHaveCount(0);
+  await expect(
+    button(welcomePhone.page, "Invia le istruzioni a un’altra persona"),
+  ).toHaveCount(0);
+  await button(
+    welcomePhone.page,
+    "Vuoi aiutare un’altra persona a installare MAIA?",
+  ).click();
   await button(welcomePhone.page, "Mostra il QR per un altro telefono").click();
   await expect(
     welcomePhone.page
@@ -609,19 +616,184 @@ try {
   await install.context.close();
   passed("Android installation prompt opens only after an explicit user click");
 
-  const ios = await fixture({ ios: true });
-  await ios.page.goto(origin + "/installa");
-  await expect(heading(ios.page, "MAIA sul tuo telefono")).toBeVisible();
-  await expect(ios.page.getByText(/Safari/).first()).toBeVisible();
-  await expect(ios.page.getByText(/Aggiungi.*[Hh]ome/).first()).toBeVisible();
-  await expect(button(ios.page, "Installa MAIA")).toHaveCount(0);
-  await noOverflow(ios.page);
-  await ios.page.screenshot({
-    path: resolve(artifacts, "install-ios-390.png"),
-  });
-  await ios.context.close();
+  for (const width of [320, 390]) {
+    const ios = await fixture({
+      width,
+      height: 780,
+      ios: true,
+      iosVersion: 26,
+    });
+    await ios.page.addInitScript(() => {
+      window.__guideShareCalls = 0;
+      Object.defineProperty(navigator, "share", {
+        configurable: true,
+        value: async () => {
+          window.__guideShareCalls++;
+          throw new Error("Installation help must not open a share sheet");
+        },
+      });
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: {
+          writeText: async (text) => {
+            window.__guideCopied = text;
+          },
+        },
+      });
+    });
+    await ios.page.goto(origin + "/installa");
+    await expect(heading(ios.page, "MAIA sul tuo telefono")).toBeVisible();
+    const firstStep = heading(ios.page, "Apri il menu di Safari");
+    await expect(firstStep).toBeVisible();
+    const firstStepBounds = await firstStep.boundingBox();
+    expect(firstStepBounds.y + firstStepBounds.height).toBeLessThan(780);
+    await expect(
+      ios.page.getByText(/tre puntini.*basso a destra/),
+    ).toBeVisible();
+    await expect(heading(ios.page, "Scegli Condividi / Share")).toBeVisible();
+    await expect(
+      ios.page.getByText(/Se è già visibile nella barra di Safari/),
+    ).toBeVisible();
+    await expect(ios.page.getByText(/Add to Home Screen/)).toBeVisible();
+    await expect(button(ios.page, "Installa MAIA")).toHaveCount(0);
+    await expect(ios.page.getByRole("navigation")).toHaveCount(0);
+    await expect(button(ios.page, "Apri menu del sito")).toHaveCount(0);
+    await expect(button(ios.page, "Copia l’indirizzo della guida")).toHaveCount(
+      0,
+    );
+    await noOverflow(ios.page);
+    await ios.page.screenshot({
+      path: resolve(artifacts, `install-ios-${width}.png`),
+    });
+    await button(ios.page, "Non trovi questi comandi?").click();
+    await expect(
+      ios.page.getByText(/apri l’app Safari \(la bussola blu\)/),
+    ).toBeVisible();
+    await button(ios.page, "Copia l’indirizzo della guida").click();
+    await expect(ios.page.getByText(/Indirizzo copiato/)).toBeVisible();
+    expect(await ios.page.evaluate(() => window.__guideCopied)).toBe(
+      "https://metimaia.com/installa",
+    );
+    expect(await ios.page.evaluate(() => window.__guideShareCalls)).toBe(0);
+    await ios.page.evaluate(() => {
+      navigator.clipboard.writeText = async () => {
+        throw new Error("Clipboard denied");
+      };
+    });
+    await button(ios.page, "Copia l’indirizzo della guida").click();
+    await expect(
+      ios.page.getByText(/Tieni premuto sull’indirizzo qui sotto/),
+    ).toBeVisible();
+    await expect(
+      ios.page.getByText("https://metimaia.com/installa", { exact: true }),
+    ).toBeVisible();
+    expect(await ios.page.evaluate(() => window.__guideShareCalls)).toBe(0);
+    await noOverflow(ios.page);
+    await ios.page.screenshot({
+      path: resolve(artifacts, `install-ios-help-${width}.png`),
+    });
+    await ios.context.close();
+    passed(
+      `${width}px: iPhone guide explains compact and older Safari controls; browser-opening help copies the public URL or offers manual copying without invoking Web Share`,
+    );
+  }
+
+  const unknownPhone = await fixture({ width: 390 });
+  await unknownPhone.page.goto(origin + "/installa");
+  await expect(
+    heading(unknownPhone.page, "Apri il menu di Safari"),
+  ).toBeVisible();
+  await expect(
+    unknownPhone.page.getByRole("img", {
+      name: "QR code per aprire le istruzioni di installazione di MAIA",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await noOverflow(unknownPhone.page);
+  await unknownPhone.context.close();
   passed(
-    "iPhone shows Safari Home-screen instructions without inventing a native install prompt",
+    "A narrow browser with an unrecognised desktop user agent prioritises phone steps rather than a QR for its own screen",
+  );
+
+  const mobileMenu = await fixture({ width: 390, ios: true });
+  await mobileMenu.page.goto(origin + "/welcome");
+  await expect(button(mobileMenu.page, "Apri menu del sito")).toHaveAttribute(
+    "aria-expanded",
+    "false",
+  );
+  await expect(
+    mobileMenu.page.getByRole("navigation", { name: "Menu del sito" }),
+  ).toHaveCount(0);
+  await button(mobileMenu.page, "Apri menu del sito").click();
+  await expect(button(mobileMenu.page, "Chiudi menu del sito")).toHaveAttribute(
+    "aria-expanded",
+    "true",
+  );
+  const publicMenu = mobileMenu.page.getByRole("navigation", {
+    name: "Menu del sito",
+  });
+  await expect(
+    publicMenu.getByRole("link", { name: "Contatti", exact: true }),
+  ).toBeVisible();
+  await noOverflow(mobileMenu.page);
+  await mobileMenu.page.screenshot({
+    path: resolve(artifacts, "mobile-public-menu-390.png"),
+  });
+  await button(mobileMenu.page, "Chiudi menu del sito").click();
+  await expect(publicMenu).toHaveCount(0);
+  await button(mobileMenu.page, "Apri menu del sito").click();
+  await publicMenu.getByRole("link", { name: "Contatti", exact: true }).click();
+  await expect(mobileMenu.page).toHaveURL(/\/contatti$/);
+  await expect(button(mobileMenu.page, "Apri menu del sito")).toHaveAttribute(
+    "aria-expanded",
+    "false",
+  );
+  await expect(publicMenu).toHaveCount(0);
+  await mobileMenu.context.close();
+  passed(
+    "Mobile public navigation opens and closes explicitly, keeps contacts reachable and closes after navigating",
+  );
+
+  const installedGuest = await fixture({
+    width: 390,
+    standalone: true,
+    ios: true,
+  });
+  await installedGuest.page.goto(origin + "/welcome");
+  await expect(button(installedGuest.page, "Crea un account")).toHaveCount(1);
+  await expect(
+    button(installedGuest.page, "Hai già un account? Accedi"),
+  ).toHaveCount(1);
+  await expect(
+    // React Native Web gives the image wrapper and its img the same name.
+    // Count actual image nodes to detect a second logo in the content.
+    installedGuest.page.locator('img[alt="MAIA"]'),
+  ).toHaveCount(1);
+  await expect(
+    button(installedGuest.page, "Come aggiungere MAIA al telefono"),
+  ).toHaveCount(0);
+  await expect(
+    button(installedGuest.page, "Installa MAIA sul telefono"),
+  ).toHaveCount(0);
+  await expect(
+    installedGuest.page.getByRole("navigation", { name: "Menu del sito" }),
+  ).toHaveCount(0);
+  await noOverflow(installedGuest.page);
+  await installedGuest.page.screenshot({
+    path: resolve(artifacts, "installed-guest-welcome-390.png"),
+  });
+  await installedGuest.page.goto(origin + "/installa");
+  await expect(
+    heading(installedGuest.page, "Sei già nell’app MAIA"),
+  ).toBeVisible();
+  await expect(
+    heading(installedGuest.page, "Apri il menu di Safari"),
+  ).toHaveCount(0);
+  await button(installedGuest.page, "Accedi al mio account").click();
+  await expect(installedGuest.page).toHaveURL(/\/account\?mode=login$/);
+  await installedGuest.context.close();
+  passed(
+    "An installed guest sees one signup action, no installation promotion, and can continue from the already-installed page directly to login",
   );
 
   for (const width of [390, 1280]) {
@@ -733,19 +905,21 @@ try {
     await app.page.screenshot({
       path: resolve(artifacts, `usability-documents-${width}.png`),
     });
-    await app.page
-      .getByRole("link", { name: "Apri i consigli d’acquisto", exact: true })
-      .click();
+    await expect(
+      app.page.getByRole("navigation", { name: "Menu del sito" }),
+    ).toHaveCount(0);
+    await app.page.getByRole("tab", { name: /Profilo/ }).click();
+    await button(app.page, "Consigli d’acquisto").click();
     await expect(heading(app.page, "Consigli d’acquisto")).toBeVisible();
     await app.page.goto(origin + "/installa");
-    await expect(
-      app.page.getByText("MAIA è già sul tuo telefono.", { exact: true }),
-    ).toBeVisible();
+    await expect(heading(app.page, "Sei già nell’app MAIA")).toBeVisible();
     await expect(button(app.page, "Installa MAIA")).toHaveCount(0);
     await noOverflow(app.page);
     await app.page.screenshot({
       path: resolve(artifacts, `installed-${width}.png`),
     });
+    await button(app.page, "Continua nel mio percorso").click();
+    await expect(button(app.page, "Apri i miei documenti")).toBeVisible();
     await app.context.close();
     passed(
       `${width}px: installed app uses five patient tabs, preserves shop access and hides redundant install prompts`,
@@ -779,9 +953,16 @@ try {
     });
   });
   await shareInstall.page.goto(origin + "/installa");
+  await expect(
+    button(shareInstall.page, "Invia le istruzioni a un’altra persona"),
+  ).toHaveCount(0);
   await button(
     shareInstall.page,
-    "Condividi il link per installare MAIA",
+    "Vuoi aiutare un’altra persona a installare MAIA?",
+  ).click();
+  await button(
+    shareInstall.page,
+    "Invia le istruzioni a un’altra persona",
   ).click();
   await expect(
     shareInstall.page.getByText(/Testo e link copiati/),
@@ -800,7 +981,7 @@ try {
   });
   await button(
     shareInstall.page,
-    "Condividi il link per installare MAIA",
+    "Invia le istruzioni a un’altra persona",
   ).click();
   await expect(
     shareInstall.page.getByText(/Seleziona e copia il testo qui sotto/),

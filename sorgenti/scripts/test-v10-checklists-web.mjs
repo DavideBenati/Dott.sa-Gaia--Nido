@@ -370,7 +370,7 @@ try {
     .getByRole("radio", { name: "Dopo la nascita", exact: true })
     .click();
   await page
-    .getByRole("button", { name: "Iscriviti e iniziamo", exact: true })
+    .getByRole("button", { name: "Crea un account", exact: true })
     .click();
   await expect(page).toHaveURL(/\/account\?journey=postpartum/);
   await expect(

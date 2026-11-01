@@ -1,6 +1,6 @@
 import maiaLogo from "../assets/brand/maia-logo.png";
 import { Text } from "./typography";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Image,
@@ -24,6 +24,7 @@ import { useApp } from "./state";
 import { usePageMetadata } from "./seo";
 import { ArticleCover } from "./art";
 import { useConnection } from "./use-connection";
+import { usePwa } from "./pwa";
 import { confirmPendingNavigation, guardedNavigation } from "./unsaved-changes";
 
 export function Brand({ compact = false }: { compact?: boolean }) {
@@ -52,6 +53,7 @@ export function Screen({
   focusTargetId,
   stageScroll = "start",
   professional = false,
+  focused = false,
 }: {
   children: React.ReactNode;
   title?: string;
@@ -63,6 +65,7 @@ export function Screen({
   focusTargetId?: string;
   stageScroll?: "start" | "heading";
   professional?: boolean;
+  focused?: boolean;
 }) {
   usePageMetadata();
   const pathname = usePathname();
@@ -78,6 +81,56 @@ export function Screen({
   } = useApp();
   const { width } = useWindowDimensions();
   const desktop = width >= 900;
+  const { standalone } = usePwa();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const mobileMenu = !desktop && !professional && !focused && !standalone;
+  const compactShell = !professional && (focused || standalone);
+  const navigation = professional
+    ? ([
+        { href: "/studio", label: "Studio", accessibilityLabel: "Studio" },
+        {
+          href: "/discover",
+          label: "Anteprima sito",
+          accessibilityLabel: "Anteprima sito",
+        },
+        {
+          href: "/sicurezza",
+          label: "Sicurezza",
+          accessibilityLabel: "Sicurezza",
+        },
+      ] as const)
+    : ([
+        {
+          href: "/gaia",
+          label: "Il progetto",
+          accessibilityLabel: "Scopri il progetto MetiMaia",
+        },
+        {
+          href: "/contatti",
+          label: "Contatti",
+          accessibilityLabel: "Contatti",
+        },
+        {
+          href: "/shop",
+          label: "Consigli d’acquisto",
+          accessibilityLabel: "Apri i consigli d’acquisto",
+        },
+        {
+          href: "/installa",
+          label: "App e QR code",
+          accessibilityLabel: "App e QR code",
+        },
+        ...(!desktop
+          ? ([
+              {
+                href: "/help",
+                label: "Quando chiedere aiuto",
+                accessibilityLabel: "Quando chiedere aiuto",
+              },
+            ] as const)
+          : []),
+      ] as const);
+  useEffect(() => setMenuOpen(false), [pathname]);
   const scroll = useRef<React.ComponentRef<typeof ScrollView>>(null);
   const previousStage = useRef(stageKey);
   useEffect(() => {
@@ -115,7 +168,13 @@ export function Screen({
   return (
     <SafeAreaView style={styles.safe} edges={["top", "left", "right"]}>
       <View style={styles.topBar}>
-        <View style={styles.topInner}>
+        <View
+          style={[
+            styles.topInner,
+            focused &&
+              !professional && { minHeight: 56, paddingHorizontal: 16 },
+          ]}
+        >
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={
@@ -130,7 +189,17 @@ export function Screen({
               );
             }}
           >
-            <Brand compact />
+            {focused && !professional ? (
+              <Image
+                source={maiaLogo}
+                accessibilityLabel="MAIA"
+                accessibilityRole="image"
+                resizeMode="contain"
+                style={{ width: 72, height: 52 }}
+              />
+            ) : (
+              <Brand compact />
+            )}
           </Pressable>
           <View style={styles.headerRight}>
             <Pressable
@@ -150,153 +219,92 @@ export function Screen({
                 {demo ? "DEMO MODE" : email ? "Il tuo account" : "Accedi"}
               </Text>
             </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Quando chiedere aiuto"
-              style={styles.roundButton}
-              onPress={() => guardedNavigation(() => router.push("/help"))}
-            >
-              <Icon name="help" size={22} />
-            </Pressable>
+            {mobileMenu ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={
+                  menuOpen ? "Chiudi menu del sito" : "Apri menu del sito"
+                }
+                aria-expanded={menuOpen}
+                onPress={() => setMenuOpen((value) => !value)}
+                style={[styles.roundButton, { paddingHorizontal: 10 }]}
+              >
+                <Text
+                  style={{
+                    color: colors.sageDark,
+                    fontSize: 14,
+                    fontWeight: "600",
+                  }}
+                >
+                  {menuOpen ? "Chiudi" : "Menu"}
+                </Text>
+              </Pressable>
+            ) : (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Quando chiedere aiuto"
+                style={styles.roundButton}
+                onPress={() => guardedNavigation(() => router.push("/help"))}
+              >
+                <Icon name="help" size={22} />
+              </Pressable>
+            )}
           </View>
         </View>
       </View>
-      <View
-        style={{
-          backgroundColor: colors.cream,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.border,
-        }}
-      >
+      {(professional || (!compactShell && (desktop || menuOpen))) && (
         <View
-          accessibilityRole="navigation"
           style={{
-            width: "100%",
-            maxWidth: 1176,
-            alignSelf: "center",
-            paddingHorizontal: 20,
-            flexDirection: "row",
-            flexWrap: "wrap",
-            gap: 8,
+            backgroundColor: colors.cream,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
           }}
         >
-          {professional ? (
-            <>
+          <View
+            accessibilityRole="navigation"
+            accessibilityLabel={
+              professional ? "Area professionale" : "Menu del sito"
+            }
+            style={{
+              width: "100%",
+              maxWidth: 1176,
+              alignSelf: "center",
+              paddingHorizontal: 20,
+              flexDirection: mobileMenu ? "column" : "row",
+              flexWrap: mobileMenu ? "nowrap" : "wrap",
+              gap: mobileMenu ? 0 : 8,
+            }}
+          >
+            {navigation.map((item) => (
               <Link
-                href="/studio"
-                accessibilityState={{ selected: pathname === "/studio" }}
+                key={item.href}
+                href={item.href}
+                accessibilityState={{ selected: pathname === item.href }}
+                accessibilityLabel={item.accessibilityLabel}
+                onPress={() => setMenuOpen(false)}
                 style={{
                   padding: 12,
                   minHeight: 44,
                   color: colors.sageDark,
                   fontSize: 14,
                   fontFamily:
-                    pathname === "/studio" ? "NidoSansBold" : "NidoSans",
+                    pathname === item.href ? "NidoSansBold" : "NidoSans",
                 }}
               >
-                Studio
+                {item.label}
               </Link>
-              <Link
-                href="/discover"
-                accessibilityState={{ selected: pathname === "/discover" }}
-                style={{
-                  padding: 12,
-                  minHeight: 44,
-                  color: colors.sageDark,
-                  fontSize: 14,
-                  fontFamily:
-                    pathname === "/discover" ? "NidoSansBold" : "NidoSans",
-                }}
-              >
-                Anteprima sito
-              </Link>
-              <Link
-                href="/sicurezza"
-                accessibilityState={{ selected: pathname === "/sicurezza" }}
-                style={{
-                  padding: 12,
-                  minHeight: 44,
-                  color: colors.sageDark,
-                  fontSize: 14,
-                  fontFamily:
-                    pathname === "/sicurezza" ? "NidoSansBold" : "NidoSans",
-                }}
-              >
-                Sicurezza
-              </Link>
-            </>
-          ) : (
-            <>
-              <Link
-                href="/gaia"
-                accessibilityState={{ selected: pathname === "/gaia" }}
-                accessibilityLabel="Scopri il progetto MetiMaia"
-                style={{
-                  padding: 12,
-                  minHeight: 44,
-                  color: colors.sageDark,
-                  fontSize: 14,
-                  fontFamily:
-                    pathname === "/gaia" ? "NidoSansBold" : "NidoSans",
-                }}
-              >
-                Il progetto
-              </Link>
-              <Link
-                href="/contatti"
-                accessibilityState={{ selected: pathname === "/contatti" }}
-                style={{
-                  padding: 12,
-                  minHeight: 44,
-                  color: colors.sageDark,
-                  fontSize: 14,
-                  fontFamily:
-                    pathname === "/contatti" ? "NidoSansBold" : "NidoSans",
-                }}
-              >
-                Contatti
-              </Link>
-              <Link
-                href="/shop"
-                accessibilityState={{ selected: pathname === "/shop" }}
-                accessibilityLabel="Apri i consigli d’acquisto"
-                style={{
-                  padding: 12,
-                  minHeight: 44,
-                  color: colors.sageDark,
-                  fontSize: 14,
-                  fontFamily:
-                    pathname === "/shop" ? "NidoSansBold" : "NidoSans",
-                }}
-              >
-                Consigli d’acquisto
-              </Link>
-              {desktop && (
-                <Link
-                  href="/installa"
-                  accessibilityLabel="App e QR code"
-                  accessibilityState={{ selected: pathname === "/installa" }}
-                  style={{
-                    padding: 12,
-                    minHeight: 44,
-                    color: colors.sageDark,
-                    fontSize: 14,
-                    fontFamily:
-                      pathname === "/installa" ? "NidoSansBold" : "NidoSans",
-                  }}
-                >
-                  App e QR code
-                </Link>
-              )}
-            </>
-          )}
+            ))}
+          </View>
         </View>
-      </View>
+      )}
       <ScrollView
         ref={scroll}
         contentContainerStyle={[
           styles.scroll,
-          !desktop && { paddingHorizontal: 20, paddingTop: 16 },
+          !desktop && {
+            paddingHorizontal: focused ? 16 : 20,
+            paddingTop: focused ? 12 : 16,
+          },
           style,
         ]}
         keyboardShouldPersistTaps="handled"
@@ -313,7 +321,7 @@ export function Screen({
                     : router.replace("/(tabs)"),
               )
             }
-            style={styles.back}
+            style={[styles.back, focused && { marginBottom: 4 }]}
           >
             <Icon name="back" size={20} />
             <Text style={styles.backText}>Indietro</Text>
@@ -365,17 +373,66 @@ export function Screen({
         {title && (
           <Text
             accessibilityRole="header"
-            style={[styles.title, !desktop && { fontSize: 32, lineHeight: 39 }]}
+            style={[
+              styles.title,
+              !desktop && { fontSize: 32, lineHeight: 39 },
+              focused && {
+                fontSize: desktop ? 34 : 28,
+                lineHeight: desktop ? 40 : 34,
+                marginBottom: 6,
+              },
+            ]}
           >
             {title}
           </Text>
         )}
-        {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+        {subtitle && (
+          <Text
+            style={[
+              styles.subtitle,
+              focused && { fontSize: 16, lineHeight: 24, marginBottom: 14 },
+            ]}
+          >
+            {subtitle}
+          </Text>
+        )}
         {children}
         {professional ? (
           <View style={styles.footer}>
             <Text style={styles.footerSmall}>
               metiMaia · Area professionale
+            </Text>
+          </View>
+        ) : compactShell ? (
+          <View
+            style={{
+              borderTopWidth: 1,
+              borderTopColor: colors.border,
+              marginTop: 28,
+              paddingTop: 12,
+              gap: 4,
+            }}
+          >
+            <View style={[ui.row, { flexWrap: "wrap", gap: 18 }]}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() =>
+                  guardedNavigation(() => router.push("/contatti"))
+                }
+                style={styles.sectionAction}
+              >
+                <Text style={styles.actionText}>Contatta Gaia</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => guardedNavigation(() => router.push("/privacy"))}
+                style={styles.sectionAction}
+              >
+                <Text style={styles.actionText}>Privacy e dati</Text>
+              </Pressable>
+            </View>
+            <Text style={styles.footerSmall}>
+              metiMaia · Con te, passo dopo passo.
             </Text>
           </View>
         ) : (

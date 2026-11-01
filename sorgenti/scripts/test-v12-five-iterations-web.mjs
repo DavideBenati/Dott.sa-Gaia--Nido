@@ -572,6 +572,7 @@ try {
     expect(
       graph["@graph"].some((node) => node["@type"] === "BreadcrumbList"),
     ).toBe(true);
+    if (width < 900) await button(library.page, "Apri menu del sito").click();
     await library.page
       .getByRole("link", { name: "Scopri il progetto MetiMaia", exact: true })
       .click();
