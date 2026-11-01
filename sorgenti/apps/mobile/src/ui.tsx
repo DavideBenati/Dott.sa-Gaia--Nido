@@ -54,6 +54,7 @@ export function Screen({
   stageScroll = "start",
   professional = false,
   focused = false,
+  compactFooter = false,
 }: {
   children: React.ReactNode;
   title?: string;
@@ -66,6 +67,7 @@ export function Screen({
   stageScroll?: "start" | "heading";
   professional?: boolean;
   focused?: boolean;
+  compactFooter?: boolean;
 }) {
   usePageMetadata();
   const pathname = usePathname();
@@ -403,7 +405,7 @@ export function Screen({
               metiMaia · Area professionale
             </Text>
           </View>
-        ) : compactShell ? (
+        ) : compactShell || compactFooter ? (
           <View
             style={{
               borderTopWidth: 1,
@@ -615,14 +617,16 @@ export function Notice({
 export function ArticleCard({
   article,
   compact = false,
+  style,
 }: {
   article: Article;
   compact?: boolean;
+  style?: StyleProp<ViewStyle>;
 }) {
   const { categories, state, toggleFavorite } = useApp();
   const saved = state.favorites.includes(article.id);
   return (
-    <View style={[styles.articleCard, compact && styles.compactCard]}>
+    <View style={[styles.articleCard, compact && styles.compactCard, style]}>
       <Link href={{ pathname: "/article", params: { id: article.id } }} asChild>
         <Pressable
           accessibilityRole="link"

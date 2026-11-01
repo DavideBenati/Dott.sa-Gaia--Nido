@@ -65,6 +65,8 @@ e7ac8e4b0f564bb6ca01ca15ae17902e28a1e1b41faaad8af8fc475ff01d6bbb  release-v11.3/
 7bc3ff88715cb9f41752da4d96182bcacdc071e76d34b7fcb26d96944a819a9b  release-v13.3/LEGGIMI.md
 1579865c8bb0dd90db791999c8597a926658829fe2673d300d9747952da6219d  release-v13.4/LEGGIMI.md
 71aa970e49ecd997997659de4419c186be2b8951a20af69a2f1a675ee9d7398d  release-v13.4/VERIFICA.json
+5b7942c8307e7ace39ec2abd608282d0eefb3908d443bfdb09683e53e20753e7  release-v13.5/LEGGIMI.md
+d85343f9ed3ae04b230c4bf8365a03dbd9793401e064f41367aff19c1f846835  release-v13.5/VERIFICA.json
 706297856953d144e50c71dacc6902c607a048d19fc14f1a1fc9f0bd3c823309  release-v13/LEGGIMI.md
 df0165fe08029db9ec4472b68833a9c7e438f1f55648431be5e2237a4a9677b6  release-v3/LEGGIMI.md
 e1c8cb3240aea83065c8ec89a59dc7793ebf181a73445c8ae3096703718f6f14  release-v4/LEGGIMI.md
@@ -115,7 +117,7 @@ dd64911af6b56e62be38a9429e7b64e1044344baa9642fdb837cd1e154cb42fc  sorgenti/apps/
 98f6dc96fc1dfac52117ad3961a26de915d47e11196604fb2724d4fdd11e1bd7  sorgenti/apps/mobile/app/(tabs)/checklists.tsx
 3a8723072769e75028603f8d8508e243893f9a1c521931eaef9cd2a2c71a11f3  sorgenti/apps/mobile/app/(tabs)/discover.tsx
 04fea6c1d722b69f9427aec68547fda7e0ac82370ec4b5e14a2a63239f8678f1  sorgenti/apps/mobile/app/(tabs)/documenti.tsx
-1c23a6b4fef9b32e4854fbbdce5c76c0351d075c6b695eb4546efa1fd44c4295  sorgenti/apps/mobile/app/(tabs)/index.tsx
+0da3d60093e740ca18e66df078c7f8f2e8443a00b85b170376140e07def4fc89  sorgenti/apps/mobile/app/(tabs)/index.tsx
 d9db04b56b08361f7505997cbc25e25e5ef64001cbac914b0bd197773dd8cbb8  sorgenti/apps/mobile/app/(tabs)/profile.tsx
 67ff2ab72b2c2636ffb03ba88261e3df7af0e85b997fabeb7c59ce7c234ae8ff  sorgenti/apps/mobile/app/(tabs)/shop.tsx
 cf644b9bff28a7c681717905fa9ac181a829ad1b992122fbe046d9e6160fa12d  sorgenti/apps/mobile/app/(tabs)/studio.tsx
@@ -201,7 +203,7 @@ f1bf66e7fc53e061b1826425743cd06a95c796080dc8d165d802c86109e5df1a  sorgenti/apps/
 309364b11f79f284d510ccd180b037ca4147cd7f5cb1d8c4b5a07f9e72524b02  sorgenti/apps/mobile/src/state.tsx
 49d626275a6a4bc9af2daae731a8831faf070e9afa121f5441cc9204086cc30e  sorgenti/apps/mobile/src/theme.ts
 36883c1fd7bbfe5c2bc75b120a5305d1dd42a01b869ceae6726e572c5159b7cd  sorgenti/apps/mobile/src/typography.tsx
-de9aa3c9c7ec187a80208509d41bd412b746e6f7b1f4c1e750d42549f57077ff  sorgenti/apps/mobile/src/ui.tsx
+669c4c8e8928eb696caa2f3b158eb8593359b5db9e033deb58a2131bb313a4a8  sorgenti/apps/mobile/src/ui.tsx
 780bf4ff062853ff2cea6ed344dddd448b8adb4fb6a2ce0480ee73e57a95352a  sorgenti/apps/mobile/src/unsaved-changes.ts
 7eaa030c6dc3ddd77e5c5f01fe27a6e975f3ee1818ed0203078fa010a2bf2834  sorgenti/apps/mobile/src/use-connection.ts
 85ca58a3ac310a17dac529f600b63b99b879804e2c8e193e88acaebd55ccebb0  sorgenti/apps/mobile/src/use-resume-refresh.ts
@@ -268,8 +270,8 @@ c9008d5df5129a0ab90451c7960422f4653e6633b0346ac611af2ca64c566fc5  sorgenti/scrip
 99a396652298c9ab434ba699b66b816847adecb46bfca773a8b00fc100e11647  sorgenti/scripts/test-v11-2-original-content-web.mjs
 7c6e2ec2262643a36c28cf25e964e99f0d987c7dc932945179c32d4fa70bea16  sorgenti/scripts/test-v11-3-document-notifications-web.mjs
 158ef57be14da21c7c778dbc8bb7d47331f22b5ec8dac35d7565500d2f4a47cf  sorgenti/scripts/test-v11-onboarding-web.mjs
-d0202c42a7e3b5104ad5fd25e5e9cd3c2986e335bb5a571c5f6ead5745390295  sorgenti/scripts/test-v12-five-iterations-web.mjs
-33f9fcc5a242e845f8f31c437d63788a32dc7c4c6bc154aa470e49bc4bde6c2b  sorgenti/scripts/test-v13-pwa-web.mjs
+c2bb1dd8a14a19a313d21ff540b002c19f1cc2a7a70e9cab0525004007632a04  sorgenti/scripts/test-v12-five-iterations-web.mjs
+b0f27f638b768791d04d6675bf4cb387a5f69714072c9e5d62e67950b5de185a  sorgenti/scripts/test-v13-pwa-web.mjs
 6cf9e6f11cbc3ae9ac8f1739040c826396c24565ff0ff414965a23c97e5a8a71  sorgenti/scripts/test-v9-content-web.mjs
 e4672ad50450ce145fdbe3941d14b475272785dae7f22e29c582ce9aca1e481e  sorgenti/scripts/web-pwa.mjs
 36d01a40fb0ca07d3e4b4a4d0730acceefe9f092a2c31400013028cee7e4e409  sorgenti/scripts/web-seo.mjs

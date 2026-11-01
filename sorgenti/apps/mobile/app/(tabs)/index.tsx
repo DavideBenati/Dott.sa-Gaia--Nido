@@ -1,16 +1,14 @@
 import { Text } from "../../src/typography";
-import React from "react";
+import React, { useState } from "react";
 import { View, Pressable } from "react-native";
 import { router } from "expo-router";
 import { calculateJourney, recommendArticles, disclaimer } from "@nido/core";
 import { useApp } from "../../src/state";
 import {
-  ArticleGrid,
+  ArticleCard,
   Button,
   ContentStatus,
-  Notice,
   Screen,
-  SectionHeader,
   Progress,
   ui,
 } from "../../src/ui";
@@ -19,6 +17,7 @@ import { colors } from "../../src/theme";
 import { usePwa } from "../../src/pwa";
 import { selectHomeChecklist } from "../../src/home-checklist";
 import { checklistSummary } from "../../src/share-content";
+
 export default function Home() {
   const {
     state,
@@ -28,13 +27,25 @@ export default function Home() {
     memberProfile,
     personalizedPreferences,
     pregnancyProfile,
+    contentLoading,
+    contentError,
   } = useApp();
   const { standalone } = usePwa();
+  const [showMore, setShowMore] = useState(false);
   const journey = calculateJourney(personalizedPreferences);
   const next = selectHomeChecklist(checklists, state.progress, journey.stage);
   const nextSummary = next ? checklistSummary(next, state.progress) : null;
+  const reading = recommendArticles(
+    articles,
+    personalizedPreferences,
+    new Date(),
+    pregnancyProfile,
+  )[0];
+
   return (
     <Screen
+      compactFooter
+      style={{ maxWidth: 840 }}
       eyebrow="IL MIO PERCORSO"
       title={
         email
@@ -43,222 +54,246 @@ export default function Home() {
             : "Il tuo spazio, con Gaia."
           : "Ogni nuovo inizio, insieme."
       }
-      subtitle="Ciao! Oggi facciamo un altro passo insieme."
+      subtitle="I tuoi materiali e un piccolo passo alla volta."
     >
-      {email && (
-        <View style={[ui.card, { padding: 18, gap: 10, marginBottom: 14 }]}>
-          <View style={[ui.row, { alignItems: "flex-start" }]}>
-            <Icon name="lock" size={28} />
-            <Text style={[ui.heading, { flex: 1 }]}>I miei documenti</Text>
-          </View>
-          <Text style={ui.body}>I materiali che Gaia ha condiviso con te.</Text>
-          <Button onPress={() => router.push("/miei-documenti")}>
-            Apri i miei documenti
-          </Button>
-        </View>
-      )}
-      {next && nextSummary && (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={next.title}
-          onPress={() =>
-            router.push({ pathname: "/checklist", params: { id: next.id } })
-          }
-          style={[ui.card, { padding: 18, gap: 9, marginBottom: 14 }]}
-        >
-          <Text style={ui.label}>
-            {nextSummary.complete
-              ? "IL TUO TRAGUARDO"
-              : nextSummary.completed > 0
-                ? "RIPRENDI DA QUI"
-                : "UNA CHECKLIST PER TE"}
-          </Text>
-          <Text style={[ui.heading, { fontSize: 24, lineHeight: 30 }]}>
-            {next.title}
-          </Text>
-          <Progress
-            completed={nextSummary.completed}
-            total={nextSummary.total}
-          />
-          <View style={[ui.row, { justifyContent: "space-between" }]}>
-            <Text style={{ color: colors.sageDark, fontWeight: "600" }}>
-              {nextSummary.complete
-                ? "Rivedi checklist"
-                : nextSummary.completed > 0
-                  ? "Riprendi checklist"
-                  : "Apri checklist"}
+      <View style={{ gap: 16 }}>
+        {email && (
+          <View style={[ui.card, { padding: 18, gap: 10 }]}>
+            <View style={[ui.row, { alignItems: "flex-start" }]}>
+              <Icon name="lock" size={26} />
+              <Text style={[ui.heading, { flex: 1 }]}>I miei documenti</Text>
+            </View>
+            <Text style={ui.body}>
+              I materiali che Gaia ha condiviso con te.
             </Text>
-            <Icon name="arrow" />
+            <Button onPress={() => router.push("/miei-documenti")}>
+              Apri i miei documenti
+            </Button>
           </View>
-        </Pressable>
-      )}
-      <View
-        style={{
-          flexDirection: "row",
-          gap: 12,
-          marginVertical: 18,
-          flexWrap: "wrap",
-        }}
-      >
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Letture salvate"
-          onPress={() => router.push("/saved")}
-          style={({ pressed }) => [
-            ui.card,
-            {
-              flex: 1,
-              minWidth: 130,
-              padding: 18,
-              gap: 12,
-              opacity: pressed ? 0.75 : 1,
-            },
-          ]}
-        >
-          <Icon name="bookmark" />
-          <Text style={{ color: colors.ink, fontWeight: "600", fontSize: 16 }}>
-            Letture salvate
-          </Text>
-          <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 20 }}>
-            I tuoi contenuti preferiti, sempre con te.
-          </Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Le tue checklist"
-          onPress={() => router.push("/(tabs)/checklists")}
-          style={({ pressed }) => [
-            ui.card,
-            {
-              flex: 1,
-              minWidth: 130,
-              padding: 18,
-              gap: 12,
-              opacity: pressed ? 0.75 : 1,
-            },
-          ]}
-        >
-          <Icon name="checklist" />
-          <Text style={{ color: colors.ink, fontWeight: "600", fontSize: 16 }}>
-            Le tue checklist
-          </Text>
-          {next ? (
+        )}
+        <ContentStatus />
+        {next && nextSummary && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={next.title}
+            onPress={() =>
+              router.push({ pathname: "/checklist", params: { id: next.id } })
+            }
+            style={[ui.card, { padding: 18, gap: 9 }]}
+          >
+            <Text style={ui.label}>
+              {nextSummary.complete
+                ? "IL TUO TRAGUARDO"
+                : nextSummary.completed > 0
+                  ? "RIPRENDI DA QUI"
+                  : "UNA CHECKLIST PER TE"}
+            </Text>
+            <Text style={[ui.heading, { fontSize: 24, lineHeight: 30 }]}>
+              {next.title}
+            </Text>
             <Progress
-              completed={next.items.filter((i) => state.progress[i.id]).length}
-              total={next.items.length}
+              completed={nextSummary.completed}
+              total={nextSummary.total}
             />
-          ) : (
-            <Text style={ui.body}>Un piccolo passo alla volta.</Text>
-          )}
-        </Pressable>
-      </View>
-      {!standalone && (
-        <Button variant="quiet" onPress={() => router.push("/installa")}>
-          MAIA sul tuo telefono
-        </Button>
-      )}
-      <View
-        style={[
-          ui.card,
-          { gap: 12, backgroundColor: colors.sagePale, marginBottom: 18 },
-        ]}
-      >
+            <View style={[ui.row, { justifyContent: "space-between" }]}>
+              <Text style={{ color: colors.sageDark, fontWeight: "600" }}>
+                {nextSummary.complete
+                  ? "Rivedi checklist"
+                  : nextSummary.completed > 0
+                    ? "Riprendi checklist"
+                    : "Apri checklist"}
+              </Text>
+              <Icon name="arrow" />
+            </View>
+          </Pressable>
+        )}
+        <View style={{ gap: 10 }}>
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              alignItems: "center",
+              justifyContent: "space-between",
+              columnGap: 12,
+            }}
+          >
+            <Text
+              accessibilityRole="header"
+              style={[ui.heading, { fontSize: 22, lineHeight: 28 }]}
+            >
+              Una lettura per te
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.navigate("/(tabs)/discover")}
+              style={{
+                minHeight: 44,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <Text
+                style={{
+                  color: colors.sageDark,
+                  fontSize: 14,
+                  fontWeight: "600",
+                }}
+              >
+                Tutte le letture
+              </Text>
+              <Icon name="arrow" size={16} />
+            </Pressable>
+          </View>
+          {reading ? (
+            <ArticleCard
+              article={reading}
+              compact
+              style={{ maxWidth: "100%", height: "auto" }}
+            />
+          ) : !contentLoading && !contentError ? (
+            <Text style={ui.body}>
+              Le letture compariranno qui quando saranno disponibili.
+            </Text>
+          ) : null}
+        </View>
         <View
           style={{
             flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
             flexWrap: "wrap",
-            gap: 12,
+            columnGap: 22,
+            rowGap: 2,
           }}
         >
-          <Text style={ui.heading}>{journey.label}</Text>
-          <Icon name="leaf" size={32} />
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push("/saved")}
+            style={{
+              minHeight: 44,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 7,
+            }}
+          >
+            <Icon name="bookmark" size={18} />
+            <Text
+              style={{
+                color: colors.sageDark,
+                fontSize: 15,
+                fontWeight: "600",
+              }}
+            >
+              Letture salvate
+            </Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push("/(tabs)/checklists")}
+            style={{
+              minHeight: 44,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 7,
+            }}
+          >
+            <Icon name="checklist" size={18} />
+            <Text
+              style={{
+                color: colors.sageDark,
+                fontSize: 15,
+                fontWeight: "600",
+              }}
+            >
+              Tutte le checklist
+            </Text>
+          </Pressable>
         </View>
-        <Text style={ui.body}>{journey.description}</Text>
-        <Button onPress={() => router.navigate("/discover")}>
-          Esplora gli Argomenti
-        </Button>
-        <Button
-          variant="secondary"
-          onPress={() => router.push("/welcome?edit=1")}
-        >
-          Personalizza il tuo percorso
-        </Button>
-        {email && (
-          <Button variant="quiet" onPress={() => router.push("/profile")}>
-            La mia scheda per Gaia
-          </Button>
-        )}
-        {email && (
-          <Button variant="quiet" onPress={() => router.push("/traguardi")}>
-            I miei traguardi
-          </Button>
-        )}
-      </View>
-      <View style={[ui.card, { gap: 14, borderColor: colors.sage }]}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-          <Icon name="mail" size={28} />
-          <Text style={[ui.heading, { flex: 1, fontSize: 25 }]}>
-            Dott.sa Gaia
-          </Text>
-        </View>
-        <Text style={ui.body}>
-          Per informazioni sui servizi e richieste di disponibilità, scrivi a
-          Gaia via email.
-        </Text>
-        <Button onPress={() => router.push("/contatti")} icon="arrow">
-          Contatta Gaia via email
-        </Button>
-        <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 20 }}>
-          Le risposte non sono immediate. Per urgenze contatta i servizi di
-          emergenza.
-        </Text>
-      </View>
-      {!email && (
-        <View style={{ marginTop: 16 }}>
-          <Button variant="quiet" onPress={() => router.push("/account")}>
+        {!email && (
+          <Button variant="secondary" onPress={() => router.push("/account")}>
             Crea account o accedi
           </Button>
+        )}
+        <View
+          style={{
+            borderTopWidth: 1,
+            borderTopColor: colors.border,
+            paddingTop: 4,
+          }}
+        >
+          <Pressable
+            accessibilityRole="button"
+            aria-expanded={showMore}
+            onPress={() => setShowMore((value) => !value)}
+            style={{
+              minHeight: 48,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+            }}
+          >
+            <Text
+              style={{
+                color: colors.sageDark,
+                fontSize: 16,
+                fontWeight: "600",
+              }}
+            >
+              Altre opzioni
+            </Text>
+            <Icon name={showMore ? "close" : "arrow"} size={18} />
+          </Pressable>
+          {showMore && (
+            <View style={{ gap: 8, paddingTop: 10 }}>
+              <Text style={[ui.label, { marginBottom: 0 }]}>
+                {journey.label}
+              </Text>
+              <Text style={ui.body}>{journey.description}</Text>
+              <Button
+                variant="quiet"
+                onPress={() => router.push("/welcome?edit=1")}
+              >
+                Personalizza il tuo percorso
+              </Button>
+              {email && (
+                <>
+                  <Button
+                    variant="quiet"
+                    onPress={() => router.push("/profile")}
+                  >
+                    La mia scheda per Gaia
+                  </Button>
+                  <Button
+                    variant="quiet"
+                    onPress={() => router.push("/traguardi")}
+                  >
+                    I miei traguardi
+                  </Button>
+                </>
+              )}
+              <Button variant="quiet" onPress={() => router.push("/contatti")}>
+                Contatta Gaia via email
+              </Button>
+              <Button variant="quiet" onPress={() => router.push("/prenota")}>
+                Prepara una richiesta via email
+              </Button>
+              <Button variant="quiet" onPress={() => router.navigate("/shop")}>
+                Scopri i consigli d’acquisto
+              </Button>
+              {!standalone && (
+                <Button
+                  variant="quiet"
+                  onPress={() => router.push("/installa")}
+                >
+                  MAIA sul tuo telefono
+                </Button>
+              )}
+            </View>
+          )}
         </View>
-      )}
-      <SectionHeader
-        title={
-          journey.week !== null && state.preferences.journey !== "postpartum"
-            ? `Una lettura per la settimana ${journey.week}`
-            : "Consigliato per te"
-        }
-        action="Tutti gli Argomenti"
-        onPress={() => router.navigate("/(tabs)/discover")}
-      />
-      <Button variant="secondary" onPress={() => router.push("/prenota")}>
-        Prepara una richiesta via email
-      </Button>
-      <ContentStatus />
-      <ArticleGrid
-        items={recommendArticles(
-          articles,
-          personalizedPreferences,
-          new Date(),
-          pregnancyProfile,
-        ).slice(0, 3)}
-      />
-      <View style={[ui.card, { gap: 12, backgroundColor: colors.peach }]}>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-          <Icon name="shop" size={28} />
-          <Text style={ui.heading}>Consigli d’acquisto</Text>
-        </View>
-        <Text style={ui.body}>
-          Una selezione di prodotti su Amazon per la quotidianità in famiglia.
-          Prezzi, disponibilità e condizioni di acquisto sono indicati su
-          Amazon.
+        <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 20 }}>
+          {disclaimer}
         </Text>
-        <Button variant="secondary" onPress={() => router.navigate("/shop")}>
-          Scopri i consigli d’acquisto
-        </Button>
-      </View>
-      <View style={{ marginTop: 24 }}>
-        <Notice>{disclaimer}</Notice>
       </View>
     </Screen>
   );

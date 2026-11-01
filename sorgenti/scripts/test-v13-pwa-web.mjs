@@ -830,14 +830,33 @@ try {
     ).toBeVisible();
     const resume = button(app.page, checklist.title);
     const resumeBounds = await resume.boundingBox();
+    await expect(button(app.page, "Scopri i consigli d’acquisto")).toHaveCount(
+      0,
+    );
+    const moreOptions = button(app.page, "Altre opzioni");
+    await expect(moreOptions).toHaveAttribute("aria-expanded", "false");
+    expect(resumeBounds.y + resumeBounds.height).toBeLessThanOrEqual(
+      app.page.viewportSize().height - 84,
+    );
+    await app.page.screenshot({
+      path: resolve(artifacts, `essential-home-installed-${width}.png`),
+    });
+    await moreOptions.click();
+    await expect(moreOptions).toHaveAttribute("aria-expanded", "true");
+    await expect(
+      button(app.page, "Scopri i consigli d’acquisto"),
+    ).toBeVisible();
     const shoppingBounds = await button(
       app.page,
       "Scopri i consigli d’acquisto",
     ).boundingBox();
-    expect(resumeBounds.y + resumeBounds.height).toBeLessThanOrEqual(
-      app.page.viewportSize().height - 84,
-    );
     expect(resumeBounds.y).toBeLessThan(shoppingBounds.y);
+    await moreOptions.click();
+    await expect(button(app.page, "Scopri i consigli d’acquisto")).toHaveCount(
+      0,
+    );
+    // Opening the secondary options scrolls down; return to the main action.
+    await resume.scrollIntoViewIfNeeded();
     await resume.click();
     const firstActivity = app.page.getByRole("checkbox").first();
     await expect(firstActivity).toBeVisible();

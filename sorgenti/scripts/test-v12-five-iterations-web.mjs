@@ -383,6 +383,23 @@ async function fixture(width, viewer = null, options = {}) {
 try {
   for (const width of [390, 1280]) {
     const home = await fixture(width, patient);
+    const homeArticles = [
+      copy(article),
+      {
+        ...copy(article),
+        id: "55555555-5555-4555-8555-555555555555",
+        slug: "seconda-lettura-di-prova",
+        title: "Seconda lettura da ritrovare",
+      },
+      {
+        ...copy(article),
+        id: "66666666-6666-4666-8666-666666666666",
+        slug: "terza-lettura-di-prova",
+        title: "Terza lettura da ritrovare",
+      },
+    ];
+    home.state.articles = homeArticles;
+    await home.page.reload();
     await button(home.page, "Vai al mio percorso").click();
     const openDocuments = button(home.page, "Apri i miei documenti");
     await expect(openDocuments).toBeVisible();
@@ -393,11 +410,71 @@ try {
       home.page.viewportSize().height - 84,
     );
     await expect(button(home.page, "Letture salvate")).toBeVisible();
-    await expect(button(home.page, "Esplora gli Argomenti")).toBeVisible();
+    await expect(button(home.page, "Tutte le letture")).toBeVisible();
+    await expect(button(home.page, "Tutte le checklist")).toBeVisible();
+    await expect(heading(home.page, "Una lettura per te")).toBeVisible();
+    await expect(
+      home.page.getByRole("link", { name: homeArticles[0].title, exact: true }),
+    ).toHaveCount(1);
+    for (const item of homeArticles.slice(1))
+      await expect(
+        home.page.getByRole("link", { name: item.title, exact: true }),
+      ).toHaveCount(0);
+    const readingBounds = await home.page
+      .getByRole("link", { name: homeArticles[0].title, exact: true })
+      .boundingBox();
+    const savedBounds = await button(
+      home.page,
+      "Letture salvate",
+    ).boundingBox();
+    expect(readingBounds.width).toBeGreaterThanOrEqual(documentsBounds.width);
+    expect(savedBounds.y).toBeGreaterThanOrEqual(
+      readingBounds.y + readingBounds.height,
+    );
+    const more = button(home.page, "Altre opzioni");
+    await expect(more).toHaveAttribute("aria-expanded", "false");
+    for (const label of [
+      "Personalizza il tuo percorso",
+      "La mia scheda per Gaia",
+      "I miei traguardi",
+      "Contatta Gaia via email",
+      "Prepara una richiesta via email",
+      "Scopri i consigli d’acquisto",
+      "MAIA sul tuo telefono",
+    ])
+      await expect(button(home.page, label)).toHaveCount(0);
     await noOverflow(home.page);
     await home.page.screenshot({
       path: resolve(artifacts, `home-${width}.png`),
     });
+    await more.click();
+    await expect(more).toHaveAttribute("aria-expanded", "true");
+    for (const label of [
+      "Personalizza il tuo percorso",
+      "La mia scheda per Gaia",
+      "I miei traguardi",
+      "Contatta Gaia via email",
+      "Prepara una richiesta via email",
+      "Scopri i consigli d’acquisto",
+      "MAIA sul tuo telefono",
+    ])
+      await expect(button(home.page, label)).toBeVisible();
+    await noOverflow(home.page);
+    await more.click();
+    await expect(more).toHaveAttribute("aria-expanded", "false");
+    await expect(button(home.page, "Personalizza il tuo percorso")).toHaveCount(
+      0,
+    );
+    await button(home.page, "Tutte le letture").click();
+    for (const item of homeArticles)
+      await expect(
+        home.page.getByRole("link", { name: item.title, exact: true }),
+      ).toBeVisible();
+    await button(home.page, "Vai al mio percorso").click();
+    await button(home.page, "Altre opzioni").click();
+    await button(home.page, "Scopri i consigli d’acquisto").click();
+    await expect(heading(home.page, "Consigli d’acquisto")).toBeVisible();
+    await button(home.page, "Vai al mio percorso").click();
     await button(home.page, "Letture salvate").click();
     await expect(heading(home.page, "Letture salvate")).toBeVisible();
     await expect(
@@ -406,6 +483,9 @@ try {
     await home.context.close();
     passed(
       `${width}px: personal home puts the documents action above the bottom tabs and labels saved readings distinctly from all topics`,
+    );
+    passed(
+      `${width}px: Home presents one recommended reading from a three-article catalogue, keeps secondary options collapsed and preserves full-catalogue, shopping and saved-reading access`,
     );
 
     const personal = await fixture(width, patient);
@@ -590,6 +670,81 @@ try {
       `${width}px: catalogue-empty differs from filter-empty and SPA navigation replaces structured page data`,
     );
   }
+
+  const guestHome = await fixture(390, null, { empty: true });
+  await guestHome.page.goto(origin + "/discover");
+  await expect(
+    guestHome.page.getByText("Nessuna lettura pubblicata", { exact: true }),
+  ).toBeVisible();
+  await button(guestHome.page, "Vai al mio percorso").click();
+  await expect(button(guestHome.page, "Apri i miei documenti")).toHaveCount(0);
+  await expect(button(guestHome.page, "Crea account o accedi")).toBeVisible();
+  await expect(
+    guestHome.page.getByText(
+      "Le letture compariranno qui quando saranno disponibili.",
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await expect(button(guestHome.page, "Altre opzioni")).toHaveAttribute(
+    "aria-expanded",
+    "false",
+  );
+  await expect(button(guestHome.page, "I miei traguardi")).toHaveCount(0);
+  await expect(button(guestHome.page, "Riprova a caricare")).toHaveCount(0);
+  await noOverflow(guestHome.page);
+  await guestHome.page.screenshot({
+    path: resolve(artifacts, "home-guest-empty-390.png"),
+  });
+  await guestHome.context.close();
+  passed(
+    "390px: an empty guest Home offers account entry and an accurate empty-reading message without private-document or account-only shortcuts",
+  );
+
+  const waitingHome = await fixture(390, null, { gateArticles: true });
+  await waitingHome.page.goto(origin + "/discover");
+  await button(waitingHome.page, "Vai al mio percorso").click();
+  await expect(
+    waitingHome.page.getByText("Prepariamo il tuo spazio…", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    waitingHome.page.getByText(
+      "Le letture compariranno qui quando saranno disponibili.",
+      { exact: true },
+    ),
+  ).toHaveCount(0);
+  await expect(button(waitingHome.page, "Altre opzioni")).toHaveAttribute(
+    "aria-expanded",
+    "false",
+  );
+  waitingHome.state.releaseArticles();
+  await expect(
+    waitingHome.page.getByRole("link", { name: article.title, exact: true }),
+  ).toBeVisible();
+  waitingHome.state.failArticles = true;
+  await waitingHome.page.goto(origin + "/discover");
+  await button(waitingHome.page, "Vai al mio percorso").click();
+  await expect(button(waitingHome.page, "Riprova a caricare")).toBeVisible();
+  await expect(
+    waitingHome.page.getByText(
+      "Le letture compariranno qui quando saranno disponibili.",
+      { exact: true },
+    ),
+  ).toHaveCount(0);
+  await expect(button(waitingHome.page, "Altre opzioni")).toHaveAttribute(
+    "aria-expanded",
+    "false",
+  );
+  waitingHome.state.failArticles = false;
+  await button(waitingHome.page, "Riprova a caricare").click();
+  await expect(
+    waitingHome.page.getByRole("link", { name: article.title, exact: true }),
+  ).toBeVisible();
+  await expect(button(waitingHome.page, "Riprova a caricare")).toHaveCount(0);
+  await noOverflow(waitingHome.page);
+  await waitingHome.context.close();
+  passed(
+    "390px: Home exposes catalogue loading and retry outside collapsed options and never labels a pending or failed request as an empty catalogue",
+  );
 
   const unrelated = await fixture(390, outsider);
   await unrelated.page.goto(origin + "/miei-documenti");
