@@ -1,6 +1,6 @@
 # Email di registrazione metiMaia — benvenuto, conferma e QR
 
-Il modello personalizza l’email automatica di conferma registrazione inviata da Supabase. Il messaggio dà il benvenuto, mantiene **Conferma il mio account** come primo passaggio e propone l’installazione dopo la conferma.
+Il modello personalizza l’email automatica di conferma registrazione inviata da Supabase. Il messaggio dà il benvenuto, mantiene **Conferma l’email** come primo passaggio e propone l’installazione dopo la conferma.
 
 La mail contiene sia **Installa MAIA sul telefono**, comodo per chi la legge dallo smartphone, sia il PNG del QR visibile nel corpo della mail per chi la legge dal computer. Se il programma di posta nasconde le immagini, restano disponibili il pulsante e il collegamento scritto.
 
@@ -33,7 +33,7 @@ L’invio resta quello automatico della conferma registrazione. Gli avvisi dei d
 Registra un tuo account di prova e verifica che:
 
 1. Arrivi la mail con il nuovo oggetto e il messaggio di Gaia.
-2. **Conferma il mio account** confermi correttamente l’indirizzo e permetta di continuare sul sito.
+2. **Conferma l’email** confermi correttamente l’indirizzo e permetta di continuare sul sito.
 3. Il pulsante **Installa MAIA sul telefono** apra le istruzioni.
 4. Il QR compaia quando il programma di posta consente le immagini e sia leggibile dalla fotocamera.
 5. Il collegamento scritto resti utilizzabile anche se le immagini sono nascoste.

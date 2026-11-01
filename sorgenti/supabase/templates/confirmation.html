@@ -1,245 +1,148 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="it">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Il tuo spazio, con Gaia.</title>
-  </head>
-  <body
-    style="
-      margin: 0;
-      padding: 0;
-      background-color: #faf7f2;
-      color: #35453b;
-      font-family: Arial, Helvetica, sans-serif;
-      line-height: 1.65;
-    "
-  >
-    <div style="display: none; max-height: 0; overflow: hidden; opacity: 0">
-      Conferma il tuo account e ritrova metiMaia anche sul telefono.
-    </div>
-    <table
-      role="presentation"
-      width="100%"
-      cellspacing="0"
-      cellpadding="0"
-      border="0"
-      style="background-color: #faf7f2"
-    >
-      <tr>
-        <td align="center" style="padding: 28px 12px">
-          <table
-            role="presentation"
-            width="600"
-            cellspacing="0"
-            cellpadding="0"
-            border="0"
-            style="
-              width: 100%;
-              max-width: 600px;
-              background-color: #ffffff;
-              border: 1px solid #e2e6dd;
-              border-radius: 18px;
-            "
-          >
-            <tr>
-              <td style="padding: 28px 24px 12px">
-                <p
-                  style="
-                    margin: 0 0 14px;
-                    color: #42624b;
-                    font-size: 13px;
-                    font-weight: bold;
-                    letter-spacing: 2px;
-                  "
-                >
-                  METIMAIA
-                </p>
-                <h1
-                  style="
-                    margin: 0 0 22px;
-                    font-family: Georgia, serif;
-                    font-size: 30px;
-                    line-height: 1.25;
-                    font-weight: normal;
-                    color: #35453b;
-                  "
-                >
-                  Il tuo spazio, con Gaia.
-                </h1>
-                <p style="margin: 0 0 16px; font-size: 16px">Ciao,</p>
-                <p style="margin: 0 0 16px; font-size: 16px">
-                  ti do il benvenuto in metiMaia. Sono felice di averti qui.
-                </p>
-                <p style="margin: 0 0 20px; font-size: 16px">
-                  Ho immaginato questo spazio per accompagnarti con letture,
-                  checklist e piccoli strumenti da ritrovare con calma, quando
-                  ti sono utili. Puoi esplorarlo con i tuoi tempi, un passo alla
-                  volta.
-                </p>
-                <p style="margin: 0 0 16px; font-size: 16px">
-                  <strong
-                    >Per iniziare, conferma il tuo indirizzo email.</strong
-                  >
-                </p>
-                <table
-                  role="presentation"
-                  cellspacing="0"
-                  cellpadding="0"
-                  border="0"
-                  style="margin: 0 0 24px"
-                >
-                  <tr>
-                    <td
-                      bgcolor="#42624b"
-                      align="center"
-                      style="border-radius: 10px"
-                    >
-                      <a
-                        href="{{ .ConfirmationURL }}"
-                        style="
-                          display: inline-block;
-                          padding: 15px 22px;
-                          border: 1px solid #42624b;
-                          border-radius: 10px;
-                          color: #ffffff;
-                          background-color: #42624b;
-                          text-decoration: none;
-                          font-size: 16px;
-                          font-weight: bold;
-                        "
-                        >Conferma il mio account</a
-                      >
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding: 0 24px">
-                <table
-                  role="presentation"
-                  width="100%"
-                  cellspacing="0"
-                  cellpadding="0"
-                  border="0"
-                  style="background-color: #edf2e9; border-radius: 12px"
-                >
-                  <tr>
-                    <td style="padding: 22px 18px">
-                      <h2
-                        style="
-                          margin: 0 0 14px;
-                          font-family: Georgia, serif;
-                          font-size: 24px;
-                          line-height: 1.3;
-                          font-weight: normal;
-                        "
-                      >
-                        Porta MAIA sul tuo telefono
-                      </h2>
-                      <p style="margin: 0 0 18px; font-size: 16px">
-                        Dopo aver confermato l’account, puoi aggiungere l’icona
-                        MAIA alla schermata Home. Ritroverai le tue letture
-                        salvate, le checklist e i materiali condivisi con te,
-                        usando la stessa email e password del sito.
-                      </p>
-                      <table
-                        role="presentation"
-                        cellspacing="0"
-                        cellpadding="0"
-                        border="0"
-                        style="margin: 0 0 18px"
-                      >
-                        <tr>
-                          <td
-                            bgcolor="#ffffff"
-                            align="center"
-                            style="
-                              border-radius: 10px;
-                              border: 1px solid #42624b;
-                            "
-                          >
-                            <a
-                              href="https://metimaia.com/installa"
-                              style="
-                                display: inline-block;
-                                padding: 13px 18px;
-                                color: #42624b;
-                                text-decoration: none;
-                                font-size: 16px;
-                                font-weight: bold;
-                              "
-                              >Installa MAIA sul telefono</a
-                            >
-                          </td>
-                        </tr>
-                      </table>
-                      <p style="margin: 0 0 16px; font-size: 16px">
-                        Se leggi questa mail dal computer, inquadra il QR con la
-                        fotocamera del telefono. Si apriranno le istruzioni per
-                        iPhone e Android.
-                      </p>
-                      <p style="margin: 0 0 16px; text-align: center">
-                        <img
-                          src="https://metimaia.com/maia-app-qr.png"
-                          width="222"
-                          height="222"
-                          alt="QR code per aprire le istruzioni di installazione di MAIA"
-                          style="
-                            display: block;
-                            width: 222px;
-                            height: auto;
-                            max-width: 100%;
-                            margin: 0 auto;
-                            border: 0;
-                            background-color: #ffffff;
-                          "
-                        />
-                      </p>
-                      <p
-                        style="
-                          margin: 0;
-                          font-size: 15px;
-                          word-break: break-word;
-                        "
-                      >
-                        Puoi aprire le istruzioni anche da qui:<br /><a
-                          href="https://metimaia.com/installa"
-                          style="color: #42624b"
-                          >https://metimaia.com/installa</a
-                        >
-                      </p>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-            <tr>
-              <td style="padding: 24px">
-                <p style="margin: 0 0 18px; font-size: 16px">
-                  Se hai una domanda, scrivimi: sarò felice di ascoltarti.
-                </p>
-                <p style="margin: 0 0 20px; font-size: 16px">
-                  Con affetto,<br /><strong>Dott.sa Gaia</strong><br />Ostetrica
-                  · metiMaia<br /><a
-                    href="mailto:ostetricamaia@gmail.com"
-                    style="color: #42624b"
-                    >ostetricamaia@gmail.com</a
-                  >
-                </p>
-                <p style="margin: 0 0 18px; color: #657467; font-size: 14px">
-                  Insieme, passo dopo passo. 🌿
-                </p>
-                <p style="margin: 0; color: #657467; font-size: 12px">
-                  Se non hai richiesto questo account, puoi ignorare questa
-                  email.
-                </p>
-              </td>
-            </tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Benvenuti in metiMaia</title>
+</head>
+<body style="margin:0;padding:0;background-color:#FAF7F2;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+         style="background-color:#FAF7F2;">
+    <tr>
+      <td align="center" style="padding:32px 16px;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+               style="max-width:560px;background-color:#FFFFFF;border-radius:20px;">
+          <tr>
+            <td style="padding:32px 24px;font-family:Arial,sans-serif;font-size:16px;line-height:1.75;color:#35453B;">
+
+              <p style="margin:0 0 28px;font-family:Georgia,serif;font-size:36px;color:#42624B;">
+                metiMaia
+              </p>
+
+              <p>Cari genitori,</p>
+
+              <p>benvenuti in <em>metiMaia</em>! ❤️</p>
+
+              <p>
+                Diventare genitori è un viaggio ricco di emozioni, scoperte, domande e cambiamenti. A volte si è pieni di entusiasmo,
+                altre volte possono emergere dubbi e insicurezze.
+                Tutto questo fa parte del percorso.
+              </p>
+
+              <p>
+                Come ostetrica, desidero accompagnarvi con ascolto, rispetto e competenza, offrendovi informazioni affidabili e strumenti utili per vivere questo momento con maggiore consapevolezza e serenità.
+              </p>
+
+              <p>
+                Attraverso il sito potrete conoscere i miei servizi, trovare contenuti dedicati alla salute della donna e del neonato
+                e scoprire le opportunità di accompagnamento pensate per voi e per la vostra famiglia.
+              </p>
+
+              <p>
+                Ricordate: non esistono genitori perfetti e non è necessario avere tutte le risposte. Ogni famiglia ha la propria storia, i propri tempi e il proprio modo di crescere insieme.
+              </p>
+
+              <p>
+                Io sarò felice di accogliervi, ascoltarvi e accompagnarvi in questo percorso.
+              </p>
+
+              <p>
+                Grazie per essere qui e per aver scelto di farne parte.
+              </p>
+
+              <p>
+                Con affetto,<br>
+                <strong>Gaia Brunetti</strong><br>
+                Ostetrica | metiMaia
+              </p>
+
+              <p style="font-family:Georgia,serif;font-size:19px;color:#42624B;">
+                Con te, dall'attesa alla nascita. 🌿
+              </p>
+
+              <hr style="border:0;border-top:1px solid #E5E8E0;margin:28px 0;">
+
+              <p>
+                Per completare la registrazione e attivare il vostro account, confermate l’indirizzo email:
+              </p>
+
+              <table role="presentation" cellspacing="0" cellpadding="0"
+                     style="margin:24px 0;">
+                <tr>
+                  <td bgcolor="#42624B" style="border-radius:12px;">
+                    <a href="{{ .ConfirmationURL }}"
+                       style="display:inline-block;padding:16px 24px;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;color:#FFFFFF;text-decoration:none;">
+                      Conferma l’email
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Installazione dell’app, dopo la conferma dell’account -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                     style="margin:28px 0;background-color:#EEF3EA;border-radius:16px;">
+                <tr>
+                  <td style="padding:24px 20px;font-family:Arial,sans-serif;font-size:16px;line-height:1.75;color:#35453B;">
+                    <h2 style="margin:0 0 16px;font-family:Georgia,serif;font-size:25px;line-height:1.3;font-weight:normal;color:#42624B;">
+                      Portate MAIA sul telefono
+                    </h2>
+
+                    <p style="margin:0 0 18px;">
+                      Dopo aver confermato l’email, potrete aggiungere l’icona MAIA alla schermata Home del telefono.
+                      Ritroverete letture salvate, checklist e materiali condivisi con il vostro account,
+                      utilizzando la stessa email e password del sito.
+                    </p>
+
+                    <table role="presentation" cellspacing="0" cellpadding="0"
+                           style="margin:20px 0;">
+                      <tr>
+                        <td bgcolor="#42624B" style="border-radius:12px;">
+                          <a href="https://metimaia.com/installa"
+                             style="display:inline-block;padding:14px 20px;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;color:#FFFFFF;text-decoration:none;">
+                            Installa MAIA sul telefono
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <p style="margin:0 0 18px;">
+                      Se leggete questa email dal telefono, toccate il pulsante qui sopra.
+                      Se siete al computer, inquadrate il QR con la fotocamera del telefono:
+                      si apriranno le istruzioni per iPhone e Android.
+                    </p>
+
+                    <p style="margin:0 0 18px;text-align:center;">
+                      <img src="https://metimaia.com/maia-app-qr.png"
+                           width="222" height="222"
+                           alt="QR code per aprire le istruzioni di installazione di MAIA"
+                           style="display:block;width:222px;max-width:100%;height:auto;margin:0 auto;border:0;background-color:#FFFFFF;">
+                    </p>
+
+                    <p style="margin:0;font-size:14px;line-height:1.6;word-break:break-word;">
+                      Potete aprire le istruzioni anche da questo collegamento:<br>
+                      <a href="https://metimaia.com/installa" style="color:#42624B;">
+                        https://metimaia.com/installa
+                      </a>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="font-size:13px;line-height:1.6;color:#68756D;">
+                Se non avete richiesto questo account, potete ignorare questa email. Non condividete il link di conferma.
+              </p>
+
+              <p style="font-size:13px;">
+                <a href="https://metimaia.com/privacy" style="color:#42624B;">
+                  Informativa privacy
+                </a>
+              </p>
+
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
 </html>

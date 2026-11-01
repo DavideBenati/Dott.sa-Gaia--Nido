@@ -52,7 +52,7 @@ try {
       page.on("pageerror", (error) => errors.push(error.message));
       await page.setContent(html, { waitUntil: "load" });
       const confirm = page.getByRole("link", {
-        name: "Conferma il mio account",
+        name: "Conferma l’email",
         exact: true,
       });
       const install = page.getByRole("link", {
