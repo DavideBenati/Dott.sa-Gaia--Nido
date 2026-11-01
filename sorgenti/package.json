@@ -21,7 +21,8 @@
     "test:e2e": "playwright test",
     "build:admin": "npm run build --workspace @nido/admin",
     "build:mobile": "npm run export --workspace @nido/mobile",
-    "build:web": "npm run export:web --workspace @nido/mobile && node scripts/prepare-web.mjs"
+    "build:web": "node scripts/generate-install-qr.mjs && npm run export:web --workspace @nido/mobile && node scripts/prepare-web.mjs",
+    "generate:install-qr": "node scripts/generate-install-qr.mjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.11",
@@ -31,7 +32,10 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "eslint": "10.13.0",
+    "jsqr": "1.4.0",
+    "pngjs": "5.0.0",
     "prettier": "3.9.10",
+    "qrcode": "1.5.4",
     "typescript": "6.0.3",
     "typescript-eslint": "8.72.0",
     "vitest": "5.0.5"

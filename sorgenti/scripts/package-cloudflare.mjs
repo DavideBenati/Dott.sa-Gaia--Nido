@@ -75,6 +75,12 @@ await cp(
   ),
   resolve(output, "social-preview.png"),
 );
+await cp(
+  fileURLToPath(
+    new URL("../apps/mobile/assets/brand/maia-app-qr.png", import.meta.url),
+  ),
+  resolve(output, "maia-app-qr.png"),
+);
 await writeFile(resolve(output, "sitemap.xml"), sitemap);
 await writeFile(
   resolve(output, "robots.txt"),

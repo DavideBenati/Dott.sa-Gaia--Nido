@@ -5,6 +5,8 @@ import { createServer } from "node:http";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { extname, resolve } from "node:path";
 import { chromium, expect } from "@playwright/test";
+import { PNG } from "pngjs";
+import jsQR from "jsqr";
 
 const root = resolve(
   process.argv[2] ?? "/workspace/shared/downloads/maia-v13-candidate-r1",
@@ -472,6 +474,123 @@ try {
     "Packaged pages share an installable manifest and iPhone/Android icons",
   );
 
+  const qrDesktop = await fixture({ width: 1280 });
+  await qrDesktop.page.goto(origin + "/welcome");
+  await qrDesktop.page
+    .getByRole("link", { name: "App e QR code", exact: true })
+    .click();
+  await expect(heading(qrDesktop.page, "MAIA sul tuo telefono")).toBeVisible();
+  const qrImage = qrDesktop.page
+    .getByRole("img", {
+      name: "QR code per aprire le istruzioni di installazione di MAIA",
+      exact: true,
+    })
+    .first();
+  await expect(qrImage).toBeVisible();
+  const qrBounds = await qrImage.boundingBox();
+  expect(qrBounds.y + qrBounds.height).toBeLessThanOrEqual(
+    qrDesktop.page.viewportSize().height,
+  );
+  const publicNavigationBounds = await qrDesktop.page
+    .getByRole("navigation")
+    .boundingBox();
+  expect(qrBounds.y).toBeGreaterThanOrEqual(
+    publicNavigationBounds.y + publicNavigationBounds.height,
+  );
+  await qrDesktop.page.screenshot({
+    path: resolve(artifacts, "install-qr-first-screen-1280.png"),
+  });
+  await expect(
+    qrDesktop.page.getByText("https://metimaia.com/installa", { exact: true }),
+  ).toBeVisible();
+  const qrResponse = await qrDesktop.page.request.get(
+    origin + "/maia-app-qr.png",
+  );
+  expect(qrResponse.status()).toBe(200);
+  const png = PNG.sync.read(await qrResponse.body());
+  expect(
+    jsQR(new Uint8ClampedArray(png.data), png.width, png.height)?.data,
+  ).toBe("https://metimaia.com/installa");
+  const qrDownload = qrDesktop.page.getByRole("link", {
+    name: "Scarica il QR code",
+    exact: true,
+  });
+  await expect(qrDownload).toHaveAttribute("download", "QR-App-MAIA.png");
+  const pendingQr = qrDesktop.page.waitForEvent("download");
+  await qrDownload.click();
+  const savedQr = await pendingQr;
+  await savedQr.saveAs(resolve(artifacts, "qr-downloaded-from-site.png"));
+  expect(
+    PNG.sync.read(
+      await readFile(resolve(artifacts, "qr-downloaded-from-site.png")),
+    ).width,
+  ).toBe(png.width);
+  await qrDesktop.page
+    .getByRole("button", { name: "Android", exact: true })
+    .click();
+  await expect(
+    qrDesktop.page.getByText("1. Apri questa pagina in Chrome.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    qrDesktop.page.getByText("1. Apri questa pagina in Safari.", {
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await qrDesktop.page.screenshot({
+    path: resolve(artifacts, "install-qr-desktop-1280.png"),
+    fullPage: true,
+  });
+  await qrDesktop.context.close();
+  passed(
+    "Public site navigation reaches a visible QR that independently decodes to the public install URL, downloads and offers device-specific steps",
+  );
+
+  const welcomePhone = await fixture({ ios: true });
+  await welcomePhone.page.goto(origin + "/welcome");
+  await button(welcomePhone.page, "MAIA sul telefono: installa l’app").click();
+  await expect(
+    heading(welcomePhone.page, "MAIA sul tuo telefono"),
+  ).toBeVisible();
+  await expect(
+    welcomePhone.page.getByText("1. Apri questa pagina in Safari.", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    welcomePhone.page.getByRole("img", {
+      name: "QR code per aprire le istruzioni di installazione di MAIA",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await expect(button(welcomePhone.page, "Installa MAIA")).toHaveCount(0);
+  await button(welcomePhone.page, "Mostra il QR per un altro telefono").click();
+  await expect(
+    welcomePhone.page
+      .getByRole("img", {
+        name: "QR code per aprire le istruzioni di installazione di MAIA",
+        exact: true,
+      })
+      .first(),
+  ).toBeVisible();
+  await button(welcomePhone.page, "Nascondi il QR code").click();
+  await expect(
+    welcomePhone.page.getByRole("img", {
+      name: "QR code per aprire le istruzioni di installazione di MAIA",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await noOverflow(welcomePhone.page);
+  await welcomePhone.page.screenshot({
+    path: resolve(artifacts, "install-phone-direct-390.png"),
+    fullPage: true,
+  });
+  await welcomePhone.context.close();
+  passed(
+    "A guest can open installation from mobile welcome, follow direct iPhone steps and show a QR only for a second phone",
+  );
+
   const install = await fixture({ android: true });
   await install.page.goto(origin + "/installa");
   await expect(heading(install.page, "MAIA sul tuo telefono")).toBeVisible();
@@ -687,7 +806,7 @@ try {
     shareInstall.page.getByText(/Seleziona e copia il testo qui sotto/),
   ).toBeVisible();
   await expect(
-    shareInstall.page.getByText(/https:\/\/metimaia.com\/installa/),
+    shareInstall.page.getByText(copiedInstall, { exact: true }),
   ).toBeVisible();
   await shareInstall.context.close();
   passed(

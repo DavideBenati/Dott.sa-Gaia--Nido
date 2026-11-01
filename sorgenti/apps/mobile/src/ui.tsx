@@ -271,6 +271,23 @@ export function Screen({
               >
                 Consigli d’acquisto
               </Link>
+              {desktop && (
+                <Link
+                  href="/installa"
+                  accessibilityLabel="App e QR code"
+                  accessibilityState={{ selected: pathname === "/installa" }}
+                  style={{
+                    padding: 12,
+                    minHeight: 44,
+                    color: colors.sageDark,
+                    fontSize: 14,
+                    fontFamily:
+                      pathname === "/installa" ? "NidoSansBold" : "NidoSans",
+                  }}
+                >
+                  App e QR code
+                </Link>
+              )}
             </>
           )}
         </View>
@@ -376,6 +393,12 @@ export function Screen({
             </Button>
             <Button variant="quiet" onPress={() => router.push("/shop")}>
               Consigli d’acquisto
+            </Button>
+            <Button
+              variant="quiet"
+              onPress={() => guardedNavigation(() => router.push("/installa"))}
+            >
+              Installa MAIA sul telefono
             </Button>
             <View style={ui.row}>
               <Pressable

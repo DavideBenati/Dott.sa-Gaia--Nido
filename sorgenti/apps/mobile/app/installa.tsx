@@ -1,46 +1,110 @@
-import React from "react";
-import { View } from "react-native";
+import React, { useState } from "react";
+import { Image, Platform, Pressable, View } from "react-native";
 import { router } from "expo-router";
-import { Screen, Button, Notice, SectionHeader, ui } from "../src/ui";
+import { Screen, Button, Notice, ui } from "../src/ui";
 import { Text } from "../src/typography";
 import { usePwa } from "../src/pwa";
 import { ShareContentButton } from "../src/share-content-button";
+import installation from "../src/app-installation.json";
+import installationQr from "../assets/brand/maia-app-qr.png";
+
+function InstallationQr({ otherPhone = false }: { otherPhone?: boolean }) {
+  return (
+    <View style={[ui.card, { gap: 14 }]}>
+      <Text accessibilityRole="header" style={ui.heading}>
+        {otherPhone
+          ? "Inquadra con l’altro telefono"
+          : "1. Inquadra il QR code"}
+      </Text>
+      <Text style={ui.body}>
+        Apri la fotocamera del telefono, inquadra il codice e tocca il
+        collegamento che compare. Troverai i passaggi per aggiungere MAIA alla
+        schermata Home.
+      </Text>
+      <Image
+        source={installationQr}
+        accessibilityRole="image"
+        accessibilityLabel="QR code per aprire le istruzioni di installazione di MAIA"
+        resizeMode="contain"
+        style={{
+          width: 222,
+          height: 222,
+          alignSelf: "center",
+          backgroundColor: "#FFFFFF",
+        }}
+      />
+      <Text selectable style={[ui.body, { textAlign: "center", fontSize: 16 }]}>
+        {installation.url}
+      </Text>
+      <Text style={ui.body}>
+        Il QR apre le istruzioni. Confermerai l’installazione sul telefono.
+      </Text>
+      {Platform.OS === "web" && (
+        <a
+          href="/maia-app-qr.png"
+          download="QR-App-MAIA.png"
+          style={{
+            color: "#42624B",
+            minHeight: 44,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontFamily: "inherit",
+          }}
+        >
+          Scarica il QR code
+        </a>
+      )}
+    </View>
+  );
+}
 
 export default function Install() {
   const pwa = usePwa();
+  const desktop = pwa.platform === "desktop";
+  const [phone, setPhone] = useState<"ios" | "android">(
+    pwa.platform === "android" ? "android" : "ios",
+  );
+  const [showQr, setShowQr] = useState(false);
   const instructions = {
     ios: [
-      "1. Apri metimaia.com con Safari.",
-      "2. Tocca Condividi, poi Aggiungi alla schermata Home.",
-      "3. Se compare Apri come app web, lascialo attivo. Conferma con Aggiungi.",
-      "4. Apri MAIA dalla nuova icona.",
+      "Apri questa pagina in Safari.",
+      "Tocca Condividi, poi Aggiungi alla schermata Home.",
+      "Lascia attivo Apri come app web, se compare, e conferma con Aggiungi.",
     ],
     android: [
-      "1. Apri metimaia.com con Chrome.",
-      "2. Tocca il menu con i tre puntini e scegli Installa app oppure Aggiungi alla schermata Home.",
-      "3. Conferma e apri MAIA dalla nuova icona.",
+      "Apri questa pagina in Chrome.",
+      "Tocca il menu con i tre puntini e scegli Installa app oppure Aggiungi alla schermata Home.",
+      "Conferma l’installazione.",
     ],
   };
-  const orderedPlatforms: ("ios" | "android")[] =
-    pwa.platform === "android" ? ["android", "ios"] : ["ios", "android"];
   return (
     <Screen
       back
-      eyebrow="SEMPRE A PORTATA DI MANO"
+      eyebrow="DAL SITO AL TUO TELEFONO"
       title="MAIA sul tuo telefono"
-      subtitle="Un’icona per ritrovare letture, checklist e i materiali di Gaia."
+      subtitle={
+        desktop
+          ? "Inquadra il codice e continua dal telefono."
+          : "Aggiungi l’icona e ritrova il tuo spazio, con un tocco."
+      }
     >
       <View
         style={{ maxWidth: 800, alignSelf: "center", width: "100%", gap: 20 }}
       >
+        {desktop && <InstallationQr />}
         {pwa.standalone ? (
           <Notice>MAIA è già sul tuo telefono.</Notice>
         ) : (
           <View style={[ui.card, { gap: 14 }]}>
-            <Text style={ui.heading}>Il tuo spazio, con un tocco.</Text>
+            <Text accessibilityRole="header" style={ui.heading}>
+              {desktop
+                ? "2. Aggiungi l’icona sul telefono"
+                : "1. Aggiungi l’icona al telefono"}
+            </Text>
             <Text style={ui.body}>
-              Aggiungi MAIA alla schermata Home del telefono e aprila dalla sua
-              icona, senza cercare ogni volta il sito.
+              Scegli il tuo telefono e segui questi passaggi. L’installazione si
+              apre solo quando la confermi tu.
             </Text>
             {pwa.canInstall && (
               <Button
@@ -55,62 +119,86 @@ export default function Install() {
                 <Notice>{pwa.installMessage}</Notice>
               </View>
             )}
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+              {(
+                [
+                  ["ios", "iPhone / iPad"],
+                  ["android", "Android"],
+                ] as const
+              ).map(([value, label]) => (
+                <Pressable
+                  key={value}
+                  accessibilityRole="button"
+                  aria-pressed={phone === value}
+                  onPress={() => setPhone(value)}
+                  style={[
+                    ui.pill,
+                    phone === value && ui.pillActive,
+                    { minHeight: 44, justifyContent: "center" },
+                  ]}
+                >
+                  <Text
+                    style={[ui.pillText, phone === value && ui.pillTextActive]}
+                  >
+                    {label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={ui.body}>
+              {phone === "ios"
+                ? "Da WhatsApp o Instagram, apri prima questa pagina in Safari."
+                : "Da WhatsApp o Instagram, apri prima questa pagina in Chrome."}
+            </Text>
+            {instructions[phone].map((step, index) => (
+              <Text key={step} style={ui.body}>
+                {index + 1}. {step}
+              </Text>
+            ))}
           </View>
         )}
-        <Notice>
-          Usa la stessa email e password del sito. Ritroverai i materiali
-          assegnati al tuo account, le letture salvate e i progressi delle
-          checklist. La prima volta potrebbe essere necessario accedere di nuovo
-          dall’icona.
-        </Notice>
+        <View style={[ui.card, { gap: 12 }]}>
+          <Text accessibilityRole="header" style={ui.heading}>
+            {pwa.standalone
+              ? "Il tuo account, anche qui"
+              : desktop
+                ? "3. Apri MAIA e accedi"
+                : "2. Apri MAIA e accedi"}
+          </Text>
+          <Text style={ui.body}>
+            Apri la nuova icona MAIA. Usa la stessa email e password del sito:
+            ritroverai i materiali assegnati al tuo account, le letture salvate
+            e i progressi delle checklist.
+          </Text>
+          <Text style={ui.body}>
+            Se è il tuo primo accesso, crea l’account dall’app. Se lo usi già,
+            la prima volta potrebbe essere necessario accedere di nuovo.
+          </Text>
+        </View>
         <ShareContentButton
           label="Condividi il link per installare MAIA"
           content={{
             title: "MAIA sul tuo telefono",
             text: "Aggiungi MAIA alla schermata Home e ritrova letture, checklist e i materiali condivisi con il tuo account. Le istruzioni per iPhone e Android sono qui:",
-            url: "https://metimaia.com/installa",
+            url: installation.url,
           }}
         />
-        {!pwa.standalone && (
-          <>
-            <Text style={ui.body}>
-              Se hai aperto questa pagina dentro WhatsApp o Instagram, aprila
-              prima in Safari su iPhone o in Chrome su Android.
-            </Text>
-            {orderedPlatforms.map((platform) => (
-              <React.Fragment key={platform}>
-                <SectionHeader
-                  title={
-                    platform === "ios"
-                      ? pwa.platform === "ios"
-                        ? "Sul tuo iPhone o iPad"
-                        : "Su iPhone e iPad"
-                      : pwa.platform === "android"
-                        ? "Sul tuo Android"
-                        : "Su Android"
-                  }
-                />
-                <View style={[ui.card, { gap: 12 }]}>
-                  {instructions[platform].map((step) => (
-                    <Text key={step} style={ui.body}>
-                      {step}
-                    </Text>
-                  ))}
-                </View>
-              </React.Fragment>
-            ))}
-            {pwa.platform === "desktop" && (
-              <Text style={ui.body}>
-                Dal computer puoi usare il pulsante Installa MAIA, quando
-                disponibile, oppure aprire questa pagina sul telefono.
-              </Text>
-            )}
-          </>
+        {!desktop && (
+          <View style={{ gap: 14 }}>
+            <Button
+              variant="quiet"
+              onPress={() => setShowQr((value) => !value)}
+            >
+              {showQr
+                ? "Nascondi il QR code"
+                : "Mostra il QR per un altro telefono"}
+            </Button>
+            {showQr && <InstallationQr otherPhone />}
+          </View>
         )}
         <Text style={ui.body}>
-          Per consultare e aggiornare i tuoi dati e aprire i documenti serve una
-          connessione a Internet. Le notifiche push non sono attive in questa
-          prima versione.
+          Serve Internet per consultare e aggiornare i dati e aprire i
+          documenti. Le notifiche push non sono ancora attive.
         </Text>
         {pwa.updateAvailable && !pwa.standalone && (
           <View style={[ui.card, { gap: 12 }]}>

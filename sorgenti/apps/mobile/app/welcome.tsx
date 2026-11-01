@@ -218,6 +218,9 @@ function WelcomeFlow() {
           <Button variant="quiet" disabled={busy} onPress={browse}>
             Esplora come ospite
           </Button>
+          <Button variant="secondary" onPress={() => router.push("/installa")}>
+            MAIA sul telefono: installa l’app
+          </Button>
           <Text style={ui.body}>
             Puoi leggere anche senza account. Le informazioni personali restano
             facoltative.
