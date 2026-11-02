@@ -1,0 +1,101 @@
+{
+  "version": "14.1",
+  "scope": "Correct Android installation guidance and distinguish request acceptance from actual browser completion",
+  "checks": {
+    "typecheck": "passed all workspaces",
+    "lint": "passed",
+    "format": "passed changed files",
+    "targeted_unit_tests": 20,
+    "browser_scenarios": 31
+  },
+  "browser": {
+    "root": "/workspace/shared/downloads/maia-v14-1-final-r3",
+    "checks": [
+      "Packaged pages share an installable manifest and iPhone/Android icons",
+      "Public site navigation reaches a visible QR that independently decodes to the public install URL, downloads and offers device-specific steps",
+      "A guest can open installation from mobile welcome, follow direct iPhone steps and show a QR only for a second phone",
+      "Android installation prompt opens only after an explicit user click",
+      "320px: Chrome without an install prompt explains Add to Home screen then Install, distinguishes shortcuts and copies the public URL without Web Share or iPhone-only directions",
+      "390px: Chrome without an install prompt explains Add to Home screen then Install, distinguishes shortcuts and copies the public URL without Web Share or iPhone-only directions",
+      "Samsung Internet is detected before its Chrome user-agent token and can be changed explicitly to the Chrome instructions",
+      "Android install feedback distinguishes acceptance, dismissal and failure, and preserves a completed appinstalled message arriving before userChoice",
+      "320px: iPhone guide explains compact and older Safari controls; browser-opening help copies the public URL or offers manual copying without invoking Web Share",
+      "390px: iPhone guide explains compact and older Safari controls; browser-opening help copies the public URL or offers manual copying without invoking Web Share",
+      "A narrow browser with an unrecognised desktop user agent prioritises phone steps rather than a QR for its own screen",
+      "Mobile public navigation opens and closes explicitly, keeps contacts reachable and closes after navigating",
+      "An installed guest sees one signup action, no installation promotion, and can continue from the already-installed page directly to login",
+      "390px: resume appears before shopping and above the tabs; checklist activities precede optional sharing",
+      "390px: installed app uses five patient tabs, preserves shop access and hides redundant install prompts",
+      "1280px: resume appears before shopping and above the tabs; checklist activities precede optional sharing",
+      "1280px: installed app uses five patient tabs, preserves shop access and hides redundant install prompts",
+      "Browser and installed app share the same five patient tabs; recommendations remain reachable through the public menu",
+      "Installation link sharing copies only the public link and offers manual copying when clipboard access is denied",
+      "Home reads the full own-grant count despite limit one, shows the latest sharing and keeps document access available on summary failure with retry",
+      "Backgrounding clears the Home's private document title; a delayed old response is discarded and returning reflects revoked grants",
+      "A genuinely empty checklist has an explicit explanation and a way back, with no false completion or blank activity list",
+      "A booking draft survives a cancelled navigation, review and a mocked email handoff; explicit discard can return to Home without sending email",
+      "Checklist remaining filter preserves progress, announces an in-flight save and prevents duplicate submissions",
+      "An already-open app explains connection loss and clears the connection notice after reconnecting",
+      "Checklist loading, a failed catalogue with retry, and genuinely missing content have distinct usable states",
+      "Returning to the app reloads another device’s checklist progress; failed writes never appear saved and failed reads warn before explicit retry",
+      "Real service worker caches only the generic offline page, never assigned document bytes or private navigation",
+      "Another account cannot discover the patient’s document in the installed app",
+      "An unresponsive update unlocks retry after twenty seconds; late activation does not reload an unsaved profile",
+      "A waiting update is explicit and declining the unsaved-change confirmation preserves the edited profile"
+    ],
+    "errors": [],
+    "unexpected": [],
+    "cachesAfterPrivate": [
+      {
+        "name": "metimaia-pwa-25bf0ed56facd1b877c4",
+        "url": "http://127.0.0.1:38665/offline.html"
+      }
+    ],
+    "offlineCaches": [
+      {
+        "name": "metimaia-pwa-25bf0ed56facd1b877c4",
+        "url": "http://127.0.0.1:38665/offline.html"
+      }
+    ],
+    "androidInstallability": {
+      "supported": true,
+      "profile": "normal-persistent",
+      "manifestUrl": "http://127.0.0.1:38665/manifest.webmanifest",
+      "manifestErrors": [],
+      "manifestData": "{\n  \"id\": \"/\",\n  \"name\": \"metiMaia\",\n  \"short_name\": \"MAIA\",\n  \"description\": \"Letture, checklist e i materiali condivisi da Gaia, con il tuo account metiMaia.\",\n  \"lang\": \"it-IT\",\n  \"dir\": \"ltr\",\n  \"start_url\": \"/?app=1\",\n  \"scope\": \"/\",\n  \"display\": \"standalone\",\n  \"background_color\": \"#FAF7F2\",\n  \"theme_color\": \"#FAF7F2\",\n  \"icons\": [\n    {\n      \"src\": \"/icons/maia-192.png\",\n      \"sizes\": \"192x192\",\n      \"type\": \"image/png\",\n      \"purpose\": \"any\"\n    },\n    {\n      \"src\": \"/icons/maia-512.png\",\n      \"sizes\": \"512x512\",\n      \"type\": \"image/png\",\n      \"purpose\": \"any\"\n    }\n  ]\n}\n",
+      "installabilityErrors": [],
+      "limitation": "Headless Chromium with Android user agent; not a physical Android installer or a live-domain check.",
+      "isolatedContext": {
+        "supported": true,
+        "profile": "isolated-off-the-record",
+        "manifestUrl": "http://127.0.0.1:38665/manifest.webmanifest",
+        "manifestErrors": [],
+        "manifestData": "{\n  \"id\": \"/\",\n  \"name\": \"metiMaia\",\n  \"short_name\": \"MAIA\",\n  \"description\": \"Letture, checklist e i materiali condivisi da Gaia, con il tuo account metiMaia.\",\n  \"lang\": \"it-IT\",\n  \"dir\": \"ltr\",\n  \"start_url\": \"/?app=1\",\n  \"scope\": \"/\",\n  \"display\": \"standalone\",\n  \"background_color\": \"#FAF7F2\",\n  \"theme_color\": \"#FAF7F2\",\n  \"icons\": [\n    {\n      \"src\": \"/icons/maia-192.png\",\n      \"sizes\": \"192x192\",\n      \"type\": \"image/png\",\n      \"purpose\": \"any\"\n    },\n    {\n      \"src\": \"/icons/maia-512.png\",\n      \"sizes\": \"512x512\",\n      \"type\": \"image/png\",\n      \"purpose\": \"any\"\n    }\n  ]\n}\n",
+        "installabilityErrors": [
+          {
+            "errorId": "in-incognito",
+            "errorArguments": []
+          }
+        ],
+        "limitation": "Headless Chromium with Android user agent; not a physical Android installer or a live-domain check."
+      }
+    }
+  },
+  "package": {
+    "name": "MAIA-Sito-v14.1-Installazione-Android.zip",
+    "bytes": 3278303,
+    "sha256": "7c38d0c6712829016d20f2b167cc4f8c9a49291ac9cea02baf77c36dd5921b83",
+    "files": 111,
+    "zip_integrity": "passed",
+    "google_verification_exact": true,
+    "contains_private_materials_source_env_sql": false
+  },
+  "limits": [
+    "No browser/version/error screenshot supplied yet for the reported physical-phone failure; root cause remains unconfirmed.",
+    "Chromium normal-profile manifest/installability diagnostics passed locally; the ordinary isolated Playwright context reports in-incognito as expected.",
+    "Samsung and Chrome guide tests use emulated user agents and intercepted service requests.",
+    "Fake prompt tests verify UI outcomes and appinstalled/userChoice ordering, not an actual Android WebAPK installation.",
+    "No live Cloudflare deployment, real Android installation or patient email send performed by the assistant.",
+    "No dependency or database migration changes in this patch."
+  ]
+}
