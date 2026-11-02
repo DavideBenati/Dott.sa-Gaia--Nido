@@ -27,9 +27,9 @@ export default function Saved() {
             text={
               state.favorites.length
                 ? "Qui compaiono le letture conservate che sono ancora disponibili nella biblioteca. Puoi esplorare gli altri argomenti."
-                : "Apri un articolo negli Argomenti e scegli Conserva questa lettura: lo ritroverai qui."
+                : "Apri un articolo nella sezione Letture e scegli Conserva questa lettura: lo ritroverai qui."
             }
-            action="Esplora gli Argomenti"
+            action="Esplora le letture"
             onPress={() => router.navigate("/(tabs)/discover")}
           />
         ))}

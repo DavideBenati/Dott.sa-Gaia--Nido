@@ -123,6 +123,8 @@ const grants = new Map([
   [other.id, new Set(["88888888-8888-4888-8888-888888888888"])],
 ]);
 const uploaded = new Set([other.id]);
+let downloadGate = null;
+let releaseDownload = null;
 function token(viewer) {
   return (
     Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString(
@@ -182,7 +184,7 @@ async function newPage(viewer = null, width = 390) {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Headers": "*",
       "Access-Control-Allow-Methods": "GET,HEAD,POST,PATCH,PUT,DELETE,OPTIONS",
-      "Access-Control-Expose-Headers": "Content-Disposition",
+      "Access-Control-Expose-Headers": "Content-Disposition,Content-Range",
     };
     if (request.method() === "OPTIONS") {
       await route.fulfill({ status: 204, headers });
@@ -232,6 +234,40 @@ async function newPage(viewer = null, width = 390) {
         documents_mfa_required: Boolean(viewer?.membership),
         can_manage: canManage,
         mfa_satisfied: viewer?.aal === "aal2",
+      });
+      return;
+    }
+    if (url.pathname.endsWith("/session_document_access")) {
+      if (
+        request.method() !== "GET" ||
+        !viewer ||
+        url.searchParams.get("user_id") !== `eq.${viewer.id}` ||
+        url.searchParams.get("session_documents.state") !== "eq.ready" ||
+        url.searchParams.get("session_documents.active") !== "eq.true"
+      ) {
+        unexpected.push({ path: url.pathname, query: url.search });
+        await json({ error: "Recipient scope required" }, 403);
+        return;
+      }
+      const visible = [...documents.values()].filter(
+        (doc) =>
+          doc.state === "ready" &&
+          doc.active &&
+          grants.get(doc.id)?.has(viewer.id),
+      );
+      await route.fulfill({
+        status: 200,
+        headers: {
+          ...headers,
+          "Content-Range": visible.length ? `0-0/${visible.length}` : "*/0",
+        },
+        contentType: "application/json",
+        body: JSON.stringify(
+          visible.slice(0, 1).map((doc) => ({
+            granted_at: at,
+            session_documents: { id: doc.id, title: doc.title },
+          })),
+        ),
       });
       return;
     }
@@ -293,6 +329,7 @@ async function newPage(viewer = null, width = 390) {
         await json({ error: "Document not found" }, 404);
         return;
       }
+      if (downloadGate) await downloadGate;
       await route.fulfill({
         status: 200,
         headers: {
@@ -363,7 +400,7 @@ async function newPage(viewer = null, width = 390) {
       await json(null);
       return;
     }
-    if (url.pathname.endsWith("/rpc/document_recipients")) {
+    if (/\/rpc\/document_recipients(?:_v2)?$/.test(url.pathname)) {
       if (!canManage) {
         await json({ error: "Forbidden" }, 403);
         return;
@@ -379,13 +416,13 @@ async function newPage(viewer = null, width = 390) {
       );
       return;
     }
-    if (url.pathname.endsWith("/rpc/search_document_users")) {
+    if (/\/rpc\/search_document_users(?:_v2)?$/.test(url.pathname)) {
       if (!canManage) {
         await json({ error: "Forbidden" }, 403);
         return;
       }
       await json(
-        body.search_term.trim().length < 3
+        body.search_term.trim().length < 2
           ? []
           : [alice, bob]
               .filter((user) =>
@@ -450,6 +487,55 @@ async function newPage(viewer = null, width = 390) {
       await json(doc.active ? copy(doc) : [copy(doc)]);
       return;
     }
+    if (url.pathname.endsWith("/rpc/document_notification_status")) {
+      await json(
+        canManage
+          ? {
+              pending: 0,
+              sending: 0,
+              accepted: 0,
+              failed: 0,
+              cancelled: 0,
+              uncertain: 0,
+            }
+          : { error: "Forbidden" },
+        canManage ? 200 : 403,
+      );
+      return;
+    }
+    if (url.pathname.endsWith("/functions/v1/document-notify")) {
+      await json(
+        canManage
+          ? { processed: 0, accepted: 0, retrying: 0, cancelled: 0 }
+          : { error: "Forbidden" },
+        canManage ? 200 : 403,
+      );
+      return;
+    }
+    if (url.pathname.endsWith("/rpc/my_member_profile")) {
+      await json({
+        nickname: "Account documenti di prova",
+        journey_shared: false,
+        shared_journey: null,
+        shared_interests: [],
+        journey_consent_at: null,
+        journey_consent_version: null,
+        sharing_updated_at: null,
+      });
+      return;
+    }
+    if (url.pathname.endsWith("/rpc/my_member_milestones")) {
+      await json({ first_recommendation_selected: false });
+      return;
+    }
+    if (url.pathname.endsWith("/rpc/my_pregnancy_profile")) {
+      await json(null);
+      return;
+    }
+    if (/\/rpc\/(care_chat_available|is_chat_staff)$/.test(url.pathname)) {
+      await json(false);
+      return;
+    }
     if (
       url.pathname.includes("/functions/v1/") ||
       !["GET", "HEAD"].includes(request.method())
@@ -458,8 +544,24 @@ async function newPage(viewer = null, width = 390) {
       await json({ error: "Unexpected request blocked" }, 400);
       return;
     }
+    if (url.pathname.endsWith("/user_preferences")) {
+      await json({
+        payload: {
+          profileType: "exploring",
+          journey: "pregnancy",
+          exploreOnly: true,
+          personalized: false,
+          date: null,
+          feedingTopics: [],
+          sensitiveConsent: false,
+          notifications: false,
+          marketing: false,
+          onboarded: true,
+        },
+      });
+      return;
+    }
     if (
-      url.pathname.includes("user_preferences") ||
       url.pathname.includes("notification_preferences") ||
       url.pathname.endsWith("/site_profile")
     ) {
@@ -479,9 +581,11 @@ async function newPage(viewer = null, width = 390) {
   );
   if (viewer) {
     await page.goto(
-      `${origin}/account#access_token=${token(viewer)}&refresh_token=test-only-refresh&expires_in=3600&token_type=bearer&type=signup`,
+      `${origin}/profile#access_token=${token(viewer)}&refresh_token=test-only-refresh&expires_in=3600&token_type=bearer&type=signup`,
     );
-    await expect(page.getByText(viewer.email, { exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Gestisci account", exact: true }),
+    ).toBeVisible();
   }
   return page;
 }
@@ -504,7 +608,7 @@ async function chooseFile(page, name, buffer) {
 }
 async function search(page, term) {
   await page
-    .getByLabel("Cerca destinatari per email", { exact: true })
+    .getByLabel("Cerca destinatari per nickname o email", { exact: true })
     .fill(term);
   await page
     .getByRole("button", { name: "Cerca account confermati", exact: true })
@@ -514,6 +618,13 @@ async function save(page, count) {
   await page
     .getByRole("button", { name: "Salva destinatari", exact: true })
     .click();
+  if (count === 0)
+    await page
+      .getByRole("button", {
+        name: "Conferma revoca di tutti gli accessi",
+        exact: true,
+      })
+      .click();
   await expect(
     page.getByText(
       `Accessi salvati per ${count} account. Solo questi utenti possono scaricare il file.`,
@@ -556,6 +667,7 @@ try {
       page.getByLabel("Titolo del documento", { exact: true }),
     ).toHaveCount(0);
     expect(callCount(viewer, "/rpc/search_document_users")).toBe(0);
+    expect(callCount(viewer, "/rpc/search_document_users_v2")).toBe(0);
     expect(callCount(viewer, "/rpc/prepare_document")).toBe(0);
   }
   results.push(
@@ -668,12 +780,25 @@ try {
     .click();
   await manage.getByRole("button", { name: "Archiviati", exact: true }).click();
   await expect(
-    manage.getByText("Nessun documento in questa pagina.", { exact: true }),
+    manage.getByText(
+      "Nessun documento corrisponde alla ricerca o ai filtri. Mostra tutti i documenti oppure cambia ricerca.",
+      { exact: true },
+    ),
   ).toBeVisible();
   expect(
     calls.filter((c) => c.path.endsWith("/session_documents")).at(-1).query,
   ).toContain("active=eq.false");
-  await manage.getByRole("button", { name: "Tutti", exact: true }).click();
+  await manage
+    .getByRole("button", { name: "Mostra tutti i documenti", exact: true })
+    .click();
+  await expect(
+    manage.getByLabel("Cerca documenti per titolo o nome file", {
+      exact: true,
+    }),
+  ).toHaveValue("");
+  await expect(
+    manage.getByRole("button", { name: "✓ Tutti", exact: true }),
+  ).toBeVisible();
   await expect(
     manage.getByRole("button", { name: /^Gestisci accessi:/ }),
   ).toHaveCount(20);
@@ -693,6 +818,10 @@ try {
   await manage
     .getByRole("button", { name: "Carica un nuovo materiale", exact: true })
     .click();
+  await chooseFile(manage, "Borsa_parto-guida.PDF", pdf);
+  await expect(
+    manage.getByLabel("Titolo del documento", { exact: true }),
+  ).toHaveValue("Borsa parto guida");
   await manage
     .getByLabel("Titolo del documento", { exact: true })
     .fill("Materiale riservato beta");
@@ -700,6 +829,9 @@ try {
     .getByLabel("Descrizione del documento", { exact: true })
     .fill("Documento fittizio per una prova senza dati reali.");
   await chooseFile(manage, "non-valido.pdf", Buffer.from("Not a PDF"));
+  await expect(
+    manage.getByLabel("Titolo del documento", { exact: true }),
+  ).toHaveValue("Materiale riservato beta");
   await manage
     .getByRole("button", { name: "Carica in area privata", exact: true })
     .click();
@@ -708,6 +840,9 @@ try {
   ).toBeVisible();
   expect(callCount(manager, "/rpc/prepare_document")).toBe(0);
   await chooseFile(manage, "allegato-beta.pdf", pdf);
+  await expect(
+    manage.getByLabel("Titolo del documento", { exact: true }),
+  ).toHaveValue("Materiale riservato beta");
   await manage
     .getByRole("button", { name: "Carica in area privata", exact: true })
     .click();
@@ -730,15 +865,24 @@ try {
     "Invalid PDF rejected before preparation; valid PDF upload has no automatic grants. Object/array RPC normalization exercised.",
   );
   await manage
-    .getByLabel("Cerca destinatari per email", { exact: true })
-    .fill("al");
+    .getByLabel("Cerca destinatari per nickname o email", { exact: true })
+    .fill("a");
   await expect(
     manage.getByRole("button", {
       name: "Cerca account confermati",
       exact: true,
     }),
   ).toBeDisabled();
-  expect(callCount(manager, "/rpc/search_document_users")).toBe(0);
+  expect(callCount(manager, "/rpc/search_document_users_v2")).toBe(0);
+  await manage
+    .getByLabel("Cerca destinatari per nickname o email", { exact: true })
+    .fill("al");
+  await expect(
+    manage.getByRole("button", {
+      name: "Cerca account confermati",
+      exact: true,
+    }),
+  ).toBeEnabled();
   await search(manage, "beta");
   await expect(
     manage.getByRole("checkbox", {
@@ -802,17 +946,35 @@ try {
   const noAccess = await newPage(bob);
   await noAccess.goto(origin + "/miei-documenti");
   await expect(
-    noAccess.getByText("Nessun documento condiviso in questa pagina.", {
-      exact: true,
-    }),
+    noAccess.getByText(
+      "Gaia non ha ancora condiviso materiali con questo account. Quando lo farà, li ritroverai qui.",
+      {
+        exact: true,
+      },
+    ),
   ).toBeVisible();
   await expect(
     noAccess.getByText(uploadedDoc.title, { exact: true }),
   ).toHaveCount(0);
   const downloadEvent = patient.waitForEvent("download");
+  const beforeDoubleTap = callCount(alice, "/functions/v1/document-file");
+  downloadGate = new Promise((done) => {
+    releaseDownload = done;
+  });
   await patient
     .getByRole("button", { name: "Scarica PDF", exact: true })
-    .click();
+    .evaluate((element) => {
+      element.click();
+      element.click();
+    });
+  await expect
+    .poll(() => callCount(alice, "/functions/v1/document-file"))
+    .toBe(beforeDoubleTap + 1);
+  await expect(
+    patient.getByRole("button", { name: "Download in corso…", exact: true }),
+  ).toBeDisabled();
+  releaseDownload();
+  downloadGate = null;
   const download = await downloadEvent;
   expect(download.suggestedFilename()).toBe("allegato-beta.pdf");
   expect(download.url().startsWith("blob:")).toBe(true);
@@ -829,11 +991,35 @@ try {
     ),
   ).toBe(false);
   results.push(
-    "Patient A sees only assigned file via Account/Profile links and downloads authenticated binary to a blob; B sees none; no signed/public URL.",
+    "Patient A sees only assigned file via Profile links; two synchronous taps cause one authenticated binary download and one blob; B sees none; no signed/public URL.",
   );
   await manage
     .getByRole("button", { name: "Deseleziona tutti", exact: true })
     .click();
+  const beforeRevocation = callCount(manager, "/rpc/set_document_recipients");
+  await manage
+    .getByRole("button", { name: "Salva destinatari", exact: true })
+    .click();
+  await expect(
+    manage.getByRole("heading", {
+      name: "Conferma la revoca degli accessi",
+      exact: true,
+    }),
+  ).toBeInViewport();
+  expect(callCount(manager, "/rpc/set_document_recipients")).toBe(
+    beforeRevocation,
+  );
+  expect(grants.get(uploadedDoc.id).size).toBe(1);
+  await manage
+    .getByRole("button", { name: "Annulla revoca", exact: true })
+    .click();
+  await expect(
+    manage.getByRole("button", {
+      name: "Conferma revoca di tutti gli accessi",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  expect(grants.get(uploadedDoc.id).size).toBe(1);
   await save(manage, 0);
   expect(grants.get(uploadedDoc.id).size).toBe(0);
   let deniedDownload = false;
@@ -857,12 +1043,15 @@ try {
     .getByRole("button", { name: "Aggiorna documenti", exact: true })
     .click();
   await expect(
-    patient.getByText("Nessun documento condiviso in questa pagina.", {
-      exact: true,
-    }),
+    patient.getByText(
+      "Gaia non ha ancora condiviso materiali con questo account. Quando lo farà, li ritroverai qui.",
+      {
+        exact: true,
+      },
+    ),
   ).toBeVisible();
   results.push(
-    "Revocation denies the very next download from an already-open patient card; refresh removes the file.",
+    "Revoking all grants requires an inline confirmation, cancelling preserves grants; confirmed revocation denies the next download and refresh removes the file.",
   );
   await search(manage, "alice");
   await manage
@@ -907,9 +1096,12 @@ try {
     .getByRole("button", { name: "Aggiorna documenti", exact: true })
     .click();
   await expect(
-    patient.getByText("Nessun documento condiviso in questa pagina.", {
-      exact: true,
-    }),
+    patient.getByText(
+      "Gaia non ha ancora condiviso materiali con questo account. Quando lo farà, li ritroverai qui.",
+      {
+        exact: true,
+      },
+    ),
   ).toBeVisible();
   results.push(
     "Archive removes existing grants; reactivation does not restore them.",
@@ -953,6 +1145,7 @@ try {
   }
   throw error;
 } finally {
+  releaseDownload?.();
   for (const context of contexts) await context.close();
   await browser.close();
   await new Promise((done) => server.close(done));

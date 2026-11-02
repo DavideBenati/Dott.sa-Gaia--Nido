@@ -1,4 +1,5 @@
 import maiaLogo from "../assets/brand/maia-logo.png";
+import release from "./app-release.json";
 import { Text } from "./typography";
 import React, { useEffect, useRef, useState } from "react";
 import {
@@ -402,7 +403,7 @@ export function Screen({
         {professional ? (
           <View style={styles.footer}>
             <Text style={styles.footerSmall}>
-              metiMaia · Area professionale
+              metiMaia · Area professionale · v{release.version}
             </Text>
           </View>
         ) : compactShell || compactFooter ? (
@@ -434,7 +435,7 @@ export function Screen({
               </Pressable>
             </View>
             <Text style={styles.footerSmall}>
-              metiMaia · Con te, passo dopo passo.
+              metiMaia · v{release.version} · Con te, passo dopo passo.
             </Text>
           </View>
         ) : (
@@ -442,7 +443,8 @@ export function Screen({
             <View style={styles.footerLine} />
             <Text style={styles.footerText}>Insieme, passo dopo passo.</Text>
             <Text style={styles.footerSmall}>
-              Uno spazio educativo, da vivere con i tuoi tempi.
+              Uno spazio educativo, da vivere con i tuoi tempi. · v
+              {release.version}
             </Text>
             <Button variant="secondary" onPress={() => router.push("/prenota")}>
               Richiedi un incontro via email
@@ -783,7 +785,9 @@ export function EmptyState({
       <View style={styles.emptyIcon}>
         <Icon name="leaf" size={36} />
       </View>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text accessibilityRole="header" style={styles.sectionTitle}>
+        {title}
+      </Text>
       <Text style={[styles.body, { textAlign: "center" }]}>{text}</Text>
       {action && onPress && (
         <Button onPress={onPress} variant="secondary">

@@ -66,9 +66,9 @@ export default function Discover() {
   }
   return (
     <Screen
-      eyebrow="ARGOMENTI"
-      title="Le parole giuste, al momento giusto."
-      subtitle="Una biblioteca da esplorare con i tuoi tempi."
+      eyebrow="LA TUA BIBLIOTECA"
+      title="Letture"
+      subtitle="Informazioni da esplorare con i tuoi tempi."
     >
       <View style={[ui.card, { padding: 16, gap: 12, marginBottom: 4 }]}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>

@@ -56,6 +56,7 @@ function Workspace() {
   const [appliedTerm, setAppliedTerm] = useState("");
   const [stateFilter, setStateFilter] =
     useState<DocumentFilter["state"]>("all");
+  const filtered = appliedTerm !== "" || stateFilter !== "all";
   const [detailTitle, setDetailTitle] = useState("");
   const [detailDescription, setDetailDescription] = useState("");
   const [showAllRecipients, setShowAllRecipients] = useState(false);
@@ -101,6 +102,7 @@ function Workspace() {
   const [searching, setSearching] = useState(false);
   const [searchMessage, setSearchMessage] = useState("");
   const [archiveConfirm, setArchiveConfirm] = useState(false);
+  const [revokeAllConfirm, setRevokeAllConfirm] = useState(false);
   const mounted = useRef(true);
   const searchSequence = useRef(0);
   const { downloading, downloadMessage, downloadDocumentId, download } =
@@ -266,6 +268,7 @@ function Workspace() {
     setResults([]);
     setSearchMessage("");
     setArchiveConfirm(false);
+    setRevokeAllConfirm(false);
     setShowAllRecipients(false);
     if (!selected || selected.state !== "ready") return;
     void documentRecipients(selected.id).then(
@@ -384,7 +387,19 @@ function Workspace() {
     input.accept = ".pdf,.docx,.pptx";
     input.onchange = () => {
       if (mounted.current) {
-        setFile(input.files?.[0] ?? null);
+        const chosen = input.files?.[0] ?? null;
+        setFile(chosen);
+        if (chosen)
+          setTitle((current) =>
+            current.trim()
+              ? current
+              : chosen.name
+                  .replace(/\.(pdf|docx|pptx)$/i, "")
+                  .replace(/[_-]+/g, " ")
+                  .replace(/\s+/g, " ")
+                  .trim()
+                  .slice(0, 180),
+          );
         setMessage("");
       }
     };
@@ -450,17 +465,27 @@ function Workspace() {
     }
   }
   function toggle(id: string) {
+    setRevokeAllConfirm(false);
     setSelectedIds((ids) =>
       ids.includes(id) ? ids.filter((value) => value !== id) : [...ids, id],
     );
     setMessage("");
   }
-  async function saveRecipients() {
+  async function saveRecipients(confirmedRevoke = false) {
     if (!selected || locked || !recipientsReady) return;
+    const previousIds = JSON.parse(baseline) as string[];
+    if (
+      previousIds.length > 0 &&
+      selectedIds.length === 0 &&
+      !confirmedRevoke
+    ) {
+      setRevokeAllConfirm(true);
+      return;
+    }
+    setRevokeAllConfirm(false);
     setBusy(true);
     setAccessMessage("");
     try {
-      const previousIds = JSON.parse(baseline) as string[];
       const addedRecipients = selectedIds.some(
         (id) => !previousIds.includes(id),
       );
@@ -527,8 +552,10 @@ function Workspace() {
       back={phase === "list"}
       title="Documenti e allegati"
       subtitle="Carica i materiali e scegli gli account autorizzati per ogni file."
-      stageKey={`${phase}:${phase === "detail" ? selected?.id : page}:${appliedTerm}:${stateFilter}`}
-      focusTargetId={focusTargetId}
+      stageKey={`${phase}:${phase === "detail" ? selected?.id : page}:${appliedTerm}:${stateFilter}:${revokeAllConfirm}`}
+      focusTargetId={
+        revokeAllConfirm ? "document-revoke-confirm-heading" : focusTargetId
+      }
       stageScroll="heading"
     >
       <View
@@ -624,6 +651,21 @@ function Workspace() {
                 {appliedTerm !== "" && (
                   <Text style={ui.body}>{`Ricerca: ${appliedTerm}`}</Text>
                 )}
+                {filtered && (
+                  <Button
+                    variant="quiet"
+                    disabled={locked || loading}
+                    onPress={() => {
+                      setFilterTerm("");
+                      setAppliedTerm("");
+                      setStateFilter("all");
+                      setPage(0);
+                      setVersion((v) => v + 1);
+                    }}
+                  >
+                    Mostra tutti i documenti
+                  </Button>
+                )}
                 <Button
                   variant="quiet"
                   disabled={locked || loading}
@@ -638,7 +680,13 @@ function Workspace() {
                     <Notice>{error}</Notice>
                   </View>
                 ) : documents.length === 0 ? (
-                  <Notice>Nessun documento in questa pagina.</Notice>
+                  <Notice>
+                    {filtered
+                      ? "Nessun documento corrisponde alla ricerca o ai filtri. Mostra tutti i documenti oppure cambia ricerca."
+                      : page > 0
+                        ? "Nessun documento in questa pagina."
+                        : "Non hai ancora caricato documenti. Usa «Carica un nuovo materiale» per iniziare."}
+                  </Notice>
                 ) : (
                   documents.map((doc) => (
                     <View style={[ui.card, { gap: 8 }]} key={doc.id}>
@@ -800,16 +848,42 @@ function Workspace() {
                     dopo il salvataggio.
                   </Notice>
                 )}
-                {recipientsReady && selected.active && (
-                  <Button
-                    disabled={
-                      locked || !recipientDirty || selectedIds.length > 200
-                    }
-                    onPress={() => void saveRecipients()}
-                  >
-                    Salva destinatari selezionati
-                  </Button>
-                )}
+                {recipientsReady &&
+                  selected.active &&
+                  (revokeAllConfirm ? (
+                    <View style={{ gap: 10 }}>
+                      <StageHeading id="document-revoke-confirm-heading">
+                        Conferma la revoca degli accessi
+                      </StageHeading>
+                      <Notice>
+                        Rimuovere tutti i destinatari? Non potranno più
+                        scaricare questo file. Le copie già scaricate resteranno
+                        sui dispositivi.
+                      </Notice>
+                      <Button
+                        disabled={locked}
+                        onPress={() => void saveRecipients(true)}
+                      >
+                        Conferma revoca di tutti gli accessi
+                      </Button>
+                      <Button
+                        variant="quiet"
+                        disabled={locked}
+                        onPress={() => setRevokeAllConfirm(false)}
+                      >
+                        Annulla revoca
+                      </Button>
+                    </View>
+                  ) : (
+                    <Button
+                      disabled={
+                        locked || !recipientDirty || selectedIds.length > 200
+                      }
+                      onPress={() => void saveRecipients()}
+                    >
+                      Salva destinatari selezionati
+                    </Button>
+                  ))}
                 {selected.state !== "ready" ? (
                   <Notice>
                     Il caricamento non è completo: nessun paziente può accedere
@@ -990,7 +1064,10 @@ function Workspace() {
                             <Button
                               variant="quiet"
                               disabled={locked || selectedIds.length === 0}
-                              onPress={() => setSelectedIds([])}
+                              onPress={() => {
+                                setSelectedIds([]);
+                                setRevokeAllConfirm(false);
+                              }}
                             >
                               Deseleziona tutti
                             </Button>
@@ -1002,6 +1079,7 @@ function Workspace() {
                             <Button
                               disabled={
                                 locked ||
+                                revokeAllConfirm ||
                                 !recipientDirty ||
                                 selectedIds.length > 200
                               }
@@ -1133,6 +1211,7 @@ function Workspace() {
                               setSelectedIds(
                                 JSON.parse(baseline || "[]") as string[],
                               );
+                              setRevokeAllConfirm(false);
                               setArchiveConfirm(true);
                             }}
                           >

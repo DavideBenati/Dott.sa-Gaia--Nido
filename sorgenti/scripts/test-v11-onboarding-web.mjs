@@ -250,6 +250,20 @@ async function fixture(options = {}) {
         body: JSON.stringify(value),
       });
     const rpc = url.pathname.split("/rpc/")[1];
+    if (url.pathname.endsWith("/session_document_access")) {
+      if (url.searchParams.get("user_id") !== `eq.${uid}`)
+        return json({ message: "Wrong summary account" }, 403);
+      return route.fulfill({
+        status: 200,
+        headers: {
+          ...headers,
+          "Content-Range": "*/0",
+          "Access-Control-Expose-Headers": "Content-Range",
+        },
+        contentType: "application/json",
+        body: "[]",
+      });
+    }
     if (url.pathname.endsWith("/auth/v1/user")) return json(user);
     if (url.pathname.endsWith("/auth/v1/signup"))
       return json({ user, session: null });

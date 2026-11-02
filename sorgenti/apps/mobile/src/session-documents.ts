@@ -107,6 +107,45 @@ export type DocumentFilter = {
   state?: "all" | "active" | "archived" | "incomplete";
   format?: "all" | "pdf" | "docx" | "pptx";
 };
+export type MyDocumentSummary = {
+  total: number | null;
+  latest: { title: string; sharedAt: string } | null;
+};
+
+/** Read only this account's active grants, ordered by the sharing date. */
+export async function loadMyDocumentSummary(): Promise<MyDocumentSummary> {
+  const owner = await identity();
+  const { data, count, error } = await client!
+    .from("session_document_access")
+    .select("granted_at,session_documents!inner(id,title)", { count: "exact" })
+    .eq("user_id", owner)
+    .eq("session_documents.state", "ready")
+    .eq("session_documents.active", true)
+    .order("granted_at", { ascending: false })
+    .order("document_id")
+    .limit(1);
+  if ((await identity()) !== owner)
+    throw new Error("Sessione cambiata: ripeti l’accesso.");
+  if (error || !Array.isArray(data)) throw new Error(unavailable);
+  const row = data[0];
+  if (!row) return { total: 0, latest: null };
+  const doc = Array.isArray(row.session_documents)
+    ? row.session_documents[0]
+    : row.session_documents;
+  if (
+    !doc ||
+    typeof doc.title !== "string" ||
+    !doc.title.trim() ||
+    typeof row.granted_at !== "string" ||
+    !Number.isFinite(Date.parse(row.granted_at))
+  )
+    throw new Error(unavailable);
+  return {
+    total: Number.isSafeInteger(count) && count! >= 1 ? count : null,
+    latest: { title: doc.title, sharedAt: row.granted_at },
+  };
+}
+
 export async function listDocuments(
   page: number,
   manage = false,

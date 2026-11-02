@@ -60,6 +60,20 @@ export default function Checklist() {
         </Button>
       </Screen>
     );
+  if (checklist.items.length === 0)
+    return (
+      <Screen back title={checklist.title} subtitle={checklist.description}>
+        <ContentStatus />
+        {!contentLoading && !contentError && (
+          <EmptyState
+            title="Questa checklist è ancora vuota"
+            text="Non ci sono ancora attività da spuntare. Puoi scegliere un’altra checklist."
+            action="Vai alle checklist"
+            onPress={() => router.navigate("/checklists")}
+          />
+        )}
+      </Screen>
+    );
   const summary = checklistSummary(checklist, state.progress);
   const items = remainingOnly
     ? checklist.items.filter(

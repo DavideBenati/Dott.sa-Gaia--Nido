@@ -55,7 +55,7 @@ export default function Article() {
         <EmptyState
           title="Lettura non disponibile"
           text="Non troviamo questa lettura tra i contenuti attualmente disponibili."
-          action="Vai agli Argomenti"
+          action="Vai alle letture"
           onPress={() => router.navigate("/discover")}
         />
       </Screen>

@@ -7,16 +7,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useProfessionalNavigation } from "../../src/professional-navigation";
 import { Icon, type IconName } from "../../src/icons";
 import { confirmPendingNavigation } from "../../src/unsaved-changes";
-import { usePwa } from "../../src/pwa";
 export default function Layout() {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const isAdministrator = useProfessionalNavigation();
-  const { standalone } = usePwa();
   const compact = width < 420;
   const tabs: [string, string, IconName][] = [
-    ["index", standalone ? "Percorso" : "Il mio percorso", "home"],
-    ["discover", standalone ? "Letture" : "Argomenti", "discover"],
+    ["index", "Percorso", "home"],
+    ["discover", "Letture", "discover"],
     ["checklists", "Checklist", "checklist"],
     ["documenti", "Documenti", "lock"],
     ["shop", "Consigli d’acquisto", "shop"],
@@ -62,9 +60,7 @@ export default function Layout() {
           key={name}
           name={name}
           options={{
-            ...((name === "studio" && !isAdministrator) ||
-            (name === "documenti" && !standalone) ||
-            (name === "shop" && standalone)
+            ...((name === "studio" && !isAdministrator) || name === "shop"
               ? {
                   // SDK 58 treats href:null as a redirect. Keep hidden
                   // destinations routable while hiding only their tab button.
@@ -87,11 +83,7 @@ export default function Layout() {
                   minHeight: 28,
                 }}
               >
-                {name === "index"
-                  ? "Percorso"
-                  : name === "shop"
-                    ? "Consigli\nd’acquisto"
-                    : title}
+                {title}
               </Text>
             ),
             tabBarAccessibilityLabel: title,

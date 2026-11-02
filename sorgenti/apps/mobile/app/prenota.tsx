@@ -9,20 +9,27 @@ import {
 import { Text, TextInput } from "../src/typography";
 import { Button, Notice, Screen, StageHeading, ui } from "../src/ui";
 import { useApp } from "../src/state";
+import { useUnsavedChanges } from "../src/unsaved-changes";
 const contact = "ostetricamaia@gmail.com";
 export default function Booking() {
   const { email } = useApp();
-  const [request, setRequest] = useState<BookingRequest>({
+  const [initialRequest] = useState<BookingRequest>(() => ({
     name: "",
     email: email ?? "",
     topic: bookingTopics[0],
     date: "",
     time: "Da concordare",
     mode: "Da concordare",
-  });
+  }));
+  const [request, setRequest] = useState<BookingRequest>(initialRequest);
   const [review, setReview] = useState(false);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const dirty = (Object.keys(initialRequest) as (keyof BookingRequest)[]).some(
+    (key) => request[key] !== initialRequest[key],
+  );
+  // Review and email handoff retain the draft; only leaving the page discards it.
+  useUnsavedChanges(dirty);
   function update(patch: Partial<BookingRequest>) {
     setRequest((r) => ({ ...r, ...patch }));
     setMessage("");

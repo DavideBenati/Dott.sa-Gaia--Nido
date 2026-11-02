@@ -226,6 +226,9 @@ async function fixture({
     failCatalog: false,
     emptyCatalog: false,
     assigned: true,
+    failSummary: false,
+    summaryGate: null,
+    emptyChecklist: false,
   };
   await context.route("**/*", async (route) => {
     const request = route.request();
@@ -326,7 +329,18 @@ async function fixture({
       if (state.catalogGate) await state.catalogGate;
       if (state.failCatalog)
         return json({ message: "Catalogue unavailable" }, 500);
-      return json(state.emptyCatalog ? [] : [{ payload: copy(checklist) }]);
+      return json(
+        state.emptyCatalog
+          ? []
+          : [
+              {
+                payload: {
+                  ...copy(checklist),
+                  ...(state.emptyChecklist ? { items: [] } : {}),
+                },
+              },
+            ],
+      );
     }
     if (url.pathname.endsWith("/checklist_progress")) {
       if (request.method() !== "GET") {
@@ -363,6 +377,36 @@ async function fixture({
         returns_terms: "",
         terms_url: "",
       });
+    if (url.pathname.endsWith("/session_document_access")) {
+      if (
+        url.searchParams.get("user_id") !== `eq.${viewer?.id}` ||
+        url.searchParams.get("session_documents.state") !== "eq.ready" ||
+        url.searchParams.get("session_documents.active") !== "eq.true"
+      )
+        return json({ message: "Missing summary account restriction" }, 403);
+      const own = viewer?.id === patient.id && state.assigned;
+      const rows = own
+        ? [
+            {
+              granted_at: stamp,
+              session_documents: { id: document.id, title: document.title },
+            },
+          ]
+        : [];
+      if (state.summaryGate) await state.summaryGate;
+      if (state.failSummary)
+        return json({ message: "Summary unavailable" }, 500);
+      return route.fulfill({
+        status: 200,
+        headers: {
+          ...headers,
+          "Content-Range": own ? "0-0/3" : "*/0",
+          "Access-Control-Expose-Headers": "Content-Range",
+        },
+        contentType: "application/json",
+        body: JSON.stringify(rows),
+      });
+    }
     if (url.pathname.endsWith("/session_documents")) {
       if (
         url.searchParams.get("session_document_access.user_id") !==
@@ -947,13 +991,26 @@ try {
 
   const web = await fixture({ viewer: patient });
   await web.page.goto(origin + "/checklists");
-  await expect(web.page.getByRole("tab", { name: /Consigli/ })).toBeVisible();
-  await expect(web.page.getByRole("tab", { name: /^Documenti$/ })).toHaveCount(
-    0,
-  );
+  await expect(web.page.getByRole("tab")).toHaveCount(5);
+  for (const label of [
+    "Percorso",
+    "Letture",
+    "Checklist",
+    "Documenti",
+    "Profilo",
+  ])
+    await expect(
+      web.page.getByRole("tab", { name: label, exact: true }),
+    ).toBeVisible();
+  await expect(web.page.getByRole("tab", { name: /Consigli/ })).toHaveCount(0);
+  await button(web.page, "Apri menu del sito").click();
+  await web.page
+    .getByRole("link", { name: "Apri i consigli d’acquisto", exact: true })
+    .click();
+  await expect(heading(web.page, "Consigli d’acquisto")).toBeVisible();
   await web.context.close();
   passed(
-    "Ordinary browser retains the existing navigation and recommendations tab",
+    "Browser and installed app share the same five patient tabs; recommendations remain reachable through the public menu",
   );
 
   const shareInstall = await fixture();
@@ -1011,6 +1068,147 @@ try {
   await shareInstall.context.close();
   passed(
     "Installation link sharing copies only the public link and offers manual copying when clipboard access is denied",
+  );
+
+  const summary = await fixture({ viewer: patient, standalone: true });
+  await summary.page.goto(origin + "/?app=1");
+  await expect(
+    summary.page.getByText("3 materiali disponibili", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    summary.page.getByText(document.title, { exact: true }),
+  ).toBeVisible();
+  await expect(summary.page.getByText(/Ultima condivisione:/)).toBeVisible();
+  const summaryCall = summary.state.calls
+    .filter((call) => call.path.endsWith("/session_document_access"))
+    .at(-1);
+  expect(summaryCall).toBeTruthy();
+  await noOverflow(summary.page);
+  await summary.page.screenshot({
+    path: resolve(artifacts, "home-documents-summary-390.png"),
+  });
+  summary.state.failSummary = true;
+  await summary.page.reload();
+  await expect(
+    button(summary.page, "Riprova riepilogo documenti"),
+  ).toBeVisible();
+  await expect(button(summary.page, "Apri i miei documenti")).toBeVisible();
+  await expect(
+    summary.page.getByText(/Non hai ancora materiali condivisi/),
+  ).toHaveCount(0);
+  summary.state.failSummary = false;
+  await button(summary.page, "Riprova riepilogo documenti").click();
+  await expect(
+    summary.page.getByText("3 materiali disponibili", { exact: true }),
+  ).toBeVisible();
+  await summary.context.close();
+  passed(
+    "Home reads the full own-grant count despite limit one, shows the latest sharing and keeps document access available on summary failure with retry",
+  );
+
+  const staleSummary = await fixture({ viewer: patient, standalone: true });
+  let releaseSummary;
+  staleSummary.state.summaryGate = new Promise((done) => {
+    releaseSummary = done;
+  });
+  await staleSummary.page.goto(origin + "/?app=1");
+  await expect
+    .poll(
+      () =>
+        staleSummary.state.calls.filter((call) =>
+          call.path.endsWith("/session_document_access"),
+        ).length,
+    )
+    .toBeGreaterThan(0);
+  await staleSummary.page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      value: "hidden",
+    });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  staleSummary.state.assigned = false;
+  staleSummary.state.summaryGate = null;
+  releaseSummary();
+  await expect(
+    staleSummary.page.getByText(document.title, { exact: true }),
+  ).toHaveCount(0);
+  await staleSummary.page.evaluate(() => {
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      value: "visible",
+    });
+    document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await expect(
+    staleSummary.page.getByText(/Non hai ancora materiali condivisi/),
+  ).toBeVisible();
+  await expect(
+    staleSummary.page.getByText(document.title, { exact: true }),
+  ).toHaveCount(0);
+  await staleSummary.context.close();
+  passed(
+    "Backgrounding clears the Home's private document title; a delayed old response is discarded and returning reflects revoked grants",
+  );
+
+  const emptyList = await fixture({ viewer: patient, standalone: true });
+  emptyList.state.emptyChecklist = true;
+  await emptyList.page.goto(`${origin}/checklist?id=${checklist.id}`);
+  await expect(
+    heading(emptyList.page, "Questa checklist è ancora vuota"),
+  ).toBeVisible();
+  await expect(emptyList.page.getByRole("checkbox")).toHaveCount(0);
+  await expect(emptyList.page.getByRole("progressbar")).toHaveCount(0);
+  await button(emptyList.page, "Vai alle checklist").click();
+  await expect(emptyList.page).toHaveURL(/\/checklists$/);
+  await emptyList.context.close();
+  passed(
+    "A genuinely empty checklist has an explicit explanation and a way back, with no false completion or blank activity list",
+  );
+
+  const bookingDraft = await fixture({ viewer: patient, standalone: true });
+  await bookingDraft.page.goto(origin + "/prenota");
+  const draftName = bookingDraft.page.getByLabel("Nome per la richiesta", {
+    exact: true,
+  });
+  await draftName.fill("Bozza da conservare");
+  let draftDialogs = 0;
+  bookingDraft.page.removeAllListeners("dialog");
+  bookingDraft.page.on("dialog", (dialog) => {
+    draftDialogs++;
+    void dialog.dismiss();
+  });
+  await button(bookingDraft.page, "Vai al mio percorso").click();
+  await expect(bookingDraft.page).toHaveURL(/\/prenota$/);
+  await expect(draftName).toHaveValue("Bozza da conservare");
+  expect(draftDialogs).toBe(1);
+  await button(bookingDraft.page, "Rivedi la richiesta").click();
+  await expect(
+    heading(bookingDraft.page, "Controlla la tua richiesta"),
+  ).toBeVisible();
+  await bookingDraft.page.evaluate(() => {
+    window.open = (url) => {
+      window.__draftMailto = String(url);
+      return null;
+    };
+  });
+  await button(bookingDraft.page, "Apri l’email per inviare").click();
+  expect(await bookingDraft.page.evaluate(() => window.__draftMailto)).toMatch(
+    /^mailto:ostetricamaia@gmail\.com\?/,
+  );
+  await button(bookingDraft.page, "Modifica richiesta").click();
+  await expect(draftName).toHaveValue("Bozza da conservare");
+  bookingDraft.page.removeAllListeners("dialog");
+  bookingDraft.page.on("dialog", (dialog) => {
+    void dialog.accept();
+  });
+  await button(bookingDraft.page, "Vai al mio percorso").click();
+  await expect(
+    button(bookingDraft.page, "Apri i miei documenti"),
+  ).toBeVisible();
+  await bookingDraft.context.close();
+  passed(
+    "A booking draft survives a cancelled navigation, review and a mocked email handoff; explicit discard can return to Home without sending email",
   );
 
   const focusedChecklist = await fixture({ viewer: patient, standalone: true });

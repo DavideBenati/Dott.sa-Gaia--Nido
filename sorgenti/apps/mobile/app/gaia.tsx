@@ -129,7 +129,7 @@ export default function MetiMaia() {
             variant="secondary"
             onPress={() => router.navigate("/discover")}
           >
-            Esplora gli Argomenti
+            Esplora le letture
           </Button>
           <Button
             variant="secondary"

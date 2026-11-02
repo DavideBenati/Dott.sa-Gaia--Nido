@@ -503,3 +503,100 @@ test("a stale editor selection cannot silently restore a revoked recipient", asy
     ).rows,
   ).toEqual([{ user_id: bob }]);
 });
+
+// Equivalent to the Home REST inner join, exact count, sharing-date order and
+// limit(1). Run under authenticated RLS rather than the fixture's owner role.
+async function homeSummary(owner: string) {
+  return (
+    await db.query<{ title: string; shared_at: string; total: number }>(
+      `select d.title, a.granted_at::text shared_at,
+         (count(*) over ())::integer total
+       from public.session_document_access a
+       join public.session_documents d on d.id = a.document_id
+       where a.user_id = $1 and d.state = 'ready' and d.active
+       order by a.granted_at desc, a.document_id
+       limit 1`,
+      [owner],
+    )
+  ).rows;
+}
+
+test("Home summary counts all available own materials before limiting and uses sharing time instead of upload time", async () => {
+  const olderUpload = await ready();
+  const newerUpload = await ready();
+  const archived = await ready();
+  const otherAccount = await ready();
+  for (const doc of [olderUpload, newerUpload, archived])
+    await grant(doc, [alice]);
+  await grant(otherAccount, [bob]);
+  await asUser(manager, "aal2");
+  const pending = await prepare("Materiale non ancora pronto");
+  await db.exec("reset role");
+  await db.query(
+    "update session_documents set title=$2,created_at=$3 where id=$1",
+    [
+      olderUpload.id,
+      "Caricato prima, condiviso per ultimo",
+      "2026-01-01T10:00:00Z",
+    ],
+  );
+  await db.query(
+    "update session_documents set title=$2,created_at=$3 where id=$1",
+    [newerUpload.id, "Caricato dopo, condiviso prima", "2026-10-01T10:00:00Z"],
+  );
+  // Retained grants make the join's active/ready filters observable even for
+  // incomplete data; the normal archive action would delete its grants.
+  await db.query("update session_documents set active=false where id=$1", [
+    archived.id,
+  ]);
+  await db.query(
+    "insert into session_document_access(document_id,user_id,granted_by)values($1,$2,$3)",
+    [pending.id, alice, manager],
+  );
+  for (const [id, sharedAt] of [
+    [olderUpload.id, "2026-11-02T10:00:00Z"],
+    [newerUpload.id, "2026-11-01T10:00:00Z"],
+    [archived.id, "2026-11-03T10:00:00Z"],
+    [pending.id, "2026-11-04T10:00:00Z"],
+  ])
+    await db.query(
+      "update session_document_access set granted_at=$2 where document_id=$1",
+      [id, sharedAt],
+    );
+  await asUser(alice);
+  const summary = await homeSummary(alice);
+  expect(summary).toHaveLength(1);
+  expect(summary[0]).toMatchObject({
+    title: "Caricato prima, condiviso per ultimo",
+    total: 2,
+  });
+  expect(new Date(summary[0].shared_at).toISOString()).toBe(
+    "2026-11-02T10:00:00.000Z",
+  );
+});
+
+test("staff Home summary keeps the explicit own-account scope despite wider document-management visibility", async () => {
+  const own = await ready();
+  const otherAccount = await ready();
+  const archived = await ready();
+  await grant(own, [manager, alice]);
+  await grant(otherAccount, [bob]);
+  await grant(archived, [manager]);
+  await db.exec("reset role");
+  await db.query("update session_documents set active=false where id=$1", [
+    archived.id,
+  ]);
+  await asUser(manager, "aal2");
+  expect(
+    (
+      await db.query(
+        "select count(*)::integer total from session_document_access",
+      )
+    ).rows,
+  ).toEqual([{ total: 4 }]);
+  expect(await homeSummary(manager)).toMatchObject([
+    { title: own.title, total: 1 },
+  ]);
+  await grant(own, [alice]);
+  expect(await homeSummary(manager)).toEqual([]);
+});

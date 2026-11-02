@@ -8,10 +8,7 @@ import {
 import { Linking, View } from "react-native";
 import { router } from "expo-router";
 import { useApp } from "../src/state";
-import {
-  privacyComplete,
-  privacyDetails as basePrivacyDetails,
-} from "../src/privacy";
+import { privacyDetails as basePrivacyDetails } from "../src/privacy";
 import { Screen, Notice, Button, ui } from "../src/ui";
 const missing =
   "Da completare prima dell’attivazione del servizio con dati personali.";
@@ -33,6 +30,15 @@ export default function Privacy() {
     transfers: profile.privacy_transfers || basePrivacyDetails.transfers,
   };
   const { demo } = useApp();
+  const privacyComplete = Boolean(
+    privacyDetails.controller &&
+    privacyDetails.address &&
+    privacyDetails.email &&
+    privacyDetails.providers &&
+    privacyDetails.retention &&
+    privacyDetails.transfers &&
+    profile.privacy_reviewed,
+  );
   const sections: [string, string][] = [
     [
       "Nickname e scheda condivisa con Gaia",
@@ -47,12 +53,15 @@ export default function Privacy() {
       `Titolare del trattamento: ${privacyDetails.controller || missing}\nSede e recapito postale: ${privacyDetails.address || missing}\nContatto privacy: ${privacyDetails.email || missing}\n${privacyDetails.dpo ? `Responsabile della protezione dei dati (DPO): ${privacyDetails.dpo}` : "Contatto DPO: da indicare se nominato; la nomina e la sua eventuale obbligatorietà devono essere verificate dal titolare."}`,
     ],
     [
-      "2. Cosa succede nella demo",
-      "Puoi esplorare senza account. Preferenze, data eventualmente scelta, letture salvate e progressi sono conservati nel browser o sul dispositivo. Non è prevista una cifratura locale dedicata: usa un dispositivo personale e rimuovi i dati se è condiviso. Cancellare i dati su un browser non cancella quelli eventualmente presenti su altri dispositivi. Registrazione e chat sono disabilitate nella demo; le conversazioni mostrate sono esempi, non messaggi inviati.",
+      demo ? "2. Cosa succede nella demo" : "2. Uso senza account",
+      "Puoi esplorare senza account. Preferenze, data eventualmente scelta, letture salvate e progressi sono conservati nel browser o sul dispositivo. Non è prevista una cifratura locale dedicata: usa un dispositivo personale e rimuovi i dati se è condiviso. Cancellare i dati su un browser non cancella quelli eventualmente presenti su altri dispositivi." +
+        (demo
+          ? " Registrazione e chat sono disabilitate nella demo; le conversazioni mostrate sono esempi, non messaggi inviati."
+          : " L’accesso ai materiali riservati e la sincronizzazione tra dispositivi richiedono un account."),
     ],
     [
-      "3. Account e dati del servizio previsto",
-      "Con l’attivazione dell’account saranno trattati email, identificativo utente, dati di autenticazione e le preferenze che scegli di salvare, per riconoscerti e ritrovare lo stesso percorso sul sito e nell’app. Le password sono gestite dal sistema di autenticazione; non sono mostrate alla professionista. Le scelte di percorso, gli argomenti e una data di gravidanza o nascita possono rivelare informazioni sulla salute. Non inserire nomi o dati di bambini, partner o altre persone se non necessari e senza averne verificato i presupposti.",
+      "3. Account e dati del servizio",
+      "Quando usi l’account vengono trattati email, identificativo utente, dati di autenticazione e le preferenze che scegli di salvare, per riconoscerti e ritrovare lo stesso percorso sul sito e nell’app. Le password sono gestite dal sistema di autenticazione; non sono mostrate alla professionista. Le scelte di percorso, gli argomenti e una data di gravidanza o nascita possono rivelare informazioni sulla salute. Non inserire nomi o dati di bambini, partner o altre persone se non necessari e senza averne verificato i presupposti.",
     ],
     [
       "4. Finalità e basi giuridiche",
@@ -64,11 +73,11 @@ export default function Privacy() {
     ],
     [
       "6. Messaggi alla Dott.sa Gaia",
-      "La chat reale richiederà l’accesso e l’abilitazione della professionista. La gestione delle conversazioni è affidata esclusivamente alla Dott.sa Gaia. L’utente vede la propria conversazione; la redazione non accede alle chat per il solo ruolo editoriale. Anche il gestore del servizio e i fornitori possono avere accessi tecnici nei limiti delle proprie funzioni: non è una chat con cifratura end-to-end. Evita referti, foto, dettagli sanitari o dati di terzi non necessari. La base giuridica e l’eventuale gestione di dati sanitari devono essere definite prima di ricevere messaggi reali. Le risposte non sono immediate: per urgenze contatta i servizi di emergenza.",
+      "La chat, quando abilitata dalla professionista, richiede l’accesso con un account. La gestione delle conversazioni è affidata esclusivamente alla Dott.sa Gaia. L’utente vede la propria conversazione; la redazione non accede alle chat per il solo ruolo editoriale. Anche il gestore del servizio e i fornitori possono avere accessi tecnici nei limiti delle proprie funzioni: non è una chat con cifratura end-to-end. Evita referti, foto, dettagli sanitari o dati di terzi non necessari. La base giuridica e l’eventuale gestione di dati sanitari devono essere definite prima di ricevere messaggi reali. Le risposte non sono immediate: per urgenze contatta i servizi di emergenza.",
     ],
     [
       "7. Fornitori e destinatari",
-      `Il sito dimostrativo è distribuito tramite GitHub Pages. Le richieste al sito possono comportare il trattamento di indirizzo IP, dati del browser e log tecnici da parte del fornitore. Il servizio account e la chat sono predisposti per Supabase; il pannello professionale richiede un hosting separato. Fornitori effettivi, ruoli privacy, eventuali responsabili nominati ai sensi dell’art. 28 GDPR e destinatari: ${privacyDetails.providers || missing} I dati non sono destinati alla diffusione pubblica; eventuali comunicazioni ad autorità avvengono nei casi previsti dalla legge.`,
+      `Il sito, l’app installabile e l’area Studio fanno parte della stessa applicazione web. Le richieste al sito possono comportare il trattamento di indirizzo IP, dati del browser e log tecnici da parte del fornitore di hosting. Quando il servizio è configurato, Supabase gestisce autenticazione, database e archivio privato dei documenti; gli avvisi email dei materiali sono gestiti tramite Resend. Fornitori effettivi, ruoli privacy, eventuali responsabili nominati ai sensi dell’art. 28 GDPR e destinatari: ${privacyDetails.providers || missing} I dati personali e i materiali riservati non sono destinati alla diffusione pubblica; eventuali comunicazioni ad autorità avvengono nei casi previsti dalla legge.`,
     ],
     [
       "8. Paesi e trasferimenti",
@@ -116,7 +125,7 @@ export default function Privacy() {
     ],
     [
       "12. Personalizzazione, minori e aggiornamenti",
-      "I suggerimenti sono selezionati in base alle preferenze e non prendono decisioni con effetti giuridici o analogamente significativi ai sensi dell’art. 22 GDPR. MAIA non è progettata per raccogliere account di bambini o dati identificativi del neonato. Per utenti minorenni, eventuali servizi sanitari e relativi consensi occorre verificare le regole applicabili prima dell’attivazione; non si presume una soglia di età unica per tutti i trattamenti. Versione del testo: 31 ottobre 2026. Il testo deve essere aggiornato se cambiano servizi, fornitori o finalità.",
+      "I suggerimenti sono selezionati in base alle preferenze e non prendono decisioni con effetti giuridici o analogamente significativi ai sensi dell’art. 22 GDPR. MAIA non è progettata per raccogliere account di bambini o dati identificativi del neonato. Per utenti minorenni, eventuali servizi sanitari e relativi consensi occorre verificare le regole applicabili prima dell’attivazione; non si presume una soglia di età unica per tutti i trattamenti. Versione del testo: v14. Il testo deve essere aggiornato se cambiano servizi, fornitori o finalità.",
     ],
   ];
   return (
@@ -140,10 +149,9 @@ export default function Privacy() {
         </Notice>
         {!privacyComplete && (
           <Notice warm>
-            Informativa in completamento. I dati del titolare, i recapiti e le
-            condizioni del servizio reale non sono ancora tutti definiti. Le
-            sezioni sul servizio futuro non costituiscono un’informativa
-            definitiva per la sua attivazione.
+            Informativa in completamento: i dati e le condizioni del servizio
+            devono essere completati e verificati dal titolare. Le informazioni
+            tecniche presenti non sostituiscono questa verifica.
           </Notice>
         )}
         <View style={{ gap: 28, marginVertical: 28 }}>

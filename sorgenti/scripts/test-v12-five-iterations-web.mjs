@@ -335,6 +335,36 @@ async function fixture(width, viewer = null, options = {}) {
         returns_terms: "",
         terms_url: "",
       });
+    if (url.pathname.endsWith("/session_document_access")) {
+      if (
+        url.searchParams.get("user_id") !== `eq.${viewer?.id}` ||
+        url.searchParams.get("session_documents.state") !== "eq.ready" ||
+        url.searchParams.get("session_documents.active") !== "eq.true"
+      )
+        return json({ message: "Missing summary account restriction" }, 403);
+      const own = viewer?.id === patient.id;
+      const rows = own
+        ? [
+            {
+              granted_at: stamp,
+              session_documents: {
+                id: documents[0].id,
+                title: documents[0].title,
+              },
+            },
+          ]
+        : [];
+      return route.fulfill({
+        status: 200,
+        headers: {
+          ...headers,
+          "Content-Range": own ? `0-0/${documents.length}` : "*/0",
+          "Access-Control-Expose-Headers": "Content-Range",
+        },
+        contentType: "application/json",
+        body: JSON.stringify(rows),
+      });
+    }
     if (url.pathname.endsWith("/session_documents")) {
       let rows =
         viewer?.manager || viewer?.id === patient.id ? copy(documents) : [];
@@ -612,10 +642,8 @@ try {
     await expect(
       reading.page.getByText("Lettura non disponibile", { exact: true }),
     ).toBeVisible();
-    await button(reading.page, "Vai agli Argomenti").click();
-    await expect(
-      heading(reading.page, "Le parole giuste, al momento giusto."),
-    ).toBeVisible();
+    await button(reading.page, "Vai alle letture").click();
+    await expect(heading(reading.page, "Letture")).toBeVisible();
     await reading.context.close();
     passed(
       `${width}px: loading/error/cover fallback and missing-reading states are distinct, with accurate runtime page schema`,

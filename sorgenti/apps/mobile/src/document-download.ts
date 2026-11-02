@@ -6,6 +6,7 @@ export function useDocumentDownload() {
   const [downloadMessage, setMessage] = useState("");
   const [downloadDocumentId, setDocumentId] = useState("");
   const mounted = useRef(true);
+  const inFlight = useRef(false);
   const urls = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   useEffect(() => {
     mounted.current = true;
@@ -20,11 +21,13 @@ export function useDocumentDownload() {
     };
   }, []);
   async function download(doc: SessionDocument) {
-    if (downloading) return;
+    if (!mounted.current || inFlight.current) return;
     if (Platform.OS !== "web") {
       setMessage("Apri metimaia.com dal browser per scaricare il documento.");
       return;
     }
+    // A second tap can arrive before React renders the disabled button.
+    inFlight.current = true;
     setDocumentId(doc.id);
     setDownloading(doc.id);
     setMessage("");
@@ -51,6 +54,7 @@ export function useDocumentDownload() {
       if (mounted.current)
         setMessage(e instanceof Error ? e.message : "Download non riuscito.");
     } finally {
+      inFlight.current = false;
       if (mounted.current) setDownloading("");
     }
   }

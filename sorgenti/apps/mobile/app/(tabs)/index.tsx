@@ -17,6 +17,7 @@ import { colors } from "../../src/theme";
 import { usePwa } from "../../src/pwa";
 import { selectHomeChecklist } from "../../src/home-checklist";
 import { checklistSummary } from "../../src/share-content";
+import { HomeDocuments } from "../../src/home-documents";
 
 export default function Home() {
   const {
@@ -24,6 +25,7 @@ export default function Home() {
     articles,
     checklists,
     email,
+    userId,
     memberProfile,
     personalizedPreferences,
     pregnancyProfile,
@@ -57,20 +59,7 @@ export default function Home() {
       subtitle="I tuoi materiali e un piccolo passo alla volta."
     >
       <View style={{ gap: 16 }}>
-        {email && (
-          <View style={[ui.card, { padding: 18, gap: 10 }]}>
-            <View style={[ui.row, { alignItems: "flex-start" }]}>
-              <Icon name="lock" size={26} />
-              <Text style={[ui.heading, { flex: 1 }]}>I miei documenti</Text>
-            </View>
-            <Text style={ui.body}>
-              I materiali che Gaia ha condiviso con te.
-            </Text>
-            <Button onPress={() => router.push("/miei-documenti")}>
-              Apri i miei documenti
-            </Button>
-          </View>
-        )}
+        {email && <HomeDocuments key={userId ?? email} />}
         <ContentStatus />
         {next && nextSummary && (
           <Pressable
