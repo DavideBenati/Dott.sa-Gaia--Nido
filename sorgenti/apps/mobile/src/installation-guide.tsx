@@ -6,6 +6,7 @@ import { Button, Notice } from "./ui";
 import { usePwa } from "./pwa";
 import { colors } from "./theme";
 import installation from "./app-installation.json";
+import { androidInstallBrowser } from "./pwa-platform";
 
 function ShareSymbol() {
   return (
@@ -60,6 +61,14 @@ export function InstallationGuide({
   const pwa = usePwa();
   const [showHelp, setShowHelp] = useState(false);
   const [copyMessage, setCopyMessage] = useState("");
+  const [androidBrowser, setAndroidBrowser] = useState<"chrome" | "samsung">(
+    () =>
+      Platform.OS === "web" && typeof navigator !== "undefined"
+        ? androidInstallBrowser(navigator.userAgent)
+        : "chrome",
+  );
+  const browserName =
+    androidBrowser === "samsung" ? "Samsung Internet" : "Chrome";
   async function copyLink() {
     try {
       if (Platform.OS !== "web" || !navigator.clipboard?.writeText)
@@ -70,7 +79,7 @@ export function InstallationGuide({
       );
     } catch {
       setCopyMessage(
-        "Tieni premuto sull’indirizzo qui sotto e scegli Copia, poi incollalo nel browser.",
+        "Tieni premuto sull’indirizzo della guida e scegli Copia, poi incollalo nel browser.",
       );
     }
   }
@@ -115,12 +124,56 @@ export function InstallationGuide({
       <Text style={styles.body}>
         {phone === "ios"
           ? "Su iPhone usa Safari. I comandi sono nella barra del browser."
-          : "Su Android apri questa pagina in Chrome."}
+          : "Scegli il browser per vedere i passaggi. Usa una scheda normale, senza la modalità in incognito."}
       </Text>
+      {phone === "android" && (
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          {(
+            [
+              ["chrome", "Chrome"],
+              ["samsung", "Samsung Internet"],
+            ] as const
+          ).map(([value, label]) => (
+            <Pressable
+              key={value}
+              accessibilityRole="button"
+              aria-pressed={androidBrowser === value}
+              onPress={() => {
+                setAndroidBrowser(value);
+                setCopyMessage("");
+              }}
+              style={[
+                styles.choice,
+                androidBrowser === value && {
+                  backgroundColor: colors.sageDark,
+                  borderColor: colors.sageDark,
+                },
+              ]}
+            >
+              <Text
+                style={{
+                  fontSize: 13,
+                  fontWeight: "600",
+                  color:
+                    androidBrowser === value ? colors.white : colors.sageDark,
+                }}
+              >
+                {label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
       {phone === "android" && pwa.canInstall && (
         <Button disabled={pwa.installing} onPress={() => void pwa.install()}>
           {pwa.installing ? "Apertura installazione…" : "Installa MAIA"}
         </Button>
+      )}
+      {phone === "android" && !pwa.canInstall && !pwa.installMessage && (
+        <Text style={styles.caption}>
+          Se non compare il pulsante «Installa MAIA», puoi usare il menu del
+          browser come indicato qui sotto.
+        </Text>
       )}
       {pwa.installMessage !== "" && (
         <View accessibilityLiveRegion="polite">
@@ -182,19 +235,53 @@ export function InstallationGuide({
         </>
       ) : (
         <>
-          <Step number={1} title="Apri il menu di Chrome">
+          <Step number={1} title={`Apri questa pagina in ${browserName}`}>
             <Text style={styles.body}>
-              Tocca i tre puntini (⋮) nella barra del browser.
+              Apri l’app {browserName} dal telefono, incolla questo indirizzo
+              nella barra e premi Vai.
+            </Text>
+            <Text
+              selectable
+              style={[styles.body, { color: colors.sageDark, fontSize: 15 }]}
+            >
+              {installation.url}
+            </Text>
+            <Button variant="secondary" onPress={() => void copyLink()}>
+              Copia l’indirizzo della guida
+            </Button>
+            {!!copyMessage && (
+              <Text accessibilityLiveRegion="polite" style={styles.body}>
+                {copyMessage}
+              </Text>
+            )}
+            <Text style={styles.caption}>
+              Se hai ricevuto il link su WhatsApp, Instagram o in un’altra app,
+              apri direttamente il browser scelto.
             </Text>
           </Step>
-          <Step number={2} title="Scegli Installa app">
+          <Step
+            number={2}
+            title={
+              androidBrowser === "chrome"
+                ? "Apri ⋮ e cerca l’installazione"
+                : "Apri il menu di Samsung Internet"
+            }
+          >
             <Text style={styles.body}>
-              La voce può chiamarsi anche «Aggiungi alla schermata Home».
+              {androidBrowser === "chrome"
+                ? "Nel menu con i tre puntini cerca «Aggiungi alla schermata Home» / «Add to Home screen», poi scegli «Installa» / «Install». Alcune versioni mostrano direttamente «Installa app» o «Installa metiMaia»."
+                : "Tocca il menu ☰ o ⋮ e cerca «Aggiungi pagina a» → «Schermata Home». Se compare una voce «Installa app» o un simbolo di installazione nella barra, puoi usare quello. Le voci cambiano secondo la versione."}
             </Text>
           </Step>
-          <Step number={3} title="Conferma con Installa o Aggiungi">
+          <Step number={3} title="Conferma e apri MAIA">
             <Text style={styles.body}>
-              Troverai l’icona MAIA tra le app del telefono.
+              {androidBrowser === "chrome"
+                ? "Premi «Installa» nel pannello del telefono e attendi il completamento. Cerca poi «MAIA» o «metiMaia» nella schermata Home o nell’elenco delle app."
+                : "Conferma il pulsante proposto dal browser («Installa» o «Aggiungi») e attendi. Cerca «MAIA» o «metiMaia» nella schermata Home o nell’elenco delle app. Se i comandi sono diversi, seleziona Chrome qui sopra e segui quel percorso."}
+            </Text>
+            <Text style={styles.caption}>
+              «Crea collegamento» propone un collegamento al sito. Per l’app
+              cerca la voce «Installa», quando disponibile.
             </Text>
           </Step>
         </>
@@ -224,28 +311,42 @@ export function InstallationGuide({
           <Text style={styles.body}>
             {phone === "ios"
               ? "Se hai aperto il link da WhatsApp, Instagram o un’altra app, torna alla Home dell’iPhone e apri l’app Safari (la bussola blu)."
-              : "Se hai aperto il link da WhatsApp, Instagram o un’altra app, apri direttamente l’app Chrome."}
+              : "Se manca la voce Installa, apri questa guida direttamente in Chrome aggiornato e in una scheda normale. Controlla anche se MAIA è già presente nella schermata Home o nell’elenco delle app."}
           </Text>
           <Text style={styles.body}>
             Scrivi o incolla questo indirizzo nella barra del browser e premi
             Vai. Poi segui i passaggi qui sopra.
           </Text>
-          <Text selectable style={[styles.body, { color: colors.sageDark }]}>
-            {installation.url}
-          </Text>
-          <Button variant="secondary" onPress={() => void copyLink()}>
-            Copia l’indirizzo della guida
-          </Button>
-          {!!copyMessage && (
+          {phone === "ios" && (
+            <>
+              <Text
+                selectable
+                style={[styles.body, { color: colors.sageDark }]}
+              >
+                {installation.url}
+              </Text>
+              <Button variant="secondary" onPress={() => void copyLink()}>
+                Copia l’indirizzo della guida
+              </Button>
+            </>
+          )}
+          {!!copyMessage && phone === "ios" && (
             <Text accessibilityLiveRegion="polite" style={styles.body}>
               {copyMessage}
             </Text>
           )}
           <Text style={styles.body}>
-            Per aggiungere l’icona usa il comando Condividi del browser. Il
-            pulsante «Invia le istruzioni» di questa pagina serve a mandare il
-            link a un’altra persona.
+            {phone === "ios"
+              ? "Per aggiungere l’icona usa il comando Condividi del browser. Il pulsante «Invia le istruzioni» di questa pagina serve a mandare il link a un’altra persona."
+              : "Per installare su Android usa il menu del browser. Il pulsante «Invia le istruzioni» serve a mandare il link a un’altra persona."}
           </Text>
+          {phone === "android" && (
+            <Text style={styles.body}>
+              Se compare un errore dopo aver premuto Installa, verifica la
+              connessione e annota il messaggio preciso: è diverso dalla
+              semplice assenza della voce nel menu.
+            </Text>
+          )}
           <Text style={styles.caption}>
             Se hai già aggiunto MAIA, cerca l’icona nella schermata Home o tra
             le app. Questa pagina nel browser può continuare a mostrare le

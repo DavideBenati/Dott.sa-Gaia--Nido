@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  androidInstallBrowser,
   installPlatform,
   keepInstalledHome,
   serviceWorkerOriginAllowed,
@@ -7,6 +8,24 @@ import {
 } from "../apps/mobile/src/pwa-platform";
 
 describe("installed web app platform and launch", () => {
+  it("offers Samsung's guide before matching its Chrome token and directs embedded or unknown browsers to the explicit Chrome path", () => {
+    expect(
+      androidInstallBrowser(
+        "Mozilla/5.0 (Linux; Android 15) Chrome/140.0 SamsungBrowser/28.0 Mobile Safari/537.36",
+      ),
+    ).toBe("samsung");
+    expect(
+      androidInstallBrowser(
+        "Mozilla/5.0 (Linux; Android 15) Chrome/140.0 Mobile Safari/537.36",
+      ),
+    ).toBe("chrome");
+    expect(
+      androidInstallBrowser(
+        "Mozilla/5.0 (Linux; Android 15; wv) Chrome/140.0 Instagram",
+      ),
+    ).toBe("chrome");
+    expect(androidInstallBrowser("")).toBe("chrome");
+  });
   it("detects iPhone, touch iPad desktop mode and Android without treating all Macs as iPads", () => {
     expect(installPlatform({ userAgent: "Mozilla/5.0 (iPhone)" })).toBe("ios");
     expect(

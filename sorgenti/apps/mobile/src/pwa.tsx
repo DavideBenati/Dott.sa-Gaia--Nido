@@ -77,6 +77,7 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
   const [updating, setUpdating] = useState(false);
   const [updateMessage, setUpdateMessage] = useState("");
   const deferred = useRef<InstallPromptEvent | null>(null);
+  const installationCompleted = useRef(false);
   const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
   const updateWatchdog = useRef<ReturnType<typeof createUpdateWatchdog> | null>(
     null,
@@ -124,8 +125,10 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
       setInstallMessage("");
     };
     const installed = () => {
+      installationCompleted.current = true;
       deferred.current = null;
       setCanInstall(false);
+      setInstalling(false);
       setInstallMessage(
         "Installazione completata. Ora puoi aprire MAIA dall’icona sul telefono.",
       );
@@ -236,18 +239,21 @@ export function PwaProvider({ children }: { children: React.ReactNode }) {
     deferred.current = null;
     setCanInstall(false);
     setInstalling(true);
+    installationCompleted.current = false;
     try {
       await event.prompt();
       const result = await event.userChoice;
-      setInstallMessage(
-        result.outcome === "accepted"
-          ? "Hai confermato l’installazione. Cerca l’icona MAIA sul telefono."
-          : "Puoi installare MAIA in un altro momento dal menu del browser.",
-      );
+      if (!installationCompleted.current)
+        setInstallMessage(
+          result.outcome === "accepted"
+            ? "Richiesta confermata. Attendi il completamento nel browser, poi cerca l’icona MAIA sul telefono."
+            : "Puoi installare MAIA in un altro momento dal menu del browser.",
+        );
     } catch {
-      setInstallMessage(
-        "Usa il menu del browser e segui le istruzioni qui sotto per aggiungere MAIA.",
-      );
+      if (!installationCompleted.current)
+        setInstallMessage(
+          "Usa il menu del browser e segui le istruzioni qui sotto per aggiungere MAIA.",
+        );
     } finally {
       setInstalling(false);
     }

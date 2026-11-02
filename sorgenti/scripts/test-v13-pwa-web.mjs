@@ -2,8 +2,16 @@
 // request is a disposable fixture. No live account, document or email is used.
 /* global EventTarget, navigator, Event, caches, innerWidth */
 import { createServer } from "node:http";
-import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
-import { extname, resolve } from "node:path";
+import {
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm,
+  stat,
+  writeFile,
+} from "node:fs/promises";
+import { extname, join, resolve } from "node:path";
+import { tmpdir } from "node:os";
 import { chromium, expect } from "@playwright/test";
 import { PNG } from "pngjs";
 import jsQR from "jsqr";
@@ -27,6 +35,7 @@ const mime = {
   ".webmanifest": "application/manifest+json",
 };
 let workerRevision = 0;
+let androidInstallability;
 const server = createServer(async (request, response) => {
   try {
     let file = resolve(
@@ -64,6 +73,7 @@ const browser = await chromium.launch({
   args: ["--no-sandbox", "--disable-external-intent-requests"],
 });
 const contexts = [];
+const temporaryProfiles = [];
 const checks = [];
 const errors = [];
 const unexpected = [];
@@ -163,8 +173,10 @@ async function fixture({
   ios = false,
   iosVersion = 18,
   android = false,
+  androidBrowser = "chrome",
+  persistent = false,
 } = {}) {
-  const context = await browser.newContext({
+  const contextOptions = {
     viewport: { width, height },
     serviceWorkers: "allow",
     acceptDownloads: true,
@@ -177,12 +189,24 @@ async function fixture({
       : android
         ? {
             userAgent:
-              "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36",
+              androidBrowser === "samsung"
+                ? "Mozilla/5.0 (Linux; Android 14; SM-S921B) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/27.0 Chrome/130.0.0.0 Mobile Safari/537.36"
+                : "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36",
             isMobile: true,
             hasTouch: true,
           }
         : {}),
-  });
+  };
+  let context;
+  if (persistent) {
+    const profile = await mkdtemp(join(tmpdir(), "maia-android-install-"));
+    temporaryProfiles.push(profile);
+    context = await chromium.launchPersistentContext(profile, {
+      ...contextOptions,
+      executablePath: "/usr/bin/chromium",
+      args: ["--no-sandbox", "--disable-external-intent-requests"],
+    });
+  } else context = await browser.newContext(contextOptions);
   contexts.push(context);
   await context.addInitScript(
     ({ standalone, ios }) => {
@@ -199,13 +223,16 @@ async function fixture({
           value: standalone,
         });
       window.__pwaPromptCalls = 0;
-      window.__dispatchInstallPrompt = () => {
+      window.__dispatchInstallPrompt = (outcome = "accepted") => {
         const event = new Event("beforeinstallprompt", { cancelable: true });
         event.prompt = async () => {
           window.__pwaPromptCalls++;
+          if (outcome === "error") throw new Error("Test prompt failure");
+          if (outcome === "installed-before-choice")
+            window.dispatchEvent(new Event("appinstalled"));
         };
         event.userChoice = Promise.resolve({
-          outcome: "accepted",
+          outcome: outcome === "dismissed" ? "dismissed" : "accepted",
           platform: "web",
         });
         window.dispatchEvent(event);
@@ -495,6 +522,30 @@ async function noOverflow(page) {
   ).toBe(true);
 }
 
+async function probeInstallability(context, page, profile) {
+  let session;
+  try {
+    session = await context.newCDPSession(page);
+    await session.send("Page.enable");
+    const appManifest = await session.send("Page.getAppManifest");
+    const installability = await session.send("Page.getInstallabilityErrors");
+    return {
+      supported: true,
+      profile,
+      manifestUrl: appManifest.url,
+      manifestErrors: appManifest.errors,
+      manifestData: appManifest.data,
+      installabilityErrors: installability.installabilityErrors,
+      limitation:
+        "Headless Chromium with Android user agent; not a physical Android installer or a live-domain check.",
+    };
+  } catch (error) {
+    return { supported: false, profile, reason: error.message };
+  } finally {
+    await session?.detach().catch(() => {});
+  }
+}
+
 try {
   const manifest = JSON.parse(
     await readFile(resolve(root, "manifest.webmanifest"), "utf8"),
@@ -576,7 +627,9 @@ try {
   await qrDesktop.page
     .getByRole("button", { name: "Android", exact: true })
     .click();
-  await expect(heading(qrDesktop.page, "Apri il menu di Chrome")).toBeVisible();
+  await expect(
+    heading(qrDesktop.page, "Apri questa pagina in Chrome"),
+  ).toBeVisible();
   await expect(heading(qrDesktop.page, "Apri il menu di Safari")).toHaveCount(
     0,
   );
@@ -585,9 +638,9 @@ try {
     fullPage: true,
   });
   await button(qrDesktop.page, "Chiudi i passaggi per il telefono").click();
-  await expect(heading(qrDesktop.page, "Apri il menu di Chrome")).toHaveCount(
-    0,
-  );
+  await expect(
+    heading(qrDesktop.page, "Apri questa pagina in Chrome"),
+  ).toHaveCount(0);
   await qrDesktop.context.close();
   passed(
     "Public site navigation reaches a visible QR that independently decodes to the public install URL, downloads and offers device-specific steps",
@@ -646,6 +699,29 @@ try {
   await install.page.goto(origin + "/installa");
   await expect(heading(install.page, "MAIA sul tuo telefono")).toBeVisible();
   await controlled(install.page);
+  const isolatedInstallability = await probeInstallability(
+    install.context,
+    install.page,
+    "isolated-off-the-record",
+  );
+  // Playwright's ordinary newContext is off-the-record. Check a separate,
+  // temporary normal profile without dispatching any fake installation event.
+  const normalInstall = await fixture({ android: true, persistent: true });
+  await normalInstall.page.goto(origin + "/installa");
+  await controlled(normalInstall.page);
+  const normalInstallability = await probeInstallability(
+    normalInstall.context,
+    normalInstall.page,
+    "normal-persistent",
+  );
+  await normalInstall.context.close();
+  androidInstallability = {
+    ...normalInstallability,
+    isolatedContext: isolatedInstallability,
+  };
+  console.log(
+    "ANDROID_INSTALLABILITY " + JSON.stringify(androidInstallability),
+  );
   await expect
     .poll(() => install.page.evaluate(() => window.__dispatchInstallPrompt()))
     .toBe(true);
@@ -659,6 +735,165 @@ try {
   });
   await install.context.close();
   passed("Android installation prompt opens only after an explicit user click");
+
+  for (const width of [320, 390]) {
+    const chromeGuide = await fixture({ width, android: true });
+    await chromeGuide.page.addInitScript(() => {
+      window.addEventListener(
+        "beforeinstallprompt",
+        (event) => event.stopImmediatePropagation(),
+        { capture: true },
+      );
+      window.__androidShareCalls = 0;
+      Object.defineProperty(navigator, "share", {
+        configurable: true,
+        value: async () => {
+          window.__androidShareCalls++;
+        },
+      });
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: {
+          writeText: async (text) => {
+            window.__androidCopied = text;
+          },
+        },
+      });
+    });
+    await chromeGuide.page.goto(origin + "/installa");
+    await expect(button(chromeGuide.page, "Chrome")).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await expect(
+      heading(chromeGuide.page, "Apri questa pagina in Chrome"),
+    ).toBeVisible();
+    await expect(
+      chromeGuide.page.getByText(
+        /Aggiungi alla schermata Home.*Add to Home screen.*Installa.*Install/,
+      ),
+    ).toBeVisible();
+    await expect(
+      chromeGuide.page.getByText(
+        /«Crea collegamento» propone un collegamento al sito/,
+      ),
+    ).toBeVisible();
+    await expect(button(chromeGuide.page, "Installa MAIA")).toHaveCount(0);
+    await expect(
+      chromeGuide.page.getByText(/Se non compare il pulsante «Installa MAIA»/),
+    ).toBeVisible();
+    await button(chromeGuide.page, "Copia l’indirizzo della guida").click();
+    await expect(chromeGuide.page.getByText(/Indirizzo copiato/)).toBeVisible();
+    expect(await chromeGuide.page.evaluate(() => window.__androidCopied)).toBe(
+      "https://metimaia.com/installa",
+    );
+    await button(chromeGuide.page, "Non trovi questi comandi?").click();
+    await expect(
+      chromeGuide.page.getByText(
+        /Per installare su Android usa il menu del browser/,
+      ),
+    ).toBeVisible();
+    await expect(
+      chromeGuide.page.getByText(
+        /Per aggiungere l’icona usa il comando Condividi/,
+      ),
+    ).toHaveCount(0);
+    await chromeGuide.page.evaluate(() => {
+      navigator.clipboard.writeText = async () => {
+        throw new Error("Clipboard denied");
+      };
+    });
+    await button(chromeGuide.page, "Copia l’indirizzo della guida").click();
+    await expect(
+      chromeGuide.page.getByText(/Tieni premuto sull’indirizzo della guida/),
+    ).toBeVisible();
+    expect(
+      await chromeGuide.page.evaluate(() => window.__androidShareCalls),
+    ).toBe(0);
+    await noOverflow(chromeGuide.page);
+    await chromeGuide.page.screenshot({
+      path: resolve(artifacts, `install-android-chrome-help-${width}.png`),
+    });
+    await chromeGuide.context.close();
+    passed(
+      `${width}px: Chrome without an install prompt explains Add to Home screen then Install, distinguishes shortcuts and copies the public URL without Web Share or iPhone-only directions`,
+    );
+  }
+
+  const samsungGuide = await fixture({
+    android: true,
+    androidBrowser: "samsung",
+  });
+  await samsungGuide.page.goto(origin + "/installa");
+  await expect(button(samsungGuide.page, "Samsung Internet")).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(
+    heading(samsungGuide.page, "Apri questa pagina in Samsung Internet"),
+  ).toBeVisible();
+  await expect(
+    heading(samsungGuide.page, "Apri il menu di Samsung Internet"),
+  ).toBeVisible();
+  await expect(
+    samsungGuide.page.getByText(/Aggiungi pagina a.*Schermata Home/),
+  ).toBeVisible();
+  await button(samsungGuide.page, "Chrome").click();
+  await expect(button(samsungGuide.page, "Chrome")).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(
+    heading(samsungGuide.page, "Apri questa pagina in Chrome"),
+  ).toBeVisible();
+  await expect(
+    heading(samsungGuide.page, "Apri il menu di Samsung Internet"),
+  ).toHaveCount(0);
+  await button(samsungGuide.page, "Samsung Internet").click();
+  await noOverflow(samsungGuide.page);
+  await samsungGuide.page.screenshot({
+    path: resolve(artifacts, "install-android-samsung-390.png"),
+  });
+  await samsungGuide.context.close();
+  passed(
+    "Samsung Internet is detected before its Chrome user-agent token and can be changed explicitly to the Chrome instructions",
+  );
+
+  const promptOutcomes = await fixture({ android: true });
+  await promptOutcomes.page.goto(origin + "/installa");
+  for (const [outcome, message] of [
+    ["accepted", /Richiesta confermata\. Attendi il completamento/],
+    ["dismissed", /Puoi installare MAIA in un altro momento/],
+    ["error", /Usa il menu del browser e segui le istruzioni/],
+    [
+      "installed-before-choice",
+      /Installazione completata\. Ora puoi aprire MAIA/,
+    ],
+  ]) {
+    await expect
+      .poll(() =>
+        promptOutcomes.page.evaluate(
+          (value) => window.__dispatchInstallPrompt(value),
+          outcome,
+        ),
+      )
+      .toBe(true);
+    await button(promptOutcomes.page, "Installa MAIA").click();
+    await expect(promptOutcomes.page.getByText(message)).toBeVisible();
+    await expect(button(promptOutcomes.page, "Installa MAIA")).toHaveCount(0);
+  }
+  expect(
+    await promptOutcomes.page.evaluate(() => window.__pwaPromptCalls),
+  ).toBe(4);
+  await expect(
+    promptOutcomes.page.getByText(
+      /Richiesta confermata\. Attendi il completamento/,
+    ),
+  ).toHaveCount(0);
+  await promptOutcomes.context.close();
+  passed(
+    "Android install feedback distinguishes acceptance, dismissal and failure, and preserves a completed appinstalled message arriving before userChoice",
+  );
 
   for (const width of [320, 390]) {
     const ios = await fixture({
@@ -726,7 +961,7 @@ try {
     });
     await button(ios.page, "Copia l’indirizzo della guida").click();
     await expect(
-      ios.page.getByText(/Tieni premuto sull’indirizzo qui sotto/),
+      ios.page.getByText(/Tieni premuto sull’indirizzo della guida/),
     ).toBeVisible();
     await expect(
       ios.page.getByText("https://metimaia.com/installa", { exact: true }),
@@ -1510,7 +1745,15 @@ try {
   await writeFile(
     resolve(artifacts, "results.json"),
     JSON.stringify(
-      { root, checks, errors, unexpected, cachesAfterPrivate, offlineCaches },
+      {
+        root,
+        checks,
+        errors,
+        unexpected,
+        cachesAfterPrivate,
+        offlineCaches,
+        androidInstallability,
+      },
       null,
       2,
     ),
@@ -1520,6 +1763,11 @@ try {
   );
 } finally {
   await Promise.allSettled(contexts.map((context) => context.close()));
+  await Promise.allSettled(
+    temporaryProfiles.map((profile) =>
+      rm(profile, { recursive: true, force: true }),
+    ),
+  );
   await browser.close();
   await new Promise((ready) => server.close(ready));
 }

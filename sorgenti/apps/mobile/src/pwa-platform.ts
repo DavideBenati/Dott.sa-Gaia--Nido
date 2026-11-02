@@ -1,5 +1,10 @@
 export type InstallPlatform = "ios" | "android" | "desktop";
 
+/** Pick a guide; unknown and embedded browsers get the explicit Chrome path. */
+export function androidInstallBrowser(userAgent: string): "chrome" | "samsung" {
+  return /SamsungBrowser\//i.test(userAgent) ? "samsung" : "chrome";
+}
+
 export function installPlatform({
   userAgent,
   platform = "",
