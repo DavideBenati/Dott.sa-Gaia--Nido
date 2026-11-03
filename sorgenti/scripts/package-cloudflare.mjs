@@ -1,6 +1,7 @@
 import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { metadata, pageHTML, sitemap, site } from "./web-seo.mjs";
 import { pwaHTML, pwaAssets, pwaHeaders } from "./web-pwa.mjs";
+import { cloudflareHeaders } from "./cloudflare-headers.mjs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 const destination = process.argv[2];
@@ -88,19 +89,6 @@ await writeFile(
 );
 await writeFile(
   resolve(output, "_headers"),
-  "/*\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: strict-origin-when-cross-origin\n  X-Frame-Options: DENY\n  Permissions-Policy: camera=(), microphone=(), geolocation=()\n/newsletter*\n  Referrer-Policy: no-referrer\n" +
-    "/\n  Cache-Control: no-store\n/*.html\n  Cache-Control: no-store\n" +
-    Object.keys(metadata)
-      .filter((path) => path !== "/")
-      .map((path) => `${path}*\n  Cache-Control: no-store\n`)
-      .join("") +
-    // This standalone-app tab alias is private even if an older metadata
-    // snapshot is used by a packaging caller.
-    "/documenti*\n  Cache-Control: no-store\n  X-Robots-Tag: noindex, nofollow\n" +
-    pwaHeaders +
-    Object.entries(metadata)
-      .filter(([, page]) => !page.index)
-      .map(([path]) => `${path}*\n  X-Robots-Tag: noindex, nofollow\n`)
-      .join(""),
+  cloudflareHeaders(metadata, pwaHeaders),
 );
 console.log(`Cloudflare assets ready: ${output}`);
