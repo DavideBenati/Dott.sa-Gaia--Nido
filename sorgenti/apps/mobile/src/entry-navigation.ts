@@ -1,12 +1,29 @@
 import { hasCompletedProfileType, type Preferences } from "@nido/core";
 
-type AccountReturnTarget = "project" | "documents";
+type AccountReturnTarget =
+  "project" | "documents" | "video_calls" | `video_calls:${string}`;
 type Entry = { email: string; returnTo: AccountReturnTarget };
 const STORAGE_KEY = "maia:account-entry:v2";
+const videoCallTarget =
+  /^video_calls:([a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12})$/i;
 
-// Accept a destination token, never a caller-supplied URL or document identity.
+// An invitation UUID carries navigation only: opening it still requires the
+// recipient's authenticated account. Never accept a caller-supplied URL.
 export function accountReturnTarget(value: unknown): AccountReturnTarget {
-  return value === "documents" ? "documents" : "project";
+  if (typeof value === "string" && videoCallTarget.test(value))
+    return value.toLowerCase() as `video_calls:${string}`;
+  return value === "documents" || value === "video_calls" ? value : "project";
+}
+
+export function videoCallReturnPath(
+  value: unknown,
+): "/videochiamate" | `/videochiamate?invito=${string}` | null {
+  const target = accountReturnTarget(value);
+  return target === "video_calls"
+    ? "/videochiamate"
+    : target.startsWith("video_calls:")
+      ? `/videochiamate?invito=${target.slice("video_calls:".length)}`
+      : null;
 }
 
 function storage(): Storage | null {
@@ -28,9 +45,12 @@ function readEntry(): Entry | null {
         "email" in value &&
         typeof value.email === "string" &&
         "returnTo" in value &&
-        (value.returnTo === "project" || value.returnTo === "documents")
+        accountReturnTarget(value.returnTo) === value.returnTo
       )
-        return { email: value.email, returnTo: value.returnTo };
+        return {
+          email: value.email,
+          returnTo: accountReturnTarget(value.returnTo),
+        };
     }
   } catch {
     // Navigation still works when browser storage is unavailable.
@@ -87,18 +107,20 @@ export function accountEntryDestination({
 }):
   | "/welcome?onboarding=1&returnTo=project"
   | "/welcome?onboarding=1&returnTo=documents"
+  | "/welcome?onboarding=1&returnTo=video_calls"
+  | `/welcome?onboarding=1&returnTo=video_calls:${string}`
   | "/gaia?start=1"
   | "/miei-documenti"
+  | "/videochiamate"
+  | `/videochiamate?invito=${string}`
   | null {
   if (passwordRecovery) return null;
   const accountRoute = pathname === "/account" || pathname === "/";
   if (!hasEntry && !accountRoute) return null;
-  const documents = accountReturnTarget(returnTo) === "documents";
-  return hasCompletedProfileType(preferences)
-    ? documents
-      ? "/miei-documenti"
-      : "/gaia?start=1"
-    : documents
-      ? "/welcome?onboarding=1&returnTo=documents"
-      : "/welcome?onboarding=1&returnTo=project";
+  const target = accountReturnTarget(returnTo);
+  if (!hasCompletedProfileType(preferences))
+    return `/welcome?onboarding=1&returnTo=${target}`;
+  return target === "documents"
+    ? "/miei-documenti"
+    : (videoCallReturnPath(target) ?? "/gaia?start=1");
 }

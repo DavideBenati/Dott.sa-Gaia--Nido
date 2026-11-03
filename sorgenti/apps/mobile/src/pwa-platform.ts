@@ -1,3 +1,5 @@
+import { videoCallReturnPath } from "./entry-navigation";
+
 export type InstallPlatform = "ios" | "android" | "desktop";
 
 /** Pick a guide; unknown and embedded browsers get the explicit Chrome path. */
@@ -67,6 +69,7 @@ export function keepInstalledHome({
     !hasEntry &&
     completeProfile &&
     !passwordRecovery &&
-    returnTo !== "documents"
+    returnTo !== "documents" &&
+    videoCallReturnPath(returnTo) === null
   );
 }

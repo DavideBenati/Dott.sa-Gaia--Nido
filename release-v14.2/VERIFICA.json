@@ -1,0 +1,88 @@
+{
+  "version": "14.2",
+  "scope": "Simplify video-call preparation, explicitly triggered email invitations and exact invitation return after login",
+  "checks": {
+    "typecheck": "passed all workspaces on final source",
+    "lint": "passed full repository",
+    "format": "passed changed supported source and documentation files",
+    "full_unit_suite_before_final_auth_return_refinement": {
+      "files": 52,
+      "tests": 334,
+      "passed": true
+    },
+    "final_auth_return_and_link_tests": {
+      "files": 3,
+      "tests": 19,
+      "passed": true,
+      "includes_two_additional_return_target_tests": true
+    },
+    "backend_email_tests": {
+      "sql": 7,
+      "edge": 9,
+      "existing_invitation_access": 4,
+      "passed": true,
+      "included_in_full_suite": true
+    },
+    "browser": {
+      "checks": [
+        "390px guest invitation link requires login and exposes no private recipient or room",
+        "1440px guest invitation link requires login and exposes no private recipient or room",
+        "A guest signs in from an email link and returns to the exact requested invitation even with two active meetings",
+        "Studio prepares a private random room link and saves UUID-scoped invitation without automatic email",
+        "A deliberate double click dispatches one invitation containing only its ID and reports provider acceptance",
+        "Accepted email status survives a reload and offers no duplicate send",
+        "Copy forwards the protected invitation URL; clipboard denial exposes selectable text",
+        "Revocation requires explicit confirmation before removing the private invitation",
+        "A network failure preserves the saved call and requires status verification instead of claiming email success",
+        "Missing email configuration leaves the invitation usable and copyable without false delivery confirmation",
+        "A patient email link isolates the requested invitation and exposes no staff or email controls",
+        "Entering a call reauthorizes the exact invitation before same-tab navigation to the mocked provider",
+        "An unavailable targeted invitation never substitutes another available meeting",
+        "The staff workflow fits desktop without horizontal overflow"
+      ],
+      "errors": [],
+      "unexpected": [],
+      "mockedExternalServices": true
+    },
+    "legacy_v9_broad_smoke": {
+      "result": "stopped before video checks",
+      "reason": "Pre-existing project-heading expectation MetiMaia is stale against current Crescere insieme. heading; dedicated current video browser suite passed."
+    }
+  },
+  "deployment": {
+    "assistant_deployed_cloudflare": false,
+    "assistant_applied_remote_sql": false,
+    "assistant_deployed_edge": false,
+    "required_migration": "019",
+    "required_edge_function": "video-call-invite",
+    "resend_secret": "existing RESEND_API_KEY",
+    "scheduled_jobs_required": false
+  },
+  "packages": [
+    {
+      "name": "MAIA-Sito-v14.2-Videochiamate.zip",
+      "bytes": 3280671,
+      "sha256": "387d4382fad3815cc6d28cdbca14eff6aa50234bbdfd7b56fd31c64d97ebf9ae"
+    },
+    {
+      "name": "MAIA-Config-v14.2-Videochiamate.zip",
+      "bytes": 8812,
+      "sha256": "c57dbf915923cc198219a0b956fd186e4b6fd0af373380ebb388d9c77286bff5"
+    }
+  ],
+  "package_verification": {
+    "site_files": 111,
+    "integrity": "passed both ZIPs",
+    "google_verification_exact": true,
+    "private_materials_env_source_sql_native_packages_in_site": false
+  },
+  "limits": [
+    "No real email or real Hostpoint meeting created. Database and provider tests are local/mocked.",
+    "Provider acceptance does not establish delivery or reading.",
+    "Saved access lasts seven days; appointment date/time are agreed separately.",
+    "Random URL preparation does not provision a meeting or establish external Hostpoint service availability.",
+    "Exact invitation access still requires recipient sign-in and current server authorization.",
+    "Live domain and production Supabase configuration require manual deployment and a real two-account test.",
+    "The previously reported Android Play Protect block is not changed or verified by this release."
+  ]
+}

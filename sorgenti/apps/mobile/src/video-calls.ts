@@ -1,4 +1,11 @@
 import { client } from "./state";
+export type CallEmailState =
+  "not_sent" | "sending" | "accepted" | "retry" | "failed" | "uncertain";
+export type CallEmailStatus = {
+  invitation_id: string;
+  status: CallEmailState;
+  accepted_at: string | null;
+};
 export type CallRecipient = {
   user_id: string;
   email: string;
@@ -29,7 +36,10 @@ async function identity() {
 }
 async function rpc(name: string, args: Record<string, unknown>) {
   if (!client) throw new Error(unavailable);
+  const owner = await identity();
   const { data, error } = await client.rpc(name, args);
+  if ((await identity()) !== owner)
+    throw new Error("Sessione cambiata: ripeti l’accesso.");
   if (error)
     throw new Error(
       error.code === "PGRST202" || error.code === "42883"
@@ -86,11 +96,13 @@ export async function listCallInvitations(
 export async function createCallInvitation(user: string, room: string) {
   const owner = await identity();
   if (!uuid(user)) throw new Error("Scegli un account dall’elenco.");
-  return rpc("create_video_call_invitation", {
+  const id = await rpc("create_video_call_invitation", {
     p_recipient_id: user,
     p_room_url: hostpointRoom(room),
     p_expected_user_id: owner,
   });
+  if (!uuid(id)) throw new Error(unavailable);
+  return id;
 }
 export async function revokeCallInvitation(id: string) {
   const owner = await identity();
@@ -107,4 +119,73 @@ export async function openCallInvitation(id: string) {
   });
   if (typeof data !== "string") throw new Error(unavailable);
   return hostpointRoom(data);
+}
+
+const emailStates: CallEmailState[] = [
+  "not_sent",
+  "sending",
+  "accepted",
+  "retry",
+  "failed",
+  "uncertain",
+];
+function emailStatus(value: unknown): value is CallEmailStatus {
+  if (!value || typeof value !== "object") return false;
+  const row = value as CallEmailStatus;
+  return (
+    uuid(row.invitation_id) &&
+    emailStates.includes(row.status) &&
+    (row.accepted_at === null ||
+      (typeof row.accepted_at === "string" &&
+        Number.isFinite(Date.parse(row.accepted_at))))
+  );
+}
+export async function listCallEmailStatus(
+  ids: string[],
+): Promise<CallEmailStatus[]> {
+  if (!ids.length) return [];
+  const data = await rpc("list_video_call_email_status", {
+    p_invitation_ids: ids,
+  });
+  if (
+    !Array.isArray(data) ||
+    data.length !== ids.length ||
+    !data.every(emailStatus) ||
+    new Set(data.map((row) => row.invitation_id)).size !== ids.length ||
+    data.some((row) => !ids.includes(row.invitation_id))
+  )
+    throw new Error(
+      "Stato email non disponibile. Aggiorna gli inviti per riprovare.",
+    );
+  return data;
+}
+export async function sendCallInvitation(
+  id: string,
+): Promise<Omit<CallEmailStatus, "invitation_id">> {
+  const owner = await identity();
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 25000);
+  try {
+    const { data, error } = await client!.functions.invoke(
+      "video-call-invite",
+      {
+        body: { invitation_id: id },
+        signal: controller.signal,
+      },
+    );
+    if ((await identity()) !== owner) throw new Error("Sessione cambiata.");
+    if (
+      error ||
+      !emailStatus({ ...data, invitation_id: id }) ||
+      data.status === "not_sent"
+    )
+      throw new Error("Invio non confermato.");
+    return data;
+  } catch {
+    throw new Error(
+      "Invio email non confermato. La videochiamata resta salvata: aggiorna gli inviti per controllare l’esito prima di riprovare.",
+    );
+  } finally {
+    clearTimeout(timeout);
+  }
 }

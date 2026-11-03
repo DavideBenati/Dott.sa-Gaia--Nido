@@ -12,7 +12,10 @@ import { PregnancyProfileEditor } from "../src/pregnancy-profile-editor";
 import { useApp } from "../src/state";
 import { Button, Notice, Screen, StageHeading, Tag, ui } from "../src/ui";
 import { colors, serif } from "../src/theme";
-import { cancelAccountEntry } from "../src/entry-navigation";
+import {
+  cancelAccountEntry,
+  videoCallReturnPath,
+} from "../src/entry-navigation";
 import { confirmPendingNavigation } from "../src/unsaved-changes";
 import { usePwa } from "../src/pwa";
 
@@ -110,9 +113,8 @@ function WelcomeFlow() {
         router.replace(
           returnTo === "documents"
             ? "/miei-documenti"
-            : returnTo === "project"
-              ? "/gaia?start=1"
-              : "/(tabs)",
+            : (videoCallReturnPath(returnTo) ??
+                (returnTo === "project" ? "/gaia?start=1" : "/(tabs)")),
         );
     } catch {
       if (mounted.current)

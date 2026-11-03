@@ -102,6 +102,21 @@ describe("installed web app platform and launch", () => {
     expect(keepInstalledHome({ ...request, returnTo: "documents" })).toBe(
       false,
     );
+    expect(keepInstalledHome({ ...request, returnTo: "video_calls" })).toBe(
+      false,
+    );
+    expect(
+      keepInstalledHome({
+        ...request,
+        returnTo: "video_calls:33333333-3333-4333-8333-333333333333",
+      }),
+    ).toBe(false);
+    expect(
+      keepInstalledHome({
+        ...request,
+        returnTo: "video_calls:https://example.invalid",
+      }),
+    ).toBe(true);
     expect(keepInstalledHome({ ...request, pathname: "/account" })).toBe(false);
     expect(keepInstalledHome({ ...request, pathname: "/miei-documenti" })).toBe(
       false,

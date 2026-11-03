@@ -255,6 +255,14 @@ async function fixture({
         },
       ]);
     if (rpc === "list_video_call_invitations") return json(state.invitations);
+    if (rpc === "list_video_call_email_status")
+      return json(
+        body.p_invitation_ids.map((id) => ({
+          invitation_id: id,
+          status: "not_sent",
+          accepted_at: null,
+        })),
+      );
     if (rpc === "create_video_call_invitation") {
       state.invitations = [
         {
@@ -451,11 +459,11 @@ try {
     .fill(room);
   await admin
     .getByRole("button", {
-      name: "Condividi l’invito con questo account",
+      name: "Salva videochiamata",
       exact: true,
     })
     .click();
-  await expect(admin.getByText(/Invito creato\./)).toBeVisible();
+  await expect(admin.getByText(/Videochiamata salvata\./)).toBeVisible();
   const create = adminState.calls.find((call) =>
     call.path.endsWith("/create_video_call_invitation"),
   );
@@ -476,6 +484,9 @@ try {
   });
   await admin
     .getByRole("button", { name: "Revoca questo invito", exact: true })
+    .click();
+  await admin
+    .getByRole("button", { name: "Conferma revoca", exact: true })
     .click();
   await expect(
     admin.getByText("Invito rimosso dall’area personale.", { exact: true }),

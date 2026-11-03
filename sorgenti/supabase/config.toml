@@ -43,3 +43,6 @@ verify_jwt = false
 
 [functions.document-notify]
 verify_jwt = false
+
+[functions.video-call-invite]
+verify_jwt = false

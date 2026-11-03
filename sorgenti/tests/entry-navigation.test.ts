@@ -84,8 +84,15 @@ describe("account entry resumes navigation without importing personal preference
       "https://example.invalid",
       "//example.invalid",
       "/miei-documenti?document_id=private-id",
+      "/videochiamate?invito=33333333-3333-4333-8333-333333333333",
       ["documents"],
+      ["video_calls"],
       { returnTo: "documents" },
+      "video_calls:",
+      "video_calls:not-an-invitation",
+      "video_calls:https://example.invalid",
+      "video_calls:33333333-3333-4333-8333-333333333333&next=https://example.invalid",
+      "video_calls:33333333-3333-4333-8333-333333333333/extra",
     ]) {
       entry.prepareAccountEntry("patient@example.invalid", target);
       expect(
@@ -102,6 +109,126 @@ describe("account entry resumes navigation without importing personal preference
     vi.resetModules();
     const refreshed = await import("../apps/mobile/src/entry-navigation");
     expect(refreshed.consumeAccountEntry("patient@example.invalid")).toBeNull();
+  });
+
+  it("resumes the video-call area for the same account without persisting an invitation identifier", async () => {
+    const entry = await import("../apps/mobile/src/entry-navigation");
+    entry.prepareAccountEntry("PATIENT@example.invalid", "video_calls");
+    expect(JSON.parse([...memory.values()][0])).toEqual({
+      email: "patient@example.invalid",
+      returnTo: "video_calls",
+    });
+    vi.resetModules();
+    const refreshed = await import("../apps/mobile/src/entry-navigation");
+    expect(refreshed.consumeAccountEntry("patient@example.invalid")).toEqual({
+      email: "patient@example.invalid",
+      returnTo: "video_calls",
+    });
+    refreshed.prepareAccountEntry("patient@example.invalid", "video_calls");
+    expect(refreshed.consumeAccountEntry("other@example.invalid")).toBeNull();
+    expect(refreshed.consumeAccountEntry("patient@example.invalid")).toBeNull();
+  });
+
+  it("returns to video calls after login and preserves the target through the profile step", async () => {
+    const { accountEntryDestination } =
+      await import("../apps/mobile/src/entry-navigation");
+    const request = {
+      preferences: {
+        ...defaultPreferences,
+        profileType: "parent" as const,
+        onboarded: true,
+      },
+      pathname: "/account",
+      hasEntry: true,
+      passwordRecovery: false,
+      returnTo: "video_calls",
+    };
+    expect(accountEntryDestination(request)).toBe("/videochiamate");
+    expect(
+      accountEntryDestination({ ...request, preferences: defaultPreferences }),
+    ).toBe("/welcome?onboarding=1&returnTo=video_calls");
+    expect(
+      accountEntryDestination({ ...request, passwordRecovery: true }),
+    ).toBeNull();
+    expect(
+      accountEntryDestination({
+        ...request,
+        pathname: "/article/a",
+        hasEntry: false,
+      }),
+    ).toBeNull();
+  });
+
+  it("preserves the exact validated invitation through refresh, login and profile completion", async () => {
+    const id = "aabbccdd-3333-4333-8333-333333333333";
+    const target = `video_calls:${id}`;
+    const first = await import("../apps/mobile/src/entry-navigation");
+    first.prepareAccountEntry(
+      "PATIENT@example.invalid",
+      `video_calls:${id.toUpperCase()}`,
+    );
+    expect(JSON.parse([...memory.values()][0])).toEqual({
+      email: "patient@example.invalid",
+      returnTo: target,
+    });
+    vi.resetModules();
+    const refreshed = await import("../apps/mobile/src/entry-navigation");
+    const entry = refreshed.consumeAccountEntry("patient@example.invalid");
+    expect(entry).toEqual({
+      email: "patient@example.invalid",
+      returnTo: target,
+    });
+    const request = {
+      preferences: {
+        ...defaultPreferences,
+        profileType: "parent" as const,
+        onboarded: true,
+      },
+      pathname: "/account",
+      hasEntry: true,
+      passwordRecovery: false,
+      returnTo: entry?.returnTo,
+    };
+    expect(refreshed.accountEntryDestination(request)).toBe(
+      `/videochiamate?invito=${id}`,
+    );
+    const onboarding = refreshed.accountEntryDestination({
+      ...request,
+      preferences: defaultPreferences,
+    });
+    expect(onboarding).toBe(`/welcome?onboarding=1&returnTo=${target}`);
+    expect(
+      refreshed.videoCallReturnPath(
+        new URL(onboarding!, "https://metimaia.com").searchParams.get(
+          "returnTo",
+        ),
+      ),
+    ).toBe(`/videochiamate?invito=${id}`);
+    expect(
+      refreshed.accountEntryDestination({ ...request, passwordRecovery: true }),
+    ).toBeNull();
+    refreshed.prepareAccountEntry("patient@example.invalid", target);
+    expect(refreshed.consumeAccountEntry("other@example.invalid")).toBeNull();
+  });
+
+  it("never turns malformed invitation targets into navigation URLs", async () => {
+    const entry = await import("../apps/mobile/src/entry-navigation");
+    for (const target of [
+      "video_calls:https://example.invalid",
+      "video_calls:33333333-3333-4333-8333-333333333333#token=secret",
+      "video_calls:33333333-3333-4333-8333-333333333333?next=/account",
+    ]) {
+      expect(entry.videoCallReturnPath(target)).toBeNull();
+      memory.set(
+        "maia:account-entry:v2",
+        JSON.stringify({ email: "patient@example.invalid", returnTo: target }),
+      );
+      vi.resetModules();
+      const refreshed = await import("../apps/mobile/src/entry-navigation");
+      expect(
+        refreshed.consumeAccountEntry("patient@example.invalid"),
+      ).toBeNull();
+    }
   });
 
   it("returns completed profiles to documents and preserves the role step for incomplete profiles", async () => {
