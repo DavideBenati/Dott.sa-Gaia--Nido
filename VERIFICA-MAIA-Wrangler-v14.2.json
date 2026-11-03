@@ -1,0 +1,55 @@
+{
+  "app_version": "14.2",
+  "delivery": "Windows launcher and guarded official Wrangler OAuth/version API publishing",
+  "target": {
+    "worker": "metimaia",
+    "account_id": "68583a5f0841226fd1f0b4adc17acb92"
+  },
+  "screenshot_evidence": [
+    "Dashboard assets/upload returns401 Unauthorized",
+    "Dashboard JSmodule request receives HTML MIME;403 organizationrequest also visible; unrelated extensionfont warnings present"
+  ],
+  "checks": {
+    "driver_tests": 9,
+    "driver_test_services": "simulated CLI only",
+    "lint": "passed targeted driver/test",
+    "format": "passed changed supported files",
+    "independent_review": "no serious deployment/data loss control issue found",
+    "official_wrangler": "4.157.0",
+    "official_cli_dry_run": {
+      "command": "versions upload --dry-run",
+      "exit_code": 0,
+      "assets_only_config_valid": true,
+      "network_upload": false
+    },
+    "actual_bundle_manifest_verification": 111,
+    "zip_integrity": "passed",
+    "archive_files": 115,
+    "static_assets_unchanged": true,
+    "launcher": "reviewed CRLF CMD; not run on Windows"
+  },
+  "package": {
+    "name": "MAIA-Pubblicazione-Windows-v14.2.zip",
+    "bytes": 3297158,
+    "sha256": "44117936350df6be9d8e0a2d574b85f00762e53054a87d8a6fbf4a7d93d0f9da"
+  },
+  "controls": [
+    "Exact account/worker only",
+    "No embedded credentials; official browser OAuth",
+    "Verify111asset hashes and reject symlinks, extra or missing files",
+    "Abort bindings, missing/nonempty handlers, custom runtime or splittraffic",
+    "TypedPUBBLICA before stagedupload",
+    "Strictconfigurationcheck and structuredvalidversionreceipt",
+    "Freshdeploymentcheck beforeactivation",
+    "Verifyactualnewversion100percent afteractivation includinglostresponse"
+  ],
+  "limits": [
+    "No actual OAuth, Cloudflare account read or production deployment by assistant.",
+    "Not a guarantee that account authorization/network restrictions will be resolved.",
+    "Known asset router defaults auto-trailing-slash and single-page-application explicitly applied; arbitrary Dashboardassetsettings cannot be promised preserved.",
+    "Unexpected version metadata such as emptyexportsarray may conservatively abort; no bypassprovided.",
+    "Windows launcher reviewed, not executed on Windows.",
+    "Driver preserves domains/routes by using versioncommands and does not invoke triggers deploy.",
+    "Supabase migration019/functionvideo-call-invite still need separate setup for manual emails."
+  ]
+}
