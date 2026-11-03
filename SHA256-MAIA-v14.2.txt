@@ -1,0 +1,4 @@
+c1ea4b3bfe205f65a953b546f04de8a22312671876e118c1af7d37dcdf187603  GUIDA-MAIA-v14.2-Videochiamate.md
+c57dbf915923cc198219a0b956fd186e4b6fd0af373380ebb388d9c77286bff5  MAIA-Config-v14.2-Videochiamate.zip
+387d4382fad3815cc6d28cdbca14eff6aa50234bbdfd7b56fd31c64d97ebf9ae  MAIA-Sito-v14.2-Videochiamate.zip
+88e4167b86ac139b7a4adf70db3b0faef736e8ec3160f9969265e377b1d31610  VERIFICA-MAIA-v14.2.json
