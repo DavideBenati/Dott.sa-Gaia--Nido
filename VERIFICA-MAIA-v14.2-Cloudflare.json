@@ -1,0 +1,123 @@
+{
+  "app_version": "14.2",
+  "package_revision": "Cloudflare headers consolidated",
+  "screenshot_diagnosis": "User reports upload stays stuck without an error. Root cause not confirmed; no live dashboard access.",
+  "original_zip_integrity": "passed; 111 files and small assets, original _headers accepted by official parser",
+  "confirmed_packaging_bug": "Workers metadata uses last exact-path block, losing preceding headers when duplicate path blocks occur.",
+  "fix": "Merge generated blocks by exact path, preserving header values and rejecting conflicts.",
+  "checks": {
+    "unit_tests": 22,
+    "unit_files": "cloudflare headers, SEO and PWA",
+    "lint": "passed targeted files",
+    "format": "passed changed files",
+    "file_comparison": {
+      "total_files": 111,
+      "changed_files": [
+        "_headers"
+      ],
+      "application_bundles_identical": true
+    },
+    "zip_integrity": "passed",
+    "google_verification_exact": true,
+    "private_materials_source_env_sql_in_site": false
+  },
+  "official_before": {
+    "officialPackage": "wrangler@4.157.0",
+    "parsedRules": 60,
+    "invalid": [],
+    "metadataRules": 37,
+    "logs": [
+      "✨ Parsed 60 valid header rules."
+    ],
+    "warnings": [],
+    "effectiveRepresentativeRules": {
+      "/*": {
+        "set": {
+          "x-content-type-options": "nosniff",
+          "referrer-policy": "strict-origin-when-cross-origin",
+          "x-frame-options": "DENY",
+          "permissions-policy": "camera=(), microphone=(), geolocation=()"
+        }
+      },
+      "/account*": {
+        "set": {
+          "x-robots-tag": "noindex, nofollow"
+        }
+      },
+      "/newsletter*": {
+        "set": {
+          "x-robots-tag": "noindex, nofollow"
+        }
+      },
+      "/documenti*": {
+        "set": {
+          "x-robots-tag": "noindex, nofollow"
+        }
+      },
+      "/service-worker.js": {
+        "set": {
+          "cache-control": "no-cache, no-store, must-revalidate",
+          "content-type": "application/javascript; charset=utf-8",
+          "service-worker-allowed": "/"
+        }
+      }
+    }
+  },
+  "official_after": {
+    "officialPackage": "wrangler@4.157.0",
+    "parsedRules": 37,
+    "invalid": [],
+    "metadataRules": 37,
+    "logs": [
+      "✨ Parsed 37 valid header rules."
+    ],
+    "warnings": [],
+    "effectiveRepresentativeRules": {
+      "/*": {
+        "set": {
+          "x-content-type-options": "nosniff",
+          "referrer-policy": "strict-origin-when-cross-origin",
+          "x-frame-options": "DENY",
+          "permissions-policy": "camera=(), microphone=(), geolocation=()"
+        }
+      },
+      "/account*": {
+        "set": {
+          "cache-control": "no-store",
+          "x-robots-tag": "noindex, nofollow"
+        }
+      },
+      "/newsletter*": {
+        "set": {
+          "referrer-policy": "no-referrer",
+          "cache-control": "no-store",
+          "x-robots-tag": "noindex, nofollow"
+        }
+      },
+      "/documenti*": {
+        "set": {
+          "cache-control": "no-store",
+          "x-robots-tag": "noindex, nofollow"
+        }
+      },
+      "/service-worker.js": {
+        "set": {
+          "cache-control": "no-cache, no-store, must-revalidate",
+          "content-type": "application/javascript; charset=utf-8",
+          "service-worker-allowed": "/"
+        }
+      }
+    }
+  },
+  "package": {
+    "name": "MAIA-Sito-v14.2-Cloudflare.zip",
+    "bytes": 3280591,
+    "sha256": "3779488c4c4007af329bbb2044c9499c7673620d73f6eda3ed4b302847833ff5"
+  },
+  "limits": [
+    "No Cloudflare deployment performed by assistant.",
+    "The header correction is verified; it is not established as the cause of the dashboard upload stall.",
+    "Retry recommended using the extracted complete folder in a fresh browser session.",
+    "App remains version14.2; original video email Supabase setup still applies."
+  ]
+}
